@@ -61,9 +61,26 @@ int main(int argc, char** argv) {
   fwrite(&sram_start, 4, 1, fout);
   /* append binary to end of this */
   uint8_t* image = (uint8_t*)malloc(image_size);
-  fread(image, image_size, 1, fin);
-  fwrite(image, image_size, 1, fout);
 
+  size_t bytes_read = fread(image, 1, image_size, fin);
+  if (bytes_read != (size_t)image_size) {
+    printf("Error: failed to read all bytes (read %zu of %d)\n", bytes_read, image_size);
+    free(image);
+    fclose(fin);
+    fclose(fout);
+    return 1;
+  }
+
+  size_t bytes_written = fwrite(image, 1, image_size, fout);
+  if (bytes_written != (size_t)image_size) {
+    printf("Error: failed to write all bytes (wrote %zu of %d)\n", bytes_written, image_size);
+    free(image);
+    fclose(fin);
+    fclose(fout);
+    return 1;
+  }
+
+  free(image);
   fclose(fout);
   fclose(fin);
 
