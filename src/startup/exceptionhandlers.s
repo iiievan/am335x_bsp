@@ -1,5 +1,5 @@
 @******************************************************************************
-@ exception_handlers_gcc.s - Exception handlers for GCC
+@ exceptionhandlers.s - Exception handlers for GCC
 @******************************************************************************
 
 .global UndefInstHandler
