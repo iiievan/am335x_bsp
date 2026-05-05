@@ -31,10 +31,8 @@ set(BSP_SOURCES
         src/regs/REGS.cpp
         src/rtt/rtt_log.c
         src/rtt/rtt_log_capi.cpp
-        #src/startup/startup.s
         src/startup/cp15.s
         src/startup/cpu.s
-        #src/startup/exceptionhandlers.s
         src/startup/cxx_support.cpp
         src/hal/UART.cpp
 )
