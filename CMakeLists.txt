@@ -24,6 +24,9 @@ add_subdirectory(thirdparty/SEGGER_RTT)
 
 set(BSP_SOURCES
         src/hal/INTC.cpp
+        src/hal/BRANCH_PREDICTION.cpp
+        src/hal/MMU.cpp
+        src/hal/CACHE.cpp
         src/hal/hwTimer.cpp
         src/hal/pins/am335x_pins.cpp
         src/hal/boards/beaglebone_black.cpp
