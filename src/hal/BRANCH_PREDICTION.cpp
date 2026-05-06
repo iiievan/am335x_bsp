@@ -3,6 +3,7 @@
 /*=======================================================================*/
 #include "hal/BRANCH_PREDICTION.hpp"
 #include "startup/cp15.h"
+#include "stdint.h"
 
 namespace HAL::BRANCH_PREDICTION
 {

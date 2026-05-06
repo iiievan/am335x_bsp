@@ -11,31 +11,49 @@
 
 namespace HAL::MMU
 {
-    static uint32_t s_page_table[PAGE_TABLE_NUM_ENTRY]
-        __attribute__((aligned(PAGE_TABLE_ALIGN_SIZE)));
+    constexpr uint32_t MMU_PAGETABLE_ENTRY_FAULT   = 0x00;
+    constexpr uint32_t MMU_PAGEBOUND_SHIFT         = 20;
+    constexpr uint32_t MMU_PG_SUPSECT_SIZE_SHIFT   = 14;
+    constexpr uint32_t MMU_PGADDR_MASK             = 0xFFF00000;
+    constexpr uint32_t MMU_PGTYPE_MASK             = 0x00040002;
+
+    static uint32_t s_page_table[PAGE_TABLE_NUM_ENTRY]  __attribute__((aligned(PAGE_TABLE_ALIGN_SIZE)));
 
     static void init_page_table_fault_entries() noexcept
     {
         for (uint32_t idx = 0; idx < PAGE_TABLE_NUM_ENTRY; idx++)
         {
-            s_page_table[idx] = 0x00;  // FAULT entry
+            s_page_table[idx] = MMU_PAGETABLE_ENTRY_FAULT;
         }
     }
 
     static void map_region(const Region_t& region) noexcept
     {
-        uint32_t first_idx = region.startAddr >> 20;
-        uint32_t base_entry = (region.startAddr & 0xFFF00000) |  // Base address (bits 31:20)
-                              (region.pgType & 0x00040002) |      // Section type bits
-                              region.memAttrib |
-                              region.accsCtrl |
-                              region.secureType;
+        uint32_t *ptEntryPtr;
+        uint32_t ptEntry;
 
-        uint32_t* pt_entry = s_page_table + first_idx;
+        /* Get the first entry in the page table to set */
+        ptEntryPtr = region.masterPtPtr + (region.startAddr >> MMU_PAGEBOUND_SHIFT);
 
-        for (uint32_t idx = 0; idx < region.numPages; idx++)
+        /* Set the pointer to the last entry */
+        ptEntryPtr += (region.numPages - 1);
+
+        /* Get the start Address MSB 3 nibbles. Ignore extended address */
+        ptEntry = (region.startAddr & region.pgType) & MMU_PGADDR_MASK;
+
+        /*
+        ** Update the page table entry with memory attributes and
+        ** Access Permissions and Security.
+        ** All the regions will be marked as global.
+        */
+        ptEntry |= ((MMU_PGTYPE_MASK & region.pgType)
+                    | region.accsCtrl | region.memAttrib
+                    | region.secureType);
+
+        /* Set the entries in the page table for the region attributes */
+        for(int idx = (region.numPages - 1); idx >= 0; idx--)
         {
-            pt_entry[idx] = base_entry + (idx << 20);
+            *ptEntryPtr-- = ptEntry + (idx << MMU_PAGEBOUND_SHIFT) ;
         }
     }
 
@@ -62,7 +80,7 @@ namespace HAL::MMU
         init_page_table_fault_entries();
 
         // 6. Map DDR region
-        RTT_LOG_I(TAG, "Mapping DDR: 0x%08X - 0x%08X", DDR_START_ADDR, DDR_START_ADDR + (DDR_NUM_SECTIONS << 20));
+        RTT_LOG_I(TAG, "Mapping DDR: 0x%08X - 0x%08X", (int)DDR_START_ADDR, (int)(DDR_START_ADDR + (DDR_NUM_SECTIONS << 20)));
 
         Region_t ddr_region(PageType::SECTION,
                                     DDR_START_ADDR,
@@ -76,7 +94,7 @@ namespace HAL::MMU
         map_region(ddr_region);
 
         // 7. Map OCMC region
-        RTT_LOG_I(TAG, "Mapping OCMC: 0x%08X - 0x%08X", OCMC_START_ADDR, OCMC_START_ADDR + (OCMC_NUM_SECTIONS << 20));
+        RTT_LOG_I(TAG, "Mapping OCMC: 0x%08X - 0x%08X", (int)OCMC_START_ADDR, (int)(OCMC_START_ADDR + (OCMC_NUM_SECTIONS << 20)));
 
         Region_t ocmc_region(PageType::SECTION,
                            OCMC_START_ADDR,
@@ -91,7 +109,7 @@ namespace HAL::MMU
 
         // 8. Map Device region (with XN flag)
         RTT_LOG_I(TAG, "Mapping Device: 0x%08X - 0x%08X",
-                  DEV_START_ADDR, DEV_START_ADDR + (DEV_NUM_SECTIONS << 20));
+                  (int)DEV_START_ADDR, (int)(DEV_START_ADDR + (DEV_NUM_SECTIONS << 20)));
 
         Region_t dev_region(PageType::SECTION,
                           DEV_START_ADDR,
@@ -110,7 +128,7 @@ namespace HAL::MMU
         RTT_LOG_I(TAG, "Enabling MMU...");
 
         // Set TTB0 register
-        cp15_TTB0_set((uint32_t)s_page_table);
+        cp15_TTB0_set(reinterpret_cast<uint32_t>(s_page_table));
 
         // Enable MMU
         cp15_MMU_enable();
@@ -145,9 +163,9 @@ namespace HAL::MMU
     {
         uint32_t idx = va >> 20;
         if (idx < PAGE_TABLE_NUM_ENTRY)
-            RTT_LOG_I(TAG, "PTE[0x%08X] = 0x%08X", va, s_page_table[idx]);
+            RTT_LOG_I(TAG, "PTE[0x%08X] = 0x%08X", (int)va, (int)s_page_table[idx]);
         else
-            RTT_LOG_E(TAG, "Invalid VA for PTE dump: 0x%08X", va);
+            RTT_LOG_E(TAG, "Invalid VA for PTE dump: 0x%08X", (int)va);
     }
 }
 
