@@ -100,8 +100,8 @@ namespace HAL::MMU
                            OCMC_START_ADDR,
                            OCMC_NUM_SECTIONS,
                            MemoryType::NORMAL_NON_SHAREABLE,
-                           CachePolicy::WT_NOWA,
-                           CachePolicy::WB_WA,
+                           CachePolicy::NON_CACHEABLE, // For RTT working
+                           CachePolicy::NON_CACHEABLE,
                            SecureType::NON_SECURE,
                            AccessPermission::PRV_RW_USR_RW,
                            s_page_table);
