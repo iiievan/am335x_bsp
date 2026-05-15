@@ -38,6 +38,8 @@ set(BSP_SOURCES
         src/startup/cpu.s
         src/startup/cxx_support.cpp
         src/hal/UART.cpp
+        include/hal/EDMA.hpp
+        src/hal/EDMA.cpp
 )
 
 

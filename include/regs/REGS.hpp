@@ -18,5 +18,6 @@
 #include "UART.hpp"
 #include "MMCHS.hpp"
 #include "GPIO.hpp"
+#include "EDMA.hpp"
 
 #endif //__AM335X_REGISTERS_H
