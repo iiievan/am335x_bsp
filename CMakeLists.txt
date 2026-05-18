@@ -40,6 +40,7 @@ set(BSP_SOURCES
         src/hal/UART.cpp
         include/hal/EDMA.hpp
         src/hal/EDMA.cpp
+        src/regs/EDMA.cpp
 )
 
 

@@ -2852,6 +2852,8 @@ namespace REGS::EDMA
     constexpr uint32_t AM335x_EDMA3TC2_BASE    = 0x49A00000;
     constexpr uint32_t PARAM_BASE              = 0x4000;
 
+    struct paRAM_entry_t;
+
     struct AM335x_EDMA3CC_Type
     {
         __R   PIDCC_reg_t           PID;            // (0x00)  Peripheral Identification Register
@@ -3002,117 +3004,62 @@ namespace REGS::EDMA
         __W   QEESR_reg_t           QEESR;          // (0x108C) QDMA Event Enable Set Register
         __R   QSER_reg_t            QSER;           // (0x1090) QDMA Secondary Event Register
         __W   QSECR_reg_t           QSECR;          // (0x1094) QDMA Secondary Event Clear Register
+
+        // ---------------------> paRAM setup methods <------------------------//
+        [[nodiscard]] paRAM_entry_t& paRAM(uint32_t n) const noexcept;
+        [[nodiscard]] uint32_t& OPT(uint32_t n) const noexcept;
+        [[nodiscard]] uint32_t& SRC(uint32_t n) const noexcept;
+        [[nodiscard]] uint32_t& ACNT_BCNT(uint32_t n) const noexcept;
+        [[nodiscard]] uint32_t& DST(uint32_t n) const noexcept;
+        [[nodiscard]] uint32_t& SRC_DST_BIDX(uint32_t n) const noexcept;
+        [[nodiscard]] uint32_t& LINK_BCNTRLD(uint32_t n) const noexcept;
+        [[nodiscard]] uint32_t& SRC_DST_CIDX(uint32_t n) const noexcept;
+        [[nodiscard]] uint32_t& CCNT(uint32_t n) const noexcept;
+
+        // ---------------------> DMA Region Access Enable <------------------------//
+        [[nodiscard]] DRAE_reg_t& DRAE(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] DRAEH_reg_t& DRAEH(e_REGION_ID region_id) const noexcept;
+
+        // ----------------------> shadow region access <----------------------//
+        [[nodiscard]] ER_reg_t& S_ER(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] ECR_reg_t& S_ECR(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] ECRH_reg_t& S_ECRH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] ESR_reg_t& S_ESR(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] ESRH_reg_t& S_ESRH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] CER_reg_t& S_CER(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] EER_reg_t& S_EER(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] EERH_reg_t& S_EERH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] EECR_reg_t& S_EECR(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] EECRH_reg_t& S_EECRH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] EESR_reg_t& S_EESR(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] EESRH_reg_t& S_EESRH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] SER_reg_t& S_SER(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] SERH_reg_t& S_SERH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] SECR_reg_t& S_SECR(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] SECRH_reg_t& S_SECRH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] IER_reg_t& S_IER(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] IERH_reg_t& S_IERH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] IECR_reg_t& S_IECR(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] IECRH_reg_t& S_IECRH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] IESR_reg_t& S_IESR(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] IESRH_reg_t& S_IESRH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] IPR_reg_t& S_IPR(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] IPRH_reg_t& S_IPRH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] ICR_reg_t& S_ICR(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] ICRH_reg_t& S_ICRH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] IEVAL_reg_t& S_IEVAL(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] QER_reg_t& S_QER(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] QEER_reg_t& S_QEER(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] QEECR_reg_t& S_QEECR(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] QEESR_reg_t& S_QEESR(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] QSER_reg_t& S_QSER(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] QSECR_reg_t& S_QSECR(e_REGION_ID region_id) const noexcept;
     };
 
-    constexpr uint32_t  DMAQNUM_CLR(const uint32_t ch_num) { return (~(0x7u << (((ch_num)%8u)*4u))); }
-    constexpr uint32_t  DMAQNUM_SET(const uint32_t ch_num, const e_EVENT_QUEUE que_num) { return ((0x7u & static_cast<uint32_t>(que_num)) << (((ch_num)%8u)*4u)); }
-    constexpr uint32_t  QDMAQNUM_CLR(const uint32_t ch_num) { return (~(0x7u << (ch_num*4u))); }
-    constexpr uint32_t  QDMAQNUM_SET(const uint32_t ch_num, const e_EVENT_QUEUE que_num) { return ((0x7u & static_cast<uint32_t>(que_num)) << (ch_num*4u)); }
-
-    constexpr uint32_t get_DRAE_addr(const e_REGION_ID region_id = REGION_0) noexcept { return AM335x_EDMA3CC_BASE + 0x340 + (static_cast<uint32_t>(region_id) * 8); }
-    #define get_DRAE_ptr(region_id) reinterpret_cast<DRAE_reg_t *>(get_DRAE_addr(region_id))
-
-    constexpr uint32_t get_DRAEH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x344 + (static_cast<uint32_t>(region_id) * 8); }
-    #define get_DRAEH_ptr(region_id) reinterpret_cast<DRAEH_reg_t *>(get_DRAEH_addr(region_id))
-
-    constexpr uint32_t get_ER_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2000 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_ER_ptr(region_id) reinterpret_cast<ER_reg_t *>(get_ER_addr(region_id))
-
-    constexpr uint32_t get_ECR_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2008 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_ECR_ptr(region_id) reinterpret_cast<ECR_reg_t *>(get_ECR_addr(region_id))
-
-    constexpr uint32_t get_ECRH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x200C + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_ECRH_ptr(region_id) reinterpret_cast<ECRH_reg_t *>(get_ECRH_addr(region_id))
-
-    constexpr uint32_t get_ESR_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2010 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_ESR_ptr(region_id) reinterpret_cast<ESR_reg_t *>(get_ESR_addr(region_id))
-
-    constexpr uint32_t get_ESRH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2014 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_ESRH_ptr(region_id) reinterpret_cast<ESRH_reg_t *>(get_ESRH_addr(region_id))
-
-    constexpr uint32_t get_CER_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2018 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_CER_ptr(region_id) reinterpret_cast<CER_reg_t *>(get_CER_addr(region_id))
-
-    constexpr uint32_t get_EER_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2020 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_EER_ptr(region_id) reinterpret_cast<EER_reg_t *>(get_EER_addr(region_id))
-
-    constexpr uint32_t get_EERH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2024 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_EERH_ptr(region_id) reinterpret_cast<EERH_reg_t *>(get_EERH_addr(region_id))
-
-    constexpr uint32_t get_EECR_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2028 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_EECR_ptr(region_id) reinterpret_cast<EECR_reg_t *>(get_EECR_addr(region_id))
-
-    constexpr uint32_t get_EECRH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x202C + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_EECRH_ptr(region_id) reinterpret_cast<EECRH_reg_t *>(get_EECRH_addr(region_id))
-
-    constexpr uint32_t get_EESR_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2030 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_EESR_ptr(region_id) reinterpret_cast<EESR_reg_t *>(get_EESR_addr(region_id))
-
-    constexpr uint32_t get_EESRH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2034 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_EESRH_ptr(region_id) reinterpret_cast<EESRH_reg_t *>(get_EESRH_addr(region_id))
-
-    constexpr uint32_t get_SER_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2038 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_SER_ptr(region_id) reinterpret_cast<SER_reg_t *>(get_SER_addr(region_id))
-
-    constexpr uint32_t get_SERH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x203C + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_SERH_ptr(region_id) reinterpret_cast<SERH_reg_t *>(get_SERH_addr(region_id))
-
-    constexpr uint32_t get_SECR_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2040 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_SECR_ptr(region_id) reinterpret_cast<SECR_reg_t *>(get_SECR_addr(region_id))
-
-    constexpr uint32_t get_SECRH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2044 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_SECRH_ptr(region_id) reinterpret_cast<SECRH_reg_t *>(get_SECRH_addr(region_id))
-
-    constexpr uint32_t get_IER_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2050 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_IER_ptr(region_id) reinterpret_cast<IER_reg_t *>(get_IER_addr(region_id))
-
-    constexpr uint32_t get_IERH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2054 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_IERH_ptr(region_id) reinterpret_cast<IERH_reg_t *>(get_IERH_addr(region_id))
-
-    constexpr uint32_t get_IECR_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2058 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_IECR_ptr(region_id) reinterpret_cast<IECR_reg_t *>(get_IECR_addr(region_id))
-
-    constexpr uint32_t get_IECRH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x205C + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_IECRH_ptr(region_id) reinterpret_cast<IECRH_reg_t *>(get_IECRH_addr(region_id))
-
-    constexpr uint32_t get_IESR_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2060 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_IESR_ptr(region_id) reinterpret_cast<IESR_reg_t *>(get_IESR_addr(region_id))
-
-    constexpr uint32_t get_IESRH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2064 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_IESRH_ptr(region_id) reinterpret_cast<IESRH_reg_t *>(get_IESRH_addr(region_id))
-
-    constexpr uint32_t get_IPR_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2068 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_IPR_ptr(region_id) reinterpret_cast<IPR_reg_t *>(get_IPR_addr(region_id))
-
-    constexpr uint32_t get_IPRH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x206C + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_IPRH_ptr(region_id) reinterpret_cast<IPRH_reg_t *>(get_IPRH_addr(region_id))
-
-    constexpr uint32_t get_ICR_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2070 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_ICR_ptr(region_id) reinterpret_cast<ICR_reg_t *>(get_ICR_addr(region_id))
-
-    constexpr uint32_t get_ICRH_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2074 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_ICRH_ptr(region_id) reinterpret_cast<ICRH_reg_t *>(get_ICRH_addr(region_id))
-
-    constexpr uint32_t get_IEVAL_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2078 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_IEVAL_ptr(region_id) reinterpret_cast<IEVAL_reg_t *>(get_IEVAL_addr(region_id))
-
-    constexpr uint32_t get_QER_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2080 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_QER_ptr(region_id) reinterpret_cast<QER_reg_t *>(get_QER_addr(region_id))
-
-    constexpr uint32_t get_QEER_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2084 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_QEER_ptr(region_id) reinterpret_cast<QEER_reg_t *>(get_QEER_addr(region_id))
-
-    constexpr uint32_t get_QEECR_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2088 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_QEECR_ptr(region_id) reinterpret_cast<QEECR_reg_t *>(get_QEECR_addr(region_id))
-
-    constexpr uint32_t get_QEESR_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x208C + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_QEESR_ptr(region_id) reinterpret_cast<QEESR_reg_t *>(get_QEESR_addr(region_id))
-
-    constexpr uint32_t get_QSER_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2090 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_QSER_ptr(region_id) reinterpret_cast<QSER_reg_t *>(get_QSER_addr(region_id))
-
-    constexpr uint32_t get_QSECR_addr(const e_REGION_ID region_id) noexcept { return AM335x_EDMA3CC_BASE + 0x2094 + (static_cast<uint32_t>(region_id) * 0x200); }
-    #define get_QSECR_ptr(region_id) reinterpret_cast<QSECR_reg_t *>(get_QSECR_addr(region_id))
+    constexpr uint32_t  DMAQNUM_CLR(const uint32_t ch_num)                                  { return (~(0x7u << (((ch_num)%8u)*4u))); }
+    constexpr uint32_t  DMAQNUM_SET(const uint32_t ch_num, const e_EVENT_QUEUE que_num)     { return ((0x7u & static_cast<uint32_t>(que_num)) << (((ch_num)%8u)*4u)); }
+    constexpr uint32_t  QDMAQNUM_CLR(const uint32_t ch_num)                                 { return (~(0x7u << (ch_num*4u))); }
+    constexpr uint32_t  QDMAQNUM_SET(const uint32_t ch_num, const e_EVENT_QUEUE que_num)    { return ((0x7u & static_cast<uint32_t>(que_num)) << (ch_num*4u)); }
     
     struct AM335x_EDMA3TC_Type
     {
@@ -3172,31 +3119,14 @@ namespace REGS::EDMA
         __R   DFDST_reg_t         DFDST3;             // (0x3CC)  Destination FIFO Destination Address Register 3
         __R   DFBIDX_reg_t        DFBIDX3;            // (0x3D0)  Destination FIFO BIDX Register 3
         __R   DFMPPRXY_reg_t      DFMPPRXY3;          // (0x3D4)  Destination FIFO Memory Protection Proxy Register 3
+
+        [[nodiscard]] DFOPT_reg_t& OPT(uint32_t n) const noexcept;
+        [[nodiscard]] DFSRC_reg_t& SRC(uint32_t n) const noexcept;
+        [[nodiscard]] DFCNT_reg_t& CNT(uint32_t n) const noexcept;
+        [[nodiscard]] DFDST_reg_t& DST(uint32_t n) const noexcept;
+        [[nodiscard]] DFBIDX_reg_t& BIDX(uint32_t n) const noexcept;
+        [[nodiscard]] DFMPPRXY_reg_t& MPPRXY(uint32_t n) const noexcept;
     };
-
-    constexpr uint32_t get_paRAM_addr(const uint32_t n) noexcept { return AM335x_EDMA3CC_BASE + PARAM_BASE + (0x20 * n); }
-    #define get_paRAM_ptr(n) reinterpret_cast<uint32_t *>(get_paRAM_addr(n))
-
-    constexpr uint32_t get_SRC_addr(const uint32_t n) noexcept { return AM335x_EDMA3CC_BASE + PARAM_BASE + 0x4 + (0x20 * n); }
-    #define get_SRC_ptr(n) reinterpret_cast<uint32_t *>(get_SRC_addr(n))
-
-    constexpr uint32_t get_ACNT_BCNT_addr(const uint32_t n) noexcept { return AM335x_EDMA3CC_BASE + PARAM_BASE + 0x8 + (0x20 * n); }
-    #define get_ACNT_BCNT_ptr(n) reinterpret_cast<uint32_t *>(get_ACNT_BCNT_addr(n))
-
-    constexpr uint32_t get_DST_addr(const uint32_t n) noexcept { return AM335x_EDMA3CC_BASE + PARAM_BASE + 0xC + (0x20 * n); }
-    #define get_DST_ptr(n) reinterpret_cast<uint32_t *>(get_DST_addr(n))
-
-    constexpr uint32_t get_SRC_DST_BIDX_addr(const uint32_t n) noexcept { return AM335x_EDMA3CC_BASE + PARAM_BASE + 0x10 + (0x20 * n); }
-    #define get_SRC_DST_BIDX_ptr(n) reinterpret_cast<uint32_t *>(get_SRC_DST_BIDX_addr(n))
-
-    constexpr uint32_t get_LINK_BCNTRLD_addr(const uint32_t n) noexcept { return AM335x_EDMA3CC_BASE + PARAM_BASE + 0x14 + (0x20 * n); }
-    #define get_LINK_BCNTRLD_ptr(n) reinterpret_cast<uint32_t *>(get_LINK_BCNTRLD_addr(n))
-
-    constexpr uint32_t get_SRC_DST_CIDX_addr(const uint32_t n) noexcept { return AM335x_EDMA3CC_BASE + PARAM_BASE + 0x18 + (0x20 * n); }
-    #define get_SRC_DST_CIDX_ptr(n) reinterpret_cast<uint32_t *>(get_SRC_DST_CIDX_addr(n))
-
-    constexpr uint32_t get_CCNT_addr(const uint32_t n) noexcept { return AM335x_EDMA3CC_BASE + PARAM_BASE + 0x1C + (0x20 * n); }
-    #define get_CCNT_ptr(n) reinterpret_cast<uint32_t *>(get_CCNT_addr(n))
 
     struct paRAM_entry_t
     {
@@ -3294,6 +3224,8 @@ namespace REGS::EDMA
 
         paRAM_entry_t() { OPT.reg = 0; }
 
+        paRAM_entry_t(const paRAM_entry_t&) = default;
+
         paRAM_entry_t& operator =(const paRAM_entry_t &right)
         {
             OPT.reg  = right.OPT.reg;
@@ -3336,8 +3268,6 @@ namespace REGS::EDMA
 
     constexpr uint32_t SET_ALL_BITS = 0xFFFFFFFFu;
     constexpr uint32_t CLR_ALL_BITS = 0x00000000u;
-
-
 
     enum e_EDMA3_CH_TYPE : uint32_t
     {
@@ -3384,6 +3314,11 @@ namespace REGS::EDMA
     constexpr uint32_t  EDMA_REVID                = 0x01u;
     constexpr uint32_t  AM335X_DMACH_MAX          = 64;
     constexpr uint32_t  AM335X_QDMACH_MAX         = 8;
+    constexpr uint32_t AM335x_PARAMSETS_MAX       = 256;
+    constexpr uint32_t AM335x_EVQUEUE_MAX         = 4;
+    constexpr uint32_t AM335x_CHMAPEXIST          = 0;
+    constexpr uint32_t AM335x_REGIONS_MAX         = 8;
+    constexpr uint32_t AM335x_MEMPROTECT          = 0;
 
     constexpr uint32_t  PARAM_ENTRY_OPT            = 0x0u;       //The OPT field (Offset Address 0x0 Bytes)
     constexpr uint32_t  PARAM_ENTRY_SRC            = 0x1u;       //The SRC field (Offset Address 0x4 Bytes)
