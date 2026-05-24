@@ -41,6 +41,8 @@ set(BSP_SOURCES
         include/hal/EDMA.hpp
         src/hal/EDMA.cpp
         src/regs/EDMA.cpp
+        include/hal/MMCSD.hpp
+        src/hal/MMCSD.cpp
 )
 
 

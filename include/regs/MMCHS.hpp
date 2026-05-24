@@ -1252,7 +1252,7 @@ namespace REGS::MMCHS
             uint32_t    BSR_ENABLE  : 1;    // bit:10      (R/W) Boot Status Interrupt Enable A write to this register when SD_CON[BOOT] is cleared to 0
                                             //                  is ignored. [0x0 = Masked; 0x1 = Enabled]
             uint32_t                : 4;    // bits:11..14 (R)   Reserved
-            uint32_t    NULL        : 1;    // bit:15      (R)   Fixed to 0. The host driver shall control error interrupts using the Error Interrupt
+            uint32_t    NULL_        : 1;    // bit:15      (R)   Fixed to 0. The host driver shall control error interrupts using the Error Interrupt
                                             //                  Signal Enable register. Writes to this bit are ignored.
             uint32_t    CTO_ENABLE  : 1;    // bit:16      (R/W) Command timeout error interrupt enable [0x0 = Masked; 0x1 = Enabled]
             uint32_t    CCRC_ENABLE : 1;    // bit:17      (R/W) Command CRC error interrupt enable [0x0 = Masked; 0x1 = Enabled]
@@ -1301,7 +1301,7 @@ namespace REGS::MMCHS
             uint32_t    BSR_SIGEN  : 1;     // bit:10      (R/W) Boot Status signal status enable. A write to this register when SD_CON[BOOT] is cleared
                                             //                  to 0 is ignored [0x0 = Masked; 0x1 = Enabled]
             uint32_t               : 4;     // bits:11..14 (R)   Reserved
-            uint32_t    NULL       : 1;     // bit:15      (R)   Fixed to 0. The host driver shall control error interrupts using the error interrupt
+            uint32_t    NULL_      : 1;     // bit:15      (R)   Fixed to 0. The host driver shall control error interrupts using the error interrupt
                                             //                  signal enable register. Writes to this bit are ignored.
             uint32_t    CTO_SIGEN  : 1;     // bit:16      (R/W) Command timeout error signal status enable [0x0 = Masked; 0x1 = Enabled]
             uint32_t    CCRC_SIGEN : 1;     // bit:17      (R/W) Command CRC error signal status enable [0x0 = Masked; 0x1 = Enabled]
@@ -1584,7 +1584,7 @@ namespace REGS::MMCHS
         __R    RSP54_reg_t      RSP54;            // (0x218)
         __R    RSP76_reg_t      RSP76;            // (0x21C)
         __RW   DATA_reg_t       DATA;             // (0x220)
-        __R    PSTATE_reg_t     PSTATE;           // (0x224)
+        __RW    PSTATE_reg_t    PSTATE;           // (0x224)
         __RW   HCTL_reg_t       HCTL;             // (0x228)
         __RW   SYSCTL_reg_t     SYSCTL;           // (0x22C)
         __RW   STAT_reg_t       STAT;             // (0x230)
@@ -1601,6 +1601,8 @@ namespace REGS::MMCHS
         __RW   ADMASAH_reg_t    ADMASAH;          // (0x25C)
         __R    uint32_t         RESERVED5[39];
         __R    REV_reg_t        REV;              // (0x2FC)
+
+        uint32_t RSP(const uint8_t n)  { return (0x210 + (n * 4)); }
     };
 
     constexpr uint32_t AM335x_MMCHS_0_BASE = 0x48060000;
@@ -1610,6 +1612,13 @@ namespace REGS::MMCHS
     inline AM335x_MMCHS_Type * AM335x_MMCHS_0 = reinterpret_cast<AM335x_MMCHS_Type *>(AM335x_MMCHS_0_BASE);
     inline AM335x_MMCHS_Type * AM335x_MMCHS_1 = reinterpret_cast<AM335x_MMCHS_Type *>(AM335x_MMCHS_1_BASE);
     inline AM335x_MMCHS_Type * AM335x_MMCHS_2 = reinterpret_cast<AM335x_MMCHS_Type *>(AM335x_MMCHS_2_BASE);
+
+    enum e_BUS_WIDTH : uint32_t
+    {
+        WIDTH_1BIT  = 0x1,
+        WIDTH_4BIT  = 0x4,
+        WIDTH_8BIT  = 0x8
+    };
 
 } // namespace MMCHS
 
