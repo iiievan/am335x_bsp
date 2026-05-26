@@ -5,6 +5,40 @@ namespace HAL::EDMA
     using namespace REGS::EDMA;
     static e_REGION_ID  region_id = e_REGION_ID::REGION_0;
 
+    void  module_clock_config() noexcept
+    {
+        using namespace REGS::PRCM;
+        auto& per = *AM335x_CM_PER;
+
+        per.TPCC_CLKCTRL.b.MODULEMODE = MODULEMODE_ENABLE;
+        while(per.TPCC_CLKCTRL.b.MODULEMODE != MODULEMODE_ENABLE) {}
+
+        per.TPTC0_CLKCTRL.b.MODULEMODE = MODULEMODE_ENABLE;
+        while(per.TPTC0_CLKCTRL.b.MODULEMODE != MODULEMODE_ENABLE) {}
+
+        per.TPTC1_CLKCTRL.b.MODULEMODE = MODULEMODE_ENABLE;
+        while(per.TPTC1_CLKCTRL.b.MODULEMODE != MODULEMODE_ENABLE) {}
+
+        per.TPTC1_CLKCTRL.b.MODULEMODE = MODULEMODE_ENABLE;
+        while(per.TPTC1_CLKCTRL.b.MODULEMODE != MODULEMODE_ENABLE) {}
+
+        /*	DMA in non-idle mode */
+        AM335X_EDMA3TC0->SYSCONFIG.reg = 0x00000028;
+        AM335X_EDMA3TC1->SYSCONFIG.reg = 0x00000028;
+        AM335X_EDMA3TC2->SYSCONFIG.reg = 0x00000028;
+
+        while(per.TPCC_CLKCTRL.b.IDLEST != IDLEST_FUNC) {}
+
+        while(per.TPTC0_CLKCTRL.b.IDLEST != IDLEST_FUNC) {}
+        while(per.TPTC0_CLKCTRL.b.STBYST != STBYST_FUNC) {}
+
+        while(per.TPTC1_CLKCTRL.b.IDLEST != IDLEST_FUNC) {}
+        while(per.TPTC1_CLKCTRL.b.STBYST != STBYST_FUNC) {}
+
+        while(per.TPTC2_CLKCTRL.b.IDLEST != IDLEST_FUNC) {}
+        while(per.TPTC2_CLKCTRL.b.STBYST != STBYST_FUNC) {}
+    }
+
     /**
      *  @brief   EDMA3 Initialization
      *
@@ -340,7 +374,7 @@ namespace HAL::EDMA
      *  EDMA3CC_CLR_QTHRQ0            Queue threshold error clear for queue 0.
      *  EDMA3CC_CLR_QTHRQ1            Queue threshold error clear for queue 1.
      */
-    void clr_CCERR(const uint32_t flags) noexcept
+    void clr_CC_Err(const uint32_t flags) noexcept
     {
         auto& cc = *AM335X_EDMA3CC;
 
@@ -578,9 +612,9 @@ namespace HAL::EDMA
     {
         AM335X_EDMA3CC->paRAM(ch_num) = src;
     }
-    void QDMA_set_paRAM(const uint32_t ch_num, const paRAM_entry_t* src) noexcept
+    void QDMA_set_paRAM(const uint32_t paRAM_id, const paRAM_entry_t* new_paRAM) noexcept
     {
-        if (src) AM335X_EDMA3CC->paRAM(ch_num) = *src;
+        if (new_paRAM) AM335X_EDMA3CC->paRAM(paRAM_id) = *new_paRAM;
     }
 
     /**
@@ -1028,7 +1062,7 @@ namespace HAL::EDMA
      *  @return  value                  Status of the Interrupt Pending Register
      *
      */
-    uint32_t get_CCERR_status() noexcept
+    uint32_t get_CC_Err_status() noexcept
     {
         uint32_t intr_status_val = 0;
 
@@ -1044,7 +1078,7 @@ namespace HAL::EDMA
      *  @return  value                  Status of the Interrupt Pending Register
      *
      */
-    uint32_t get_ERR_intr_status() noexcept
+    uint32_t get_Err_intr_status() noexcept
     {
         uint32_t intr_status_val = 0;
 
@@ -1059,7 +1093,7 @@ namespace HAL::EDMA
      *  @return  value              Status of the QDMA Interrupt Pending Register
      *
      */
-    uint32_t QDMA_get_ERR_intr_status() noexcept
+    uint32_t QDMA_get_Err_intr_status() noexcept
     {
         uint32_t intr_status_val = 0;
 
@@ -1075,7 +1109,7 @@ namespace HAL::EDMA
      *           error conditions.
      *
      */
-    void CCERR_evaluate() noexcept
+    void CC_Err_evaluate() noexcept
     {
         constexpr uint32_t EEVAL_EVAL        = 0x00000001u;
         constexpr uint32_t EEVAL_EVAL_SHIFT  = 0x00000000u;
@@ -1108,7 +1142,7 @@ namespace HAL::EDMA
         cc.DRAE(region_id).reg =  CLR_ALL_BITS;
         cc.DRAEH(region_id).reg =  CLR_ALL_BITS;
 
-        clr_CCERR(CCERRCLR_TCCERR);
+        clr_CC_Err(CCERRCLR_TCCERR);
 
         // Clear the Event miss Registers
         cc.EMCR.reg =  SET_ALL_BITS;
@@ -1159,7 +1193,7 @@ namespace HAL::EDMA
      *  @return  value                  Status of the Interrupt Pending Register
      *
      */
-    uint32_t ERR_intr_high_status_get() noexcept
+    uint32_t Err_intr_high_status_get() noexcept
     {
         uint32_t intr_sts_val = 0;
 

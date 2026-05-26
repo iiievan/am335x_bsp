@@ -143,13 +143,13 @@ namespace HAL::UART
         m_user_callback = cb;
 
         // Регистрируем обработчик в контроллере прерываний
-        HAL::INTC::register_handler(static_cast<e_INT_ID>(IRQNum), uart_isr);
-        HAL::INTC::unmask_interrupt(static_cast<e_INT_ID>(IRQNum));
+        INTC::register_handler(static_cast<e_INT_ID>(IRQNum), uart_isr);
+        INTC::unmask_interrupt(static_cast<e_INT_ID>(IRQNum));
     }
 
     void cleanup_interrupts() noexcept
     {
-        HAL::INTC::mask_interrupt(static_cast<REGS::INTC::e_INT_ID>(IRQNum));
+        INTC::mask_interrupt(static_cast<REGS::INTC::e_INT_ID>(IRQNum));
     }
 
     public:

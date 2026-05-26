@@ -3166,8 +3166,8 @@ namespace REGS::EDMA
                 uint32_t    PRIV      :1;   // bit: 31         (R) Privilege level (supervisor versus user) for the host/CPU/DMA that programmed this PaRAM set. This
                                             //                     value is set with the EDMA3 master﷿s privilege value when any part of the PaRAM set is written.
                                             //                     [ 0x0 = User level privilege.; 0x1 = Supervisor level privilege. ]
-            } b;                            // Structure used for bit access
-            uint32_t  reg;                  // Type used for register access
+            } b;
+            uint32_t  reg;
         } OPT;
 
         uint32_t  SRC { 0 };    // The byte address from which data is transferred
@@ -3259,8 +3259,6 @@ namespace REGS::EDMA
     constexpr uint32_t COMPL_HANDLER_RETRY_COUNT = 10u;
     constexpr uint32_t ERR_HANDLER_RETRY_COUNT   = 10u;
 
-    constexpr uint32_t EVTQUE_AVAIL  = 2u;  // Number of Event Queues available
-
     inline AM335x_EDMA3CC_Type * AM335X_EDMA3CC  = reinterpret_cast<AM335x_EDMA3CC_Type *>(AM335x_EDMA3CC_BASE);
     inline AM335x_EDMA3TC_Type * AM335X_EDMA3TC0 = reinterpret_cast<AM335x_EDMA3TC_Type *>(AM335x_EDMA3TC0_BASE);
     inline AM335x_EDMA3TC_Type * AM335X_EDMA3TC1 = reinterpret_cast<AM335x_EDMA3TC_Type *>(AM335x_EDMA3TC1_BASE);
@@ -3280,6 +3278,19 @@ namespace REGS::EDMA
         TRIG_MODE_MANUAL = 0x0,
         TRIG_MODE_QDMA   = 0x1,
         TRIG_MODE_EVENT  = 0x2
+    };
+
+    enum e_IRQ_TYPE : uint32_t
+    {
+        XFER_COMPLETE     = 0u,
+        CC_DMA_EVT_MISS   = 1u,
+        CC_QDMA_EVT_MISS  = 2u
+    };
+
+    enum e_SYNC_TYPE : uint32_t
+    {
+        SYNC_A   = 0u,
+        SYNC_AB  = 1u
     };
 
     // From 11.3.20 EDMA Events of TRM on page 1635.
@@ -3311,14 +3322,48 @@ namespace REGS::EDMA
         CH_I2C1_RX        = 61  // I2C1 Transmit Event
     };
 
-    constexpr uint32_t  EDMA_REVID                = 0x01u;
-    constexpr uint32_t  AM335X_DMACH_MAX          = 64;
-    constexpr uint32_t  AM335X_QDMACH_MAX         = 8;
-    constexpr uint32_t AM335x_PARAMSETS_MAX       = 256;
-    constexpr uint32_t AM335x_EVQUEUE_MAX         = 4;
-    constexpr uint32_t AM335x_CHMAPEXIST          = 0;
-    constexpr uint32_t AM335x_REGIONS_MAX         = 8;
-    constexpr uint32_t AM335x_MEMPROTECT          = 0;
+    constexpr uint32_t  EDMA_REVID                 = 0x01u;
+    constexpr uint32_t  AM335X_DMACH_MAX           = 64;
+    constexpr uint32_t  AM335X_QDMACH_MAX          = 8;
+    constexpr uint32_t  AM335x_PARAMSETS_MAX       = 256;
+    constexpr uint32_t  AM335x_EVQUEUE_MAX         = 4;
+    constexpr uint32_t  AM335x_CHMAPEXIST          = 0;
+    constexpr uint32_t  AM335x_REGIONS_MAX         = 8;
+    constexpr uint32_t  AM335x_MEMPROTECT          = 0;
+
+    constexpr uint32_t  OPT_PRIVID          = 0x0F000000u;
+    constexpr uint32_t  OPT_PRIVID_SHIFT    = 0x00000018u;
+    constexpr uint32_t  OPT_ITCCHEN         = 0x00800000u;
+    constexpr uint32_t  OPT_ITCCHEN_SHIFT   = 0x00000017u;
+    constexpr uint32_t  OPT_TCCHEN          = 0x00400000u;
+    constexpr uint32_t  OPT_TCCHEN_SHIFT    = 0x00000016u;
+    constexpr uint32_t  OPT_ITCINTEN        = 0x00200000u;
+    constexpr uint32_t  OPT_ITCINTEN_SHIFT  = 0x00000015u;
+    constexpr uint32_t  OPT_TCINTEN         = 0x00100000u;
+    constexpr uint32_t  OPT_TCINTEN_SHIFT   = 0x00000014u;
+    constexpr uint32_t  OPT_TCC             = 0x0003F000u;
+    constexpr uint32_t  OPT_TCC_SHIFT       = 0x0000000Cu;
+    constexpr uint32_t  OPT_TCCMOD          = 0x00000800u;
+    constexpr uint32_t  OPT_TCCMOD_SHIFT    = 0x0000000Bu;
+    constexpr uint32_t  OPT_TCCMOD_NORMAL   = 0x00000000u;
+    constexpr uint32_t  OPT_TCCMOD_EARLY    = 0x00000001u;
+    constexpr uint32_t  OPT_FWID            = 0x00000700u;
+    constexpr uint32_t  OPT_FWID_SHIFT      = 0x00000008u;
+    constexpr uint32_t  OPT_FWID_8BIT       = 0x00000000u;
+    constexpr uint32_t  OPT_FWID_16BIT      = 0x00000001u;
+    constexpr uint32_t  OPT_FWID_32BIT      = 0x00000002u;
+    constexpr uint32_t  OPT_FWID_64BIT      = 0x00000003u;
+    constexpr uint32_t  OPT_FWID_128BIT     = 0x00000004u;
+    constexpr uint32_t  OPT_FWID_256BIT     = 0x00000005u;
+    constexpr uint32_t  OPT_STATIC          = 0x00000008u;
+    constexpr uint32_t  OPT_STATIC_SHIFT    = 0x00000003u;
+    constexpr uint32_t  OPT_SYNCDIM         = 0x00000004u;
+    constexpr uint32_t  OPT_SYNCDIM_SHIFT   = 0x00000002u;
+    constexpr uint32_t  OPT_DAM             = 0x00000002u;
+    constexpr uint32_t  OPT_DAM_SHIFT       = 0x00000001u;
+    constexpr uint32_t  OPT_SAM             = 0x00000001u;
+    constexpr uint32_t  OPT_SAM_SHIFT       = 0x00000000u;
+
 
     constexpr uint32_t  PARAM_ENTRY_OPT            = 0x0u;       //The OPT field (Offset Address 0x0 Bytes)
     constexpr uint32_t  PARAM_ENTRY_SRC            = 0x1u;       //The SRC field (Offset Address 0x4 Bytes)
