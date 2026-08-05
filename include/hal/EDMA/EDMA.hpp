@@ -2,7 +2,7 @@
 #define __HAL_EDMA_HPP
 
 #include <cstdint>
-#include "../regs/REGS.hpp"
+#include "../../regs/REGS.hpp"
 
 namespace HAL::EDMA
 {

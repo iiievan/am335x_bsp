@@ -1,4 +1,4 @@
-#include "hal/EDMA.hpp"
+#include "../../include/hal/EDMA/EDMA.hpp"
 
 namespace HAL::EDMA
 {
@@ -447,7 +447,7 @@ namespace HAL::EDMA
         if(ch_num < 32)
              cc.S_EECR(region_id).reg |= (0x01u <<  ch_num);
         else
-             cc.S_EECR(region_id).reg |= (0x01u <<  ch_num);
+             cc.S_EECRH(region_id).reg |= (0x01u <<  ch_num);
     }
 
     /**

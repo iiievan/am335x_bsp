@@ -38,13 +38,16 @@ set(BSP_SOURCES
         src/startup/cpu.s
         src/startup/cxx_support.cpp
         src/hal/UART.cpp
-        include/hal/EDMA.hpp
         src/hal/EDMA.cpp
         src/regs/EDMA.cpp
         include/hal/MMCSD.hpp
         src/hal/MMCSD.cpp
+        include/hal/EDMA/EDMA.hpp
+        include/hal/EDMA/ParamBuilder.hpp
+        include/hal/EDMA/DmaChannel.hpp
+        include/hal/EDMA/InterruptDispatcher.hpp
+        include/hal/EDMA/edma_interrupt_handlers.cpp
 )
-
 
 add_library(am335x_bsp STATIC ${BSP_SOURCES})
 
