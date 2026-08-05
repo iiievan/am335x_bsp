@@ -343,7 +343,7 @@ namespace HAL::EDMA
         }
         else
         {
-             cc.S_SECR(region_id).reg = (0x01u << (ch_num - 32));
+             cc.S_SECRH(region_id).reg = (0x01u << (ch_num - 32));
              cc.EMCRH.reg |= (0x01u <<  (ch_num - 32));               // clear EMCRH to clean any previous NULL request
         }
     }
@@ -396,7 +396,7 @@ namespace HAL::EDMA
         if(ch_num < 32)
               cc.S_ESR(region_id).reg |= (0x01u <<  ch_num);
         else
-              cc.S_ESR(region_id).reg |= (0x01u << (ch_num - 32));
+              cc.S_ESRH(region_id).reg |= (0x01u << (ch_num - 32));
     }
 
     /**
@@ -429,7 +429,7 @@ namespace HAL::EDMA
         if(ch_num < 32)
              cc.S_EESR(region_id).reg |= (0x01u <<  ch_num);
         else
-             cc.S_EESR(region_id).reg |= (0x01u << (ch_num - 32));
+             cc.S_EESRH(region_id).reg |= (0x01u << (ch_num - 32));
     }
 
     /**
@@ -503,7 +503,7 @@ namespace HAL::EDMA
         if(ch_num < 32)
             cc.S_IESR(region_id).reg |= (0x01u <<  ch_num);
         else
-            cc.S_IESR(region_id).reg |= (0x01u << (ch_num - 32));
+            cc.S_IESRH(region_id).reg |= (0x01u << (ch_num - 32));
     }
 
     /**
