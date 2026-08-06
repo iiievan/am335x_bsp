@@ -87,7 +87,10 @@ namespace HAL::EDMA
             }
         }
 
-        void configure(const REGS::EDMA::paRAM_entry_t& param) const noexcept { HAL::EDMA::set_paRAM(ch_num, param); }
+        void configure(const REGS::EDMA::paRAM_entry_t& param) const noexcept
+        {
+            HAL::EDMA::set_paRAM(ch_num, param);
+        }
 
         void start(const TriggerMode mode = TriggerMode::TRIG_MODE_MANUAL) const noexcept
         { HAL::EDMA::enable_transfer(ch_num, mode); }

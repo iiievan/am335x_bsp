@@ -47,6 +47,7 @@ set(BSP_SOURCES
         include/hal/EDMA/DmaChannel.hpp
         include/hal/EDMA/InterruptDispatcher.hpp
         include/hal/EDMA/edma_interrupt_handlers.cpp
+        include/hal/EDMA/QdmaChannel.hpp
 )
 
 add_library(am335x_bsp STATIC ${BSP_SOURCES})

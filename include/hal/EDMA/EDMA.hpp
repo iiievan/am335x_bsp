@@ -34,8 +34,8 @@ namespace HAL::EDMA
         [[nodiscard]] REGS::EDMA::paRAM_entry_t QDMA_get_paRAM(uint32_t paRAM_id) noexcept;
         void  set_paRAM(uint32_t ch_num, const REGS::EDMA::paRAM_entry_t& src) noexcept;
         void  set_paRAM(uint32_t ch_num, const REGS::EDMA::paRAM_entry_t* src) noexcept;
-        void  QDMA_set_paRAM( uint32_t ch_num, const REGS::EDMA::paRAM_entry_t& src) noexcept;
-        void  QDMA_set_paRAM(uint32_t paRAM_id, const REGS::EDMA::paRAM_entry_t* new_paRAM) noexcept;
+        void  QDMA_set_paRAM(uint32_t paRAM_id, const REGS::EDMA::paRAM_entry_t* new_paRAM, uint8_t trig_word_idx) noexcept;
+        void  QDMA_set_paRAM(uint32_t paRAM_id, const REGS::EDMA::paRAM_entry_t& src, uint8_t trig_word_idx) noexcept;
         void  QDMA_set_paRAM_entry(uint32_t paRAM_id, uint32_t paRAM_entry, uint32_t new_paRAM_entry_val) noexcept;
     uint32_t  QDMA_get_paRAM_entry(uint32_t paRAM_id, uint32_t paRAM_entry) noexcept;
         bool  request_channel(REGS::EDMA::e_EDMA3_CH_TYPE ch_type, uint32_t ch_num, uint32_t tcc_num, REGS::EDMA::e_EVENT_QUEUE evt_Qnum) noexcept;

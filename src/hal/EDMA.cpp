@@ -279,7 +279,7 @@ namespace HAL::EDMA
     {
         auto& cc = *AM335X_EDMA3CC;
         constexpr uint32_t QCHMAP_PAENTRY_MSK = 0x00003FE0u;
-        constexpr uint32_t QCHMAP_PAENTRY_SHIFT = 0x00000005u;
+        constexpr uint32_t QCHMAP_PAENTRY_SHIFT = 5u;
 
     #define EDMA3CC_QCHMAP_PAENTRY_SET(paRAM_id) \
     (((QCHMAP_PAENTRY_MSK >> QCHMAP_PAENTRY_SHIFT) & (paRAM_id)) << QCHMAP_PAENTRY_SHIFT)
@@ -317,8 +317,8 @@ namespace HAL::EDMA
      */
     void set_QDMA_trig_word(const uint32_t ch_num, const uint8_t trig_word) noexcept
     {
-        constexpr uint32_t QCHMAP_TRWORD_MSK = 0x00003FE0u;
-        constexpr uint32_t QCHMAP_TRWORD_SHIFT = 0x00000002u;
+        constexpr uint32_t QCHMAP_TRWORD_MSK = 0x0000001Cu;
+        constexpr uint32_t QCHMAP_TRWORD_SHIFT = 2u;
 
     #define EDMA3CC_QCHMAP_TRWORD_SET(paRAMId)  \
     (((QCHMAP_TRWORD_MSK >> QCHMAP_TRWORD_SHIFT) & (paRAMId)) << QCHMAP_TRWORD_SHIFT)
@@ -608,13 +608,33 @@ namespace HAL::EDMA
      * @param   src               Parameter RAM set to be copied onto existing
      *                                 PaRAM.
      */
-    void QDMA_set_paRAM(const uint32_t ch_num, const paRAM_entry_t& src) noexcept
+    // Перегрузка с передачей указателя и выбором trigger_word (по умолчанию 7 - CCNT)
+    void QDMA_set_paRAM(const uint32_t paRAM_id, const paRAM_entry_t* new_paRAM, const uint8_t trig_word_idx = 7) noexcept
     {
-        AM335X_EDMA3CC->paRAM(ch_num) = src;
+        if (!new_paRAM) return;
+
+        auto* dst = reinterpret_cast<volatile uint32_t*>(&AM335X_EDMA3CC->paRAM(paRAM_id));
+        const auto* src = reinterpret_cast<const uint32_t*>(new_paRAM);
+
+        // 1. Записываем все 32-битные слова PaRAM, КРОМЕ Trigger Word
+        for (uint32_t i = 0; i < 8; ++i)
+        {
+            if (i != trig_word_idx)
+            {
+                dst[i] = src[i];
+            }
+        }
+
+        __asm__ volatile("dmb" ::: "memory");
+
+        // 3. Записываем Trigger Word ПОСЛЕДНИМ — это инициирует транзакцию QDMA
+        dst[trig_word_idx] = src[trig_word_idx];
     }
-    void QDMA_set_paRAM(const uint32_t paRAM_id, const paRAM_entry_t* new_paRAM) noexcept
+
+    // Перегрузка по ссылке
+    void QDMA_set_paRAM(const uint32_t paRAM_id, const paRAM_entry_t& src, const uint8_t trig_word_idx = 7) noexcept
     {
-        if (new_paRAM) AM335X_EDMA3CC->paRAM(paRAM_id) = *new_paRAM;
+        QDMA_set_paRAM(paRAM_id, &src, trig_word_idx);
     }
 
     /**
@@ -733,46 +753,45 @@ namespace HAL::EDMA
      *
      *  @return  TRUE if parameters are valid, else FALSE
      */
-    bool  request_channel(const e_EDMA3_CH_TYPE ch_type, const uint32_t ch_num, const uint32_t tcc_num,  const e_EVENT_QUEUE evt_Qnum) noexcept
+    bool request_channel(const e_EDMA3_CH_TYPE ch_type, const uint32_t ch_num, const uint32_t tcc_num, const e_EVENT_QUEUE evt_Qnum) noexcept
     {
         bool result = false;
 
         constexpr uint32_t OPT_TCC_MSK   = 0x0003F000u;
         constexpr uint32_t OPT_TCC_SHIFT = 0x0000000Cu;
 
-    #define OPT_TCC_SET(tcc) (((OPT_TCC_MSK >> OPT_TCC_SHIFT) & (tcc)) << OPT_TCC_SHIFT)
+        #define OPT_TCC_SET(tcc) (((OPT_TCC_MSK >> OPT_TCC_SHIFT) & (tcc)) << OPT_TCC_SHIFT)
 
-        if (ch_num <  AM335X_DMACH_MAX)
+        // TCC валиден в диапазоне всех каналов EDMA (0..63)
+        if (tcc_num >= AM335X_DMACH_MAX)
         {
-            //Enable the DMA channel in the enabled in the shadow region specific register
+            return false;
+        }
+
+        if (CHANNEL_TYPE_DMA == ch_type && ch_num < AM335X_DMACH_MAX)
+        {
             enable_ch_in_shadow_reg(ch_type, ch_num);
             map_ch_to_evtQ(ch_type, ch_num, evt_Qnum);
 
-            if (CHANNEL_TYPE_DMA == ch_type)
-            {
-                // Interrupt channel nums are < 32
-                if (tcc_num <  AM335X_DMACH_MAX)
-                {
-                    enable_evt_intr(ch_num);
-                    result = true;
-                }
-                AM335X_EDMA3CC->OPT(ch_num) &= (~OPT_TCC_MSK);
-                AM335X_EDMA3CC->OPT(ch_num) |= OPT_TCC_SET(tcc_num);
-            }
-            else
-            if (CHANNEL_TYPE_QDMA == ch_type)
-            {
-                // Interrupt channel nums are < 8
-                if (tcc_num <  AM335X_QDMACH_MAX)
-                {
-                    enable_evt_intr(ch_num);
-                    result = true;
-                }
+            enable_evt_intr(tcc_num); // Включаем прерывание по TCC!
 
-                AM335X_EDMA3CC->OPT(ch_num) &= (~OPT_TCC_MSK);
-                AM335X_EDMA3CC->OPT(ch_num) |= OPT_TCC_SET(tcc_num);
-            }
+            AM335X_EDMA3CC->OPT(ch_num) &= (~OPT_TCC_MSK);
+            AM335X_EDMA3CC->OPT(ch_num) |= OPT_TCC_SET(tcc_num);
+            result = true;
         }
+        else if (CHANNEL_TYPE_QDMA == ch_type && ch_num < AM335X_QDMACH_MAX)
+        {
+            enable_ch_in_shadow_reg(ch_type, ch_num);
+            map_ch_to_evtQ(ch_type, ch_num, evt_Qnum);
+
+            enable_evt_intr(tcc_num); // Включаем прерывание по TCC!
+
+            const uint32_t qdma_param_id = 32 + ch_num; // PaRAM 32..39 для QDMA
+            AM335X_EDMA3CC->OPT(qdma_param_id) &= (~OPT_TCC_MSK);
+            AM335X_EDMA3CC->OPT(qdma_param_id) |= OPT_TCC_SET(tcc_num);
+            result = true;
+        }
+
         return result;
     }
 
