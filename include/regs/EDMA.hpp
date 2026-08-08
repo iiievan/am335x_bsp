@@ -3364,16 +3364,17 @@ namespace REGS::EDMA
     constexpr uint32_t  OPT_SAM             = 0x00000001u;
     constexpr uint32_t  OPT_SAM_SHIFT       = 0x00000000u;
 
-
-    constexpr uint32_t  PARAM_ENTRY_OPT            = 0x0u;       //The OPT field (Offset Address 0x0 Bytes)
-    constexpr uint32_t  PARAM_ENTRY_SRC            = 0x1u;       //The SRC field (Offset Address 0x4 Bytes)
-    constexpr uint32_t  PARAM_ENTRY_ACNT_BCNT      = 0x2u;       //The (ACNT+BCNT) field (Offset Address 0x8 Bytes)
-    constexpr uint32_t  PARAM_ENTRY_DST            = 0x3u;       //The DST field (Offset Address 0xC Bytes)
-    constexpr uint32_t  PARAM_ENTRY_SRC_DST_BIDX   = 0x4u;       //The (SRCBIDX+DSTBIDX) field (Offset Address 0x10 Bytes)
-    constexpr uint32_t  PARAM_ENTRY_LINK_BCNTRLD   = 0x5u;       //The (LINK+BCNTRLD) field (Offset Address 0x14 Bytes)
-    constexpr uint32_t  PARAM_ENTRY_SRC_DST_CIDX   = 0x6u;       //The (SRCCIDX+DSTCIDX) field (Offset Address 0x18 Bytes)
-    constexpr uint32_t  PARAM_ENTRY_CCNT           = 0x7u;       //The (CCNT+RSVD) field (Offset Address 0x1C Bytes)
-    constexpr uint32_t  PARAM_FIELD_OFFSET         = 0x4u;       //The offset for each PaRAM Entry field
+    enum class e_paRAM_entry_field : uint8_t
+    {
+        OPT             = 0,
+        SRC             = 1,
+        ACNT_BCNT       = 2,
+        DST             = 3,
+        SRC_DST_BIDX    = 4,
+        LINK_BCNTRLD    = 5,
+        SRC_DST_CIDX    = 6,
+        CCNT            = 7
+    };
 
     // Structure to store the EDMA context
     typedef struct edma_context

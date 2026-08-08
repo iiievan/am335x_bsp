@@ -7,18 +7,7 @@
 
 namespace HAL::EDMA
 {
-    // Индексы слов PaRAM для настройки Trigger Word (0 = OPT, 1 = SRC, ..., 7 = CCNT)
-    enum class QdmaTrigWord : uint8_t
-    {
-        OPT   = 0,
-        SRC   = 1,
-        ACNT_BCNT = 2,
-        DST   = 3,
-        SRC_DST_BIDX = 4,
-        LINK_BCNTRLD = 5,
-        SRC_DST_CIDX = 6,
-        CCNT  = 7  // По умолчанию в TRM AM335x
-    };
+
 
     class QdmaChannel
     {
@@ -26,17 +15,17 @@ namespace HAL::EDMA
         uint8_t qch_num;
         uint8_t tcc_num;
         uint32_t param_id;
-        QdmaTrigWord trig_word;
+        REGS::EDMA::e_paRAM_entry_field trig_word_field;
         REGS::EDMA::e_EVENT_QUEUE queue;
         bool is_allocated{false};
 
     public:
         explicit QdmaChannel(const uint8_t qdma_channel,
                              const uint8_t tcc,
-                             const QdmaTrigWord trigger = QdmaTrigWord::CCNT,
+                             const REGS::EDMA::e_paRAM_entry_field trigger = REGS::EDMA::e_paRAM_entry_field::CCNT,
                              const REGS::EDMA::e_EVENT_QUEUE q = REGS::EDMA::EVENT_Q0) noexcept
             : qch_num(qdma_channel), tcc_num(tcc), param_id(32 + qdma_channel),
-              trig_word(trigger), queue(q) {}
+              trig_word_field(trigger), queue(q) {}
 
         ~QdmaChannel() noexcept
         {
@@ -52,7 +41,7 @@ namespace HAL::EDMA
 
         QdmaChannel(QdmaChannel&& other) noexcept
             : qch_num(other.qch_num), tcc_num(other.tcc_num), param_id(other.param_id),
-              trig_word(other.trig_word), queue(other.queue), is_allocated(other.is_allocated)
+              trig_word_field(other.trig_word_field), queue(other.queue), is_allocated(other.is_allocated)
         {
             other.is_allocated = false;
         }
@@ -69,7 +58,7 @@ namespace HAL::EDMA
                 qch_num = other.qch_num;
                 tcc_num = other.tcc_num;
                 param_id = other.param_id;
-                trig_word = other.trig_word;
+                trig_word_field = other.trig_word_field;
                 queue = other.queue;
                 is_allocated = other.is_allocated;
 
@@ -85,14 +74,14 @@ namespace HAL::EDMA
 
         bool init() noexcept
         {
-            is_allocated = HAL::EDMA::request_channel(REGS::EDMA::CHANNEL_TYPE_QDMA,
+            is_allocated = request_channel(REGS::EDMA::CHANNEL_TYPE_QDMA,
                                                        qch_num,
                                                        tcc_num,
                                                        queue);
             if (!is_allocated) return false;
 
-            HAL::EDMA::map_QDMA_ch_to_paRAM(qch_num, &param_id);
-            HAL::EDMA::set_QDMA_trig_word(qch_num, static_cast<uint8_t>(trig_word));
+            map_QDMA_ch_to_paRAM(qch_num, &param_id);
+            set_QDMA_trig_word(qch_num, static_cast<uint8_t>(trig_word_field));
 
             return true;
         }
@@ -101,8 +90,8 @@ namespace HAL::EDMA
         {
             if (is_allocated)
             {
-                HAL::EDMA::disable_QDMA_event(qch_num);
-                HAL::EDMA::free_channel(REGS::EDMA::CHANNEL_TYPE_QDMA,
+                disable_QDMA_event(qch_num);
+                free_channel(REGS::EDMA::CHANNEL_TYPE_QDMA,
                                         qch_num,
                                         REGS::EDMA::TRIG_MODE_QDMA,
                                         tcc_num,
@@ -113,33 +102,14 @@ namespace HAL::EDMA
 
         void configure(const REGS::EDMA::paRAM_entry_t& param) const noexcept
         {
-            using namespace REGS::EDMA;
-
-            AM335X_EDMA3CC->S_QEECR(e_REGION_ID::REGION_0).reg = (1u << qch_num);
-
-            auto* dst = reinterpret_cast<volatile uint32_t*>(&AM335X_EDMA3CC->paRAM(param_id));
-            const auto* src = reinterpret_cast<const uint32_t*>(&param);
-
-            for (uint32_t i = 0; i < 8; ++i)
-                dst[i] = src[i];
-
-            __asm__ volatile("dmb" ::: "memory");
-
-            AM335X_EDMA3CC->S_QEESR(e_REGION_ID::REGION_0).reg = (1u << qch_num);
-
-            const auto trig_idx = static_cast<uint32_t>(trig_word);
-            dst[trig_idx] = src[trig_idx];   // повторная запись
+            QDMA_set_paRAM(param_id, param);
+            enable_QDMA_event(qch_num);
         }
 
         void start() const noexcept
         {
-            HAL::EDMA::set_QDMA_trig_word(qch_num, static_cast<uint8_t>(trig_word));
-        }
-
-        // Quick Restart: update only the trigger word (for example, CCNT or the source/destination address)
-        void triggerEntry(const uint32_t entry_index, const uint32_t val) const noexcept
-        {
-            HAL::EDMA::QDMA_set_paRAM_entry(param_id, entry_index, val);
+            const auto val = QDMA_get_paRAM_entry(param_id,static_cast<uint32_t>(trig_word_field));
+            QDMA_set_paRAM_entry(param_id, static_cast<uint32_t>(trig_word_field), val);
         }
 
         [[nodiscard]] uint32_t getParamId() const noexcept { return param_id; }

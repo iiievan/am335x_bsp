@@ -658,7 +658,7 @@ namespace HAL::EDMA
      */
     void QDMA_set_paRAM_entry(const uint32_t paRAM_id, const uint32_t paRAM_entry, const uint32_t new_paRAM_entry_val) noexcept
     {
-        if (paRAM_entry <= PARAM_ENTRY_CCNT)  // 0..7
+        if (paRAM_entry <= static_cast<uint32_t> (e_paRAM_entry_field::CCNT))  // 0..7
         {
             auto* dist = reinterpret_cast<uint32_t*>(&AM335X_EDMA3CC->paRAM(paRAM_id));
             dist[paRAM_entry] = new_paRAM_entry_val;
@@ -697,7 +697,7 @@ namespace HAL::EDMA
      */
     uint32_t QDMA_get_paRAM_entry(const uint32_t paRAM_id, const uint32_t paRAM_entry) noexcept
     {
-        if (paRAM_entry > PARAM_ENTRY_CCNT) return 0;
+        if (paRAM_entry > static_cast<uint32_t> (e_paRAM_entry_field::CCNT)) return 0;
 
         const auto* src = reinterpret_cast<uint32_t*>(&AM335X_EDMA3CC->paRAM(paRAM_id));
         return src[paRAM_entry];
