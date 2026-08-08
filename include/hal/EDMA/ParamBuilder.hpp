@@ -48,6 +48,35 @@ namespace HAL::EDMA
             return *this;
         }
 
+        constexpr ParamBuilder& enableIntermediateCompletionInterrupt() noexcept
+        {
+            entry.OPT.b.ITCINTEN = 1; // Transfer Intermediate Complete Interrupt Enable
+            return *this;
+        }
+
+        constexpr ParamBuilder& setFIFOWidth(REGS::EDMA::e_paRAM_FIFO_WIDTH fwid) noexcept
+        {
+            if (fwid > REGS::EDMA::FIFO_WIDTH_256BIT)
+                entry.OPT.b.FWID = REGS::EDMA::FIFO_WIDTH_8BIT;
+            else
+                entry.OPT.b.FWID = fwid;
+
+            return *this;
+        }
+
+        constexpr ParamBuilder& setStatic() noexcept
+        {
+            entry.OPT.b.STATIC = 1;
+            return *this;
+        }
+
+        constexpr ParamBuilder& setSrcDstDestinationMode(const bool DAM = false, const bool SAM = false) noexcept
+        {
+            entry.OPT.b.DAM = DAM ? 1 : 0;
+            entry.OPT.b.SAM = SAM ? 1 : 0;
+            return *this;
+        }
+
         constexpr ParamBuilder& setSyncType(const bool is_ab_sync) noexcept
         {
             entry.OPT.b.SYNCDIM = is_ab_sync ? 1 : 0; // 0 = A-Sync, 1 = AB-Sync

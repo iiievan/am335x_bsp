@@ -317,13 +317,12 @@ namespace HAL::EDMA
      */
     void set_QDMA_trig_word(const uint32_t ch_num, const uint8_t trig_word) noexcept
     {
-        constexpr uint32_t QCHMAP_TRWORD_MSK = 0x0000001Cu;
+        constexpr uint32_t QCHMAP_TRWORD_MSK   = 0x0000001Cu;
         constexpr uint32_t QCHMAP_TRWORD_SHIFT = 2u;
 
-    #define EDMA3CC_QCHMAP_TRWORD_SET(paRAMId)  \
-    (((QCHMAP_TRWORD_MSK >> QCHMAP_TRWORD_SHIFT) & (paRAMId)) << QCHMAP_TRWORD_SHIFT)
-
-         AM335X_EDMA3CC->QCHMAP[ch_num].reg |= EDMA3CC_QCHMAP_TRWORD_SET(trig_word);
+        auto& reg = AM335X_EDMA3CC->QCHMAP[ch_num].reg;
+        reg &= ~QCHMAP_TRWORD_MSK;
+        reg |= ((static_cast<uint32_t>(trig_word) << QCHMAP_TRWORD_SHIFT) & QCHMAP_TRWORD_MSK);
     }
 
     /**
@@ -609,32 +608,24 @@ namespace HAL::EDMA
      *                                 PaRAM.
      */
     // Перегрузка с передачей указателя и выбором trigger_word (по умолчанию 7 - CCNT)
-    void QDMA_set_paRAM(const uint32_t paRAM_id, const paRAM_entry_t* new_paRAM, const uint8_t trig_word_idx = 7) noexcept
+    void QDMA_set_paRAM(const uint32_t paRAM_id, const paRAM_entry_t* new_paRAM) noexcept
     {
         if (!new_paRAM) return;
 
         auto* dst = reinterpret_cast<volatile uint32_t*>(&AM335X_EDMA3CC->paRAM(paRAM_id));
         const auto* src = reinterpret_cast<const uint32_t*>(new_paRAM);
 
-        // 1. Записываем все 32-битные слова PaRAM, КРОМЕ Trigger Word
         for (uint32_t i = 0; i < 8; ++i)
         {
-            if (i != trig_word_idx)
-            {
-                dst[i] = src[i];
-            }
+            dst[i] = src[i];
         }
 
         __asm__ volatile("dmb" ::: "memory");
-
-        // 3. Записываем Trigger Word ПОСЛЕДНИМ — это инициирует транзакцию QDMA
-        dst[trig_word_idx] = src[trig_word_idx];
     }
 
-    // Перегрузка по ссылке
-    void QDMA_set_paRAM(const uint32_t paRAM_id, const paRAM_entry_t& src, const uint8_t trig_word_idx = 7) noexcept
+    void QDMA_set_paRAM(const uint32_t paRAM_id, const paRAM_entry_t& src) noexcept
     {
-        QDMA_set_paRAM(paRAM_id, &src, trig_word_idx);
+        QDMA_set_paRAM(paRAM_id, &src);
     }
 
     /**

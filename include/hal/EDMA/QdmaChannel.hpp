@@ -93,7 +93,6 @@ namespace HAL::EDMA
 
             HAL::EDMA::map_QDMA_ch_to_paRAM(qch_num, &param_id);
             HAL::EDMA::set_QDMA_trig_word(qch_num, static_cast<uint8_t>(trig_word));
-            HAL::EDMA::enable_QDMA_event(qch_num);
 
             return true;
         }
@@ -112,10 +111,29 @@ namespace HAL::EDMA
             }
         }
 
-        // Write the entire PaRAM structure (The write to the Trigger Word must be done LAST!)
-        void configureAndTrigger(const REGS::EDMA::paRAM_entry_t& param) const noexcept
+        void configure(const REGS::EDMA::paRAM_entry_t& param) const noexcept
         {
-            HAL::EDMA::QDMA_set_paRAM(param_id, param, static_cast<uint8_t>(trig_word));
+            using namespace REGS::EDMA;
+
+            AM335X_EDMA3CC->S_QEECR(e_REGION_ID::REGION_0).reg = (1u << qch_num);
+
+            auto* dst = reinterpret_cast<volatile uint32_t*>(&AM335X_EDMA3CC->paRAM(param_id));
+            const auto* src = reinterpret_cast<const uint32_t*>(&param);
+
+            for (uint32_t i = 0; i < 8; ++i)
+                dst[i] = src[i];
+
+            __asm__ volatile("dmb" ::: "memory");
+
+            AM335X_EDMA3CC->S_QEESR(e_REGION_ID::REGION_0).reg = (1u << qch_num);
+
+            const auto trig_idx = static_cast<uint32_t>(trig_word);
+            dst[trig_idx] = src[trig_idx];   // повторная запись
+        }
+
+        void start() const noexcept
+        {
+            HAL::EDMA::set_QDMA_trig_word(qch_num, static_cast<uint8_t>(trig_word));
         }
 
         // Quick Restart: update only the trigger word (for example, CCNT or the source/destination address)
