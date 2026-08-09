@@ -5,6 +5,9 @@ namespace HAL::EDMA
     using namespace REGS::EDMA;
     static e_REGION_ID  region_id = e_REGION_ID::REGION_0;
 
+    e_REGION_ID get_region_id() noexcept { return region_id; }
+    void set_region_id(e_REGION_ID regid) noexcept { region_id = regid; }
+
     void  module_clock_config() noexcept
     {
         using namespace REGS::PRCM;
@@ -275,29 +278,31 @@ namespace HAL::EDMA
      *         for QDMA Channels. (32 - 38) is assigned by driver in this API.
      *
      */
-    void map_QDMA_ch_to_paRAM(const uint32_t ch_num, uint32_t *paRAM_id) noexcept
+    bool map_QDMA_ch_to_paRAM(const uint32_t ch_num, uint32_t& paRAM_id) noexcept
     {
+        using namespace REGS::EDMA;
         auto& cc = *AM335X_EDMA3CC;
-        constexpr uint32_t QCHMAP_PAENTRY_MSK = 0x00003FE0u;
+        constexpr uint32_t QCHMAP_PAENTRY_MSK   = 0x00003FE0u; // Биты 5..13
         constexpr uint32_t QCHMAP_PAENTRY_SHIFT = 5u;
 
-    #define EDMA3CC_QCHMAP_PAENTRY_SET(paRAM_id) \
-    (((QCHMAP_PAENTRY_MSK >> QCHMAP_PAENTRY_SHIFT) & (paRAM_id)) << QCHMAP_PAENTRY_SHIFT)
+        if (ch_num >= AM335X_QDMACH_MAX)
+        {
+            return false;
+        }
 
-        // First 32 channels are for DMA only
-        if ((AM335X_DMACH_MAX + ch_num) == (*paRAM_id))
+        // Если передан некорректный paRAM_id, назначаем безопасный дефолт (32..39)
+        if (paRAM_id >= AM335x_PARAMSETS_MAX)
         {
-            // Map Parameter RAM Set Number for specified channelId
-            cc.QCHMAP[ch_num].reg &= (~QCHMAP_PAENTRY_MSK);
-            cc.QCHMAP[ch_num].reg |= EDMA3CC_QCHMAP_PAENTRY_SET(*paRAM_id);
+            paRAM_id = AM335x_QDMA_PARAM_BASE + ch_num;
         }
-        else
-        {
-            (*paRAM_id) = (AM335X_DMACH_MAX + ch_num);
-            // Map Parameter RAM Set Number for specified channelId
-            cc.QCHMAP[ch_num].reg &= (~QCHMAP_PAENTRY_MSK);
-            cc.QCHMAP[ch_num].reg |= EDMA3CC_QCHMAP_PAENTRY_SET(*paRAM_id);
-        }
+
+        uint32_t reg_val = cc.QCHMAP[ch_num].reg;
+        reg_val &= ~QCHMAP_PAENTRY_MSK;
+        reg_val |= ((paRAM_id << QCHMAP_PAENTRY_SHIFT) & QCHMAP_PAENTRY_MSK);
+
+        cc.QCHMAP[ch_num].reg = reg_val;
+
+        return true;
     }
 
     /**
@@ -317,12 +322,11 @@ namespace HAL::EDMA
      */
     void set_QDMA_trig_word(const uint32_t ch_num, const uint8_t trig_word) noexcept
     {
-        constexpr uint32_t QCHMAP_TRWORD_MSK   = 0x0000001Cu;
-        constexpr uint32_t QCHMAP_TRWORD_SHIFT = 2u;
+        constexpr uint32_t MSK   = 0x0000001Cu;
+        constexpr uint32_t SHIFT = 2u;
 
         auto& reg = AM335X_EDMA3CC->QCHMAP[ch_num].reg;
-        reg &= ~QCHMAP_TRWORD_MSK;
-        reg |= ((static_cast<uint32_t>(trig_word) << QCHMAP_TRWORD_SHIFT) & QCHMAP_TRWORD_MSK);
+        reg = (reg & ~MSK) | ((static_cast<uint32_t>(trig_word) << SHIFT) & MSK);
     }
 
     /**

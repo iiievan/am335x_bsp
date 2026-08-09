@@ -75,6 +75,12 @@ namespace REGS::EDMA
             reinterpret_cast<uintptr_t>(this) + 0x2000 + (static_cast<uint32_t>(region_id) * 0x200));
     }
 
+    ERH_reg_t & AM335x_EDMA3CC_Type::S_ERH(const e_REGION_ID region_id) const noexcept
+    {
+        return *reinterpret_cast<ERH_reg_t*>(
+            reinterpret_cast<uintptr_t>(this) + 0x2004 + (static_cast<uint32_t>(region_id) * 0x200));
+    }
+
     ECR_reg_t& AM335x_EDMA3CC_Type::S_ECR(const e_REGION_ID region_id) const noexcept
     {
         return *reinterpret_cast<ECR_reg_t*>(
@@ -103,6 +109,12 @@ namespace REGS::EDMA
     {
         return *reinterpret_cast<CER_reg_t*>(
             reinterpret_cast<uintptr_t>(this) + 0x2018 + (static_cast<uint32_t>(region_id) * 0x200));
+    }
+
+    CERH_reg_t & AM335x_EDMA3CC_Type::S_CERH(const e_REGION_ID region_id) const noexcept
+    {
+        return *reinterpret_cast<CERH_reg_t*>(
+            reinterpret_cast<uintptr_t>(this) + 0x201C + (static_cast<uint32_t>(region_id) * 0x200));
     }
 
     EER_reg_t& AM335x_EDMA3CC_Type::S_EER(const e_REGION_ID region_id) const noexcept

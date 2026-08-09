@@ -3022,11 +3022,13 @@ namespace REGS::EDMA
 
         // ----------------------> shadow region access <----------------------//
         [[nodiscard]] ER_reg_t& S_ER(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] ERH_reg_t& S_ERH(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] ECR_reg_t& S_ECR(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] ECRH_reg_t& S_ECRH(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] ESR_reg_t& S_ESR(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] ESRH_reg_t& S_ESRH(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] CER_reg_t& S_CER(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] CERH_reg_t& S_CERH(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] EER_reg_t& S_EER(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] EERH_reg_t& S_EERH(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] EECR_reg_t& S_EECR(e_REGION_ID region_id) const noexcept;
@@ -3325,11 +3327,12 @@ namespace REGS::EDMA
     constexpr uint32_t  EDMA_REVID                 = 0x01u;
     constexpr uint32_t  AM335X_DMACH_MAX           = 64;
     constexpr uint32_t  AM335X_QDMACH_MAX          = 8;
-    constexpr uint32_t  AM335x_PARAMSETS_MAX       = 256;
+    constexpr uint32_t  AM335x_PARAMSETS_MAX       = 64;
     constexpr uint32_t  AM335x_EVQUEUE_MAX         = 4;
     constexpr uint32_t  AM335x_CHMAPEXIST          = 0;
     constexpr uint32_t  AM335x_REGIONS_MAX         = 8;
     constexpr uint32_t  AM335x_MEMPROTECT          = 0;
+    constexpr uint32_t  AM335x_QDMA_PARAM_BASE     = 32;
 
     constexpr uint32_t  OPT_PRIVID          = 0x0F000000u;
     constexpr uint32_t  OPT_PRIVID_SHIFT    = 0x00000018u;

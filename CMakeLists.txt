@@ -48,6 +48,10 @@ set(BSP_SOURCES
         include/hal/EDMA/InterruptDispatcher.hpp
         include/hal/EDMA/edma_interrupt_handlers.cpp
         include/hal/EDMA/QdmaChannel.hpp
+        include/hal/EDMA/EDMA_diagnostics.hpp
+        include/hal/EDMA/EDMA_diagnostics_2.hpp
+        include/hal/EDMA/EDMA_diagnostics_3.hpp
+        src/hal/EDMA/EDMA_diagnostics_3.cpp
 )
 
 add_library(am335x_bsp STATIC ${BSP_SOURCES})

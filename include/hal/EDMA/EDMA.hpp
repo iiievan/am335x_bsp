@@ -6,6 +6,11 @@
 
 namespace HAL::EDMA
 {
+        void revaluateInterruptLine() noexcept;
+
+        REGS::EDMA::e_REGION_ID get_region_id() noexcept;
+        void set_region_id( REGS::EDMA::e_REGION_ID regid) noexcept;
+
         void  module_clock_config() noexcept;
         void  init(REGS::EDMA::e_EVENT_QUEUE que_num) noexcept;
         void  set_non_idle_mode() noexcept;
@@ -13,7 +18,7 @@ namespace HAL::EDMA
         void  disable_ch_in_shadow_reg(REGS::EDMA::e_EDMA3_CH_TYPE ch_type, uint32_t ch_num) noexcept;
         void  map_ch_to_evtQ(REGS::EDMA::e_EDMA3_CH_TYPE ch_type, uint32_t ch_num, REGS::EDMA::e_EVENT_QUEUE evt_Qnum) noexcept;
         void  unmap_ch_to_evtQ(REGS::EDMA::e_EDMA3_CH_TYPE ch_type, uint32_t ch_num) noexcept;
-        void  map_QDMA_ch_to_paRAM(uint32_t ch_num, uint32_t *paRAM_id) noexcept;
+        bool  map_QDMA_ch_to_paRAM(uint32_t ch_num, uint32_t &paRAM_id) noexcept;
         void  set_QDMA_trig_word(uint32_t ch_num, uint8_t trig_word) noexcept;
         void  clr_miss_evt(uint32_t ch_num) noexcept;
         void  QDMA_clr_miss_evt(uint32_t ch_num) noexcept;
