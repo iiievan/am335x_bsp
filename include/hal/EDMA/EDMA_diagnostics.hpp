@@ -177,7 +177,7 @@ namespace HAL::EDMA
         static constexpr uint32_t REGIONS       = 8;
 
         // Бездинамическое снятие снимков
-        static EDMA_DiagnosticSnapshot capture() noexcept;
+        static void capture(EDMA_DiagnosticSnapshot *snapshot) noexcept;
         static EDMA_TC_Diagnostic captureTC(uint32_t tc_idx) noexcept;
         static EDMA_CC_Diagnostic captureCC() noexcept;
 
@@ -197,7 +197,16 @@ namespace HAL::EDMA
         static void clearCCErrors(uint32_t mask) noexcept;
     private:
 
-        static REGS::EDMA::AM335x_EDMA3TC_Type* tc_arr[REGS::EDMA::AM335x_TCS_MAX];
+        static inline REGS::EDMA::AM335x_EDMA3TC_Type* getTC(const uint32_t tc_idx) noexcept
+        {
+            static constexpr uintptr_t tc_bases[REGS::EDMA::AM335x_TCS_MAX] = {
+                REGS::EDMA::AM335x_EDMA3TC0_BASE,
+                REGS::EDMA::AM335x_EDMA3TC1_BASE,
+                REGS::EDMA::AM335x_EDMA3TC2_BASE
+            };
+            if (tc_idx >= REGS::EDMA::AM335x_TCS_MAX) return nullptr;
+            return reinterpret_cast<REGS::EDMA::AM335x_EDMA3TC_Type*>(tc_bases[tc_idx]);
+        }
     };
 }
 
