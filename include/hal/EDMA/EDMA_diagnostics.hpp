@@ -1,335 +1,204 @@
 #ifndef HAL_EDMA_DIAGNOSTICS_HPP
 #define HAL_EDMA_DIAGNOSTICS_HPP
 
-#include "regs/EDMA.hpp"
-#include "hal/EDMA/EDMA.hpp"
+#include <array>
 #include <cstdint>
-#include "rtt/rtt_log.h"
-
-#define TAG "edma_diag"
+#include <string_view>
+#include <cstddef>
+#include "hal/EDMA/EDMA.hpp"
 
 namespace HAL::EDMA
 {
-    struct TcSnapshot
+    /**
+     * @brief Ошибки модуля Transfer Controller (TC) в соответствии со структурой TI:
+     * ERRSTAT
+     *   ├── BUSERR
+     *   ├── TRERR
+     *   └── MMRAERR
+     *        └── ERRDET (STAT, TCC, TCINTEN, TCCHEN)
+     */
+    struct EDMA_TC_Error_Details
     {
-        uint32_t base;
-        uint32_t tcstat;
-        uint32_t errstat;
-        uint32_t errdet;
-        uint32_t erren;
+        bool bus_error{};
+        bool tr_error{};
+        bool mmra_error{};
 
-        // Source Active
-        uint32_t saopt;
-        uint32_t sasrc;
-        uint32_t sacnt;
-        uint32_t sadst;
-        uint32_t sabidx;
-
-        // Destination FIFO sets (0..3)
-        struct DfSet {
-            uint32_t opt;
-            uint32_t src;
-            uint32_t cnt;
-            uint32_t dst;
-            uint32_t bidx;
-        } df[4];
+        // Поля из регистра ERRDET при MMRAERR
+        uint32_t stat{};
+        uint32_t tcc{};
+        bool tcinten{};
+        bool tcchen{};
     };
 
-    struct CcSnapshot
+    struct EDMA_TC_Diagnostic
     {
-        // Errors / Misses
-        uint32_t emr;
-        uint32_t emrh;
-        uint32_t qemr;
-        uint32_t ccerr;
+        uint32_t base{};
+        uint32_t pid{};
+        uint32_t tccfg{};
+        uint32_t sysconfig{};
+        uint32_t tcstat{};
+        uint32_t errstat{};
+        uint32_t erren{};
+        uint32_t errdet{};
+        uint32_t rdrate{};
 
-        // Event path
-        uint32_t er, erh;
-        uint32_t eer, eerh;
-        uint32_t ser, serh;
-        uint32_t cer, cerh;
-        uint32_t esr, esrh;          // manual set
+        // Active register set (Source)
+        uint32_t saopt{};
+        uint32_t sasrc{};
+        uint32_t sacnt{};
+        uint32_t sadst{};
+        uint32_t sabidx{};
+        uint32_t sampprxy{};
+        uint32_t sacntrld{};
+        uint32_t sasrcbref{};
+        uint32_t sadstbref{};
 
-        // QDMA path
-        uint32_t qer;
-        uint32_t qeer;
-        uint32_t qser;
+        // Destination FIFO (4 набора на AM335x)
+        std::array<uint32_t, 4> dfopt{};
+        std::array<uint32_t, 4> dfsrc{};
+        std::array<uint32_t, 4> dfcnt{};
+        std::array<uint32_t, 4> dfdst{};
+        std::array<uint32_t, 4> dfbidx{};
+        std::array<uint32_t, 4> dfmppRxy{};
 
-        // Interrupt path
-        uint32_t ier, ierh;
-        uint32_t ipr, iprh;
+        uint32_t dfcntrld{};
+        uint32_t dfsrcbref{};
+        uint32_t dfdstbref{};
 
-        // Queue / status
-        uint32_t qstat[3];
-        uint32_t qwmthra;
-        uint32_t ccstat;
+        // Декодированные состояния TCSTAT
+        uint32_t tcstat_dfstrtptr{};
+        uint32_t tcstat_dstactv{};
+        bool tcstat_wsactive{};
+        bool tcstat_srcactive{};
+        bool tcstat_progbusy{};
 
-        // Memory protection
-        uint32_t mpfar;
-        uint32_t mpfsr;
-
-        // Region
-        REGS::EDMA::e_REGION_ID region;
+        // Декодированные ошибки TC по структуре TI
+        EDMA_TC_Error_Details errors{};
     };
 
-    struct ChannelSnapshot
+    struct EDMA_CC_Diagnostic
     {
-        uint8_t  ch_num;
-        bool     is_qdma;
-        uint32_t dchmap;          // only for DMA
-        uint32_t qchmap;          // only for QDMA
-        uint32_t queue_num;       // из DMAQNUM / QDMAQNUM
-        bool     shadow_enabled;  // DRAE / QRAE
-        bool     event_enabled;   // EER / QEER
-        bool     secondary_set;   // SER / QSER
-        bool     miss_set;        // EMR / QEMR
-        bool     interrupt_enabled;
-        bool     interrupt_pending;
-        REGS::EDMA::paRAM_entry_t param;
+        uint32_t base{};
+        uint32_t pid{};
+        uint32_t cccfg{};
+        uint32_t sysconfig{};
+
+        std::array<uint32_t, 64> dchmap{};
+        std::array<uint32_t, 8> qchmap{};
+        std::array<uint32_t, 8> dma_qnum{};
+        uint32_t qdma_qnum{};
+        uint32_t quepri{};
+
+        uint32_t emr{};
+        uint32_t emrh{};
+        uint32_t qemr{};
+        uint32_t ccerr{};
+        uint32_t eeval{};
+
+        std::array<uint32_t, 8> drae{};
+        std::array<uint32_t, 8> draeh{};
+        std::array<uint32_t, 8> qrae{};
+
+        std::array<uint32_t, 3> qstat{};
+        uint32_t qwmthra{};
+        uint32_t ccstat{};
+
+        uint32_t mpfar{};
+        uint32_t mpfsr{};
+        uint32_t mppag{};
+        std::array<uint32_t, 8> mppa{};
+
+        struct Region
+        {
+            uint32_t er{}, erh{};
+            uint32_t esr{}, esrh{};
+            uint32_t cer{}, cerh{};
+            uint32_t eer{}, eerh{};
+            uint32_t ser{}, serh{};
+            uint32_t ier{}, ierh{};
+            uint32_t ipr{}, iprh{};
+            uint32_t qer{}, qeer{}, qser{};
+        };
+
+        std::array<Region, 8> region{};
+        std::array<std::array<uint32_t, 16>, 3> qentry{};
     };
 
-    class EdmaDiagnostics
+    struct EDMA_Channel_Diagnostic
+    {
+        uint32_t channel{};
+        bool is_qdma{};
+        uint32_t tcc{};
+        uint32_t param_id{};
+        uint32_t dchmap_or_qchmap{};
+        uint32_t queue{};
+        uint32_t param_opt{};
+        REGS::EDMA::paRAM_entry_t param{};
+        bool event{};
+        bool event_enable{};
+        bool secondary_event{};
+        bool interrupt_pending{};
+        bool interrupt_enable{};
+        bool chained_event{};
+        bool shadow_access{};
+    };
+
+    /**
+     * @brief Полный путь трассировки цепочки
+     * TCC -> PaRAM -> DMA/QDMA Channel -> Event Queue -> DCHMAP/QCHMAP
+     */
+    struct EDMA_TCC_Path_Trace
+    {
+        uint32_t target_tcc{0xFFFFFFFF};
+        int32_t found_dma_channel{-1};
+        int32_t found_qdma_channel{-1};
+        int32_t param_id{-1};
+        uint32_t mapped_queue{0xFFFFFFFF};
+        bool is_tcc_channel_matching{false};
+        bool is_param_valid{false};
+    };
+
+    struct EDMA_DiagnosticSnapshot
+    {
+        uint32_t region_id{};
+        EDMA_CC_Diagnostic cc{};
+        std::array<EDMA_TC_Diagnostic, 3> tc{};
+
+        std::array<EDMA_Channel_Diagnostic, 64> dma{};
+        std::array<EDMA_Channel_Diagnostic, 8> qdma{};
+    };
+
+    class EDMA_Diagnostics final
     {
     public:
+        static constexpr uint32_t DMA_CHANNELS  = 64;
+        static constexpr uint32_t QDMA_CHANNELS = 8;
+        static constexpr uint32_t TCS           = 3;
+        static constexpr uint32_t REGIONS       = 8;
 
-        static void captureFull(CcSnapshot& cc, TcSnapshot tc[3]) noexcept
-        {
-            captureCc(cc);
-            captureTc(0, tc[0]);
-            captureTc(1, tc[1]);
-            captureTc(2, tc[2]);
-        }
+        // Бездинамическое снятие снимков
+        static EDMA_DiagnosticSnapshot capture() noexcept;
+        static EDMA_TC_Diagnostic captureTC(uint32_t tc_idx) noexcept;
+        static EDMA_CC_Diagnostic captureCC() noexcept;
 
-        static void captureCc(CcSnapshot& s) noexcept
-        {
-            using namespace REGS::EDMA;
-            const auto& cc = *AM335X_EDMA3CC;
-            const auto region = HAL::EDMA::get_region_id();
+        // Поисковые методы и диагностика связей (без std::string)
+        static EDMA_TCC_Path_Trace findChannelByTCC(const EDMA_DiagnosticSnapshot& s, uint32_t tcc) noexcept;
+        static int32_t findParamByAddress(uint32_t address) noexcept;
 
-            s.region = region;
+        static bool diagnoseChannel(const EDMA_DiagnosticSnapshot& s, uint32_t channel, bool is_qdma, EDMA_Channel_Diagnostic& out_diag) noexcept;
+        static bool diagnoseTransfer(const EDMA_DiagnosticSnapshot& s, uint32_t tcc, EDMA_TCC_Path_Trace& out_trace) noexcept;
 
-            s.emr   = cc.EMR.reg;
-            s.emrh  = cc.EMRH.reg;
-            s.qemr  = cc.QEMR.reg;
-            s.ccerr = cc.CCERR.reg;
+        // Функция форматирования лога напрямую в буфер (для RTT)
+        static size_t decodeCC(const EDMA_DiagnosticSnapshot& s, char* buf, size_t max_len) noexcept;
+        static size_t decodeTC(const EDMA_DiagnosticSnapshot& s, char* buf, size_t max_len, uint32_t channel, uint8_t tc_idx = 0, bool is_qdma = false) noexcept;
+        static size_t decodeChannel(const EDMA_DiagnosticSnapshot& s, char* buf, size_t max_len, uint32_t channel, bool is_qdma = false) noexcept;
+        // Очистка аппаратных регистров
+        static void clearTCError(uint32_t tc_idx, uint32_t mask) noexcept;
+        static void clearCCErrors(uint32_t mask) noexcept;
+    private:
 
-            s.er    = cc.S_ER(region).reg;
-            s.erh   = cc.ERH.reg;               // global high (если нужно)
-            s.eer   = cc.S_EER(region).reg;
-            s.eerh  = cc.S_EERH(region).reg;
-            s.ser   = cc.S_SER(region).reg;
-            s.serh  = cc.S_SERH(region).reg;
-            s.cer   = cc.S_CER(region).reg;
-            s.cerh  = cc.CERH.reg;
-            s.esr   = cc.S_ESR(region).reg;
-            s.esrh  = cc.S_ESRH(region).reg;
-
-            s.qer   = cc.S_QER(region).reg;
-            s.qeer  = cc.S_QEER(region).reg;
-            s.qser  = cc.S_QSER(region).reg;
-
-            s.ier   = cc.S_IER(region).reg;
-            s.ierh  = cc.S_IERH(region).reg;
-            s.ipr   = cc.S_IPR(region).reg;
-            s.iprh  = cc.S_IPRH(region).reg;
-
-            s.qstat[0] = cc.QSTAT_0.reg;
-            s.qstat[1] = cc.QSTAT_1.reg;
-            s.qstat[2] = cc.QSTAT_2.reg;
-            s.qwmthra  = cc.QWMTHRA.reg;
-            s.ccstat   = cc.CCSTAT.reg;
-
-            s.mpfar = cc.MPFAR.reg;
-            s.mpfsr = cc.MPFSR.reg;
-        }
-
-        static void captureTc(const uint8_t tc_idx, TcSnapshot& s) noexcept
-        {
-            using namespace REGS::EDMA;
-            const AM335x_EDMA3TC_Type* tc = nullptr;
-
-            switch (tc_idx)
-            {
-                case 0: tc = AM335X_EDMA3TC0; s.base = AM335x_EDMA3TC0_BASE; break;
-                case 1: tc = AM335X_EDMA3TC1; s.base = AM335x_EDMA3TC1_BASE; break;
-                case 2: tc = AM335X_EDMA3TC2; s.base = AM335x_EDMA3TC2_BASE; break;
-                default: return;
-            }
-
-            s.tcstat  = tc->TCSTAT.reg;
-            s.errstat = tc->ERRSTAT.reg;
-            s.errdet  = tc->ERRDET.reg;
-            s.erren   = tc->ERREN.reg;
-
-            s.saopt = tc->SAOPT.reg;
-            s.sasrc = tc->SASRC.reg;
-            s.sacnt = tc->SACNT.reg;
-            s.sadst = tc->SADST.reg;
-            s.sabidx= tc->SABIDX.reg;
-
-            for (uint32_t i = 0; i < 4; ++i)
-            {
-                s.df[i].opt  = tc->OPT(i).reg;
-                s.df[i].src  = tc->SRC(i).reg;
-                s.df[i].cnt  = tc->CNT(i).reg;
-                s.df[i].dst  = tc->DST(i).reg;
-                s.df[i].bidx = tc->BIDX(i).reg;
-            }
-        }
-
-        static ChannelSnapshot captureChannel(const uint8_t ch, const bool is_qdma = false) noexcept
-        {
-            using namespace REGS::EDMA;
-
-            ChannelSnapshot s{};
-            s.ch_num  = ch;
-            s.is_qdma = is_qdma;
-
-            const auto& cc = *AM335X_EDMA3CC;
-            const auto region = HAL::EDMA::get_region_id();
-
-            if (!is_qdma)
-            {
-                s.dchmap = cc.DCHMAP[ch].reg;
-                // queue number
-                const uint32_t qreg = cc.DMAQNUM[ch >> 3].reg;
-                s.queue_num = (qreg >> ((ch % 8) * 4)) & 0x7;
-
-                if (ch < 32)
-                {
-                    s.shadow_enabled   = (cc.DRAE(region).reg  & (1u << ch)) != 0;
-                    s.event_enabled    = (cc.S_EER(region).reg & (1u << ch)) != 0;
-                    s.secondary_set    = (cc.S_SER(region).reg & (1u << ch)) != 0;
-                    s.miss_set         = (cc.EMR.reg           & (1u << ch)) != 0;
-                    s.interrupt_enabled= (cc.S_IER(region).reg & (1u << ch)) != 0;
-                    s.interrupt_pending= (cc.S_IPR(region).reg & (1u << ch)) != 0;
-                }
-                else
-                {
-                    const uint32_t bit = ch - 32;
-                    s.shadow_enabled   = (cc.DRAEH(region).reg  & (1u << bit)) != 0;
-                    s.event_enabled    = (cc.S_EERH(region).reg & (1u << bit)) != 0;
-                    s.secondary_set    = (cc.S_SERH(region).reg & (1u << bit)) != 0;
-                    s.miss_set         = (cc.EMRH.reg           & (1u << bit)) != 0;
-                    s.interrupt_enabled= (cc.S_IERH(region).reg & (1u << bit)) != 0;
-                    s.interrupt_pending= (cc.S_IPRH(region).reg & (1u << bit)) != 0;
-                }
-
-                const uint32_t param_id = (s.dchmap >> 5) & 0x1FF;
-                HAL::EDMA::get_paRAM(param_id, s.param);
-            }
-            else
-            {
-                s.qchmap = cc.QCHMAP[ch].reg;
-                s.queue_num = (cc.QDMAQNUM.reg >> (ch * 4)) & 0x7;
-
-                s.shadow_enabled    = (cc.QRAE[region].reg & (1u << ch)) != 0;
-                s.event_enabled     = (cc.S_QEER(region).reg & (1u << ch)) != 0;
-                s.secondary_set     = (cc.S_QSER(region).reg & (1u << ch)) != 0;
-                s.miss_set          = (cc.QEMR.reg          & (1u << ch)) != 0;
-
-                const uint32_t param_id = (s.qchmap >> 5) & 0x1FF;
-                HAL::EDMA::QDMA_get_paRAM(param_id, s.param);
-
-                // Interrupt on TCC (NOT on qch)
-                const uint8_t tcc = s.param.OPT.b.TCC;
-                if (tcc < 32)
-                {
-                    s.interrupt_enabled = (cc.S_IER(region).reg & (1u << tcc)) != 0;
-                    s.interrupt_pending = (cc.S_IPR(region).reg & (1u << tcc)) != 0;
-                }
-                else
-                {
-                    const uint32_t bit = tcc - 32;
-                    s.interrupt_enabled = (cc.S_IERH(region).reg & (1u << bit)) != 0;
-                    s.interrupt_pending = (cc.S_IPRH(region).reg & (1u << bit)) != 0;
-                }
-            }
-
-            return s;
-        }
-
-        static void dumpChannel(const ChannelSnapshot& s) noexcept
-        {
-            RTT_LOG_I(TAG,"=== Channel %u (%s) ===", s.ch_num, s.is_qdma ? "QDMA" : "DMA");
-            RTT_LOG_I(TAG,"  Queue          : %u", (unsigned)s.queue_num);
-            RTT_LOG_I(TAG,"  Shadow enabled : %s", s.shadow_enabled ? "YES" : "NO");
-            RTT_LOG_I(TAG,"  Event enabled  : %s", s.event_enabled  ? "YES" : "NO");
-            RTT_LOG_I(TAG,"  Secondary set  : %s", s.secondary_set  ? "YES" : "NO");
-            RTT_LOG_I(TAG,"  Missed event   : %s", s.miss_set       ? "YES" : "NO");
-            RTT_LOG_I(TAG,"  Intr enabled   : %s", s.interrupt_enabled ? "YES" : "NO");
-            RTT_LOG_I(TAG,"  Intr pending   : %s", s.interrupt_pending ? "YES" : "NO");
-
-            if (!s.is_qdma)
-                RTT_LOG_I(TAG,"  DCHMAP         : 0x%08X (PaRAM %u)", (unsigned)s.dchmap, (unsigned)((s.dchmap >> 5) & 0x1FF));
-            else
-                RTT_LOG_I(TAG,"  QCHMAP         : 0x%08X (PaRAM %u, trigword %u)", (unsigned)s.qchmap, (unsigned)((s.qchmap >> 5) & 0x1FF), (unsigned)((s.qchmap >> 2) & 0x7));
-
-            const auto& p = s.param;
-            RTT_LOG_I(TAG,"  PaRAM OPT      : 0x%08X", (unsigned)p.OPT.reg);
-            RTT_LOG_I(TAG,"    SAM=%u DAM=%u SYNCDIM=%u STATIC=%u FWID=%u", p.OPT.b.SAM, p.OPT.b.DAM, p.OPT.b.SYNCDIM, p.OPT.b.STATIC, p.OPT.b.FWID);
-            RTT_LOG_I(TAG,"    TCC=%u TCINTEN=%u ITCINTEN=%u TCCHEN=%u", p.OPT.b.TCC, p.OPT.b.TCINTEN, p.OPT.b.ITCINTEN, p.OPT.b.TCCHEN);
-            RTT_LOG_I(TAG,"  SRC=0x%08X  DST=0x%08X", (unsigned)p.SRC, (unsigned)p.DST);
-            RTT_LOG_I(TAG,"  ACNT=%u BCNT=%u CCNT=%u", p.ACNT, p.BCNT, p.CCNT);
-            RTT_LOG_I(TAG,"  SRCBIDX=%d DSTBIDX=%d  SRCCIDX=%d DSTCIDX=%d", p.SRCBIDX, p.DSTBIDX, p.SRCCIDX, p.DSTCIDX);
-            RTT_LOG_I(TAG,"  LINK=0x%04X  BCNTRLD=%u", p.LINK, p.BCNTRLD);
-        }
-
-        static void dumpCc(const CcSnapshot& s) noexcept
-        {
-            RTT_LOG_I(TAG,"=== CC Snapshot (region %u) ===", static_cast<unsigned>(s.region));
-            RTT_LOG_I(TAG,"  EMR  = 0x%08X  EMRH = 0x%08X  QEMR = 0x%08X", (unsigned)s.emr, (unsigned)s.emrh, (unsigned)s.qemr);
-            RTT_LOG_I(TAG,"  CCERR= 0x%08X", (unsigned)s.ccerr);
-            RTT_LOG_I(TAG,"  EER  = 0x%08X  EERH = 0x%08X", (unsigned)s.eer, (unsigned)s.eerh);
-            RTT_LOG_I(TAG,"  SER  = 0x%08X  SERH = 0x%08X", (unsigned)s.ser, (unsigned)s.serh);
-            RTT_LOG_I(TAG,"  IPR  = 0x%08X  IPRH = 0x%08X", (unsigned)s.ipr, (unsigned)s.iprh);
-            RTT_LOG_I(TAG,"  IER  = 0x%08X  IERH = 0x%08X", (unsigned)s.ier, (unsigned)s.ierh);
-            RTT_LOG_I(TAG,"  QSTAT0=0x%08X QSTAT1=0x%08X QSTAT2=0x%08X", (unsigned)s.qstat[0], (unsigned)s.qstat[1], (unsigned)s.qstat[2]);
-            RTT_LOG_I(TAG,"  CCSTAT=0x%08X  QWMTHRA=0x%08X", (unsigned)s.ccstat, (unsigned)s.qwmthra);
-            RTT_LOG_I(TAG,"  MPFAR=0x%08X  MPFSR=0x%08X", (unsigned)s.mpfar, (unsigned)s.mpfsr);
-        }
-
-        static void dumpTc(const TcSnapshot& s) noexcept
-        {
-            RTT_LOG_I(TAG,"=== TC @ 0x%08X ===", (unsigned)s.base);
-            RTT_LOG_I(TAG,"  TCSTAT = 0x%08X", (unsigned)s.tcstat);
-            RTT_LOG_I(TAG,"  ERRSTAT= 0x%08X  ERRDET=0x%08X  ERREN=0x%08X", (unsigned)s.errstat, (unsigned)s.errdet, (unsigned)s.erren);
-            RTT_LOG_I(TAG,"  SAOPT=0x%08X SASRC=0x%08X SACNT=0x%08X SADST=0x%08X", (unsigned)s.saopt, (unsigned)s.sasrc, (unsigned)s.sacnt, (unsigned)s.sadst);
-
-            for (int i = 0; i < 4; ++i)
-            {
-                if (s.df[i].opt || s.df[i].cnt)
-                {
-                    RTT_LOG_I(TAG,"  DF[%d] OPT=0x%08X SRC=0x%08X CNT=0x%08X DST=0x%08X", i, (unsigned)s.df[i].opt, (unsigned)s.df[i].src, (unsigned)s.df[i].cnt, (unsigned)s.df[i].dst);
-                }
-            }
-        }
-
-        static void diagnoseSilentChannel(const uint8_t ch, const bool is_qdma = false) noexcept
-        {
-            const auto chs = captureChannel(ch, is_qdma);
-            dumpChannel(chs);
-
-            CcSnapshot cc{};
-            captureCc(cc);
-            dumpCc(cc);
-
-            if (chs.miss_set)
-                RTT_LOG_E(TAG,">>> EVENT MISSED! Clear EMR/QEMR and check why channel was not ready.");
-
-            if (!chs.event_enabled)
-                RTT_LOG_E(TAG,">>> Event is NOT enabled (EER/QEER).");
-
-            if (!chs.interrupt_enabled)
-                RTT_LOG_E(TAG,">>> Completion interrupt is NOT enabled for TCC.");
-
-            if (chs.param.ACNT == 0)
-                RTT_LOG_E(TAG,">>> ACNT == 0 → transfer will never start.");
-
-            if (is_qdma && chs.param.OPT.b.STATIC == 0)
-                RTT_LOG_E(TAG,">>> QDMA without STATIC bit — careful with linking.");
-        }
+        static REGS::EDMA::AM335x_EDMA3TC_Type* tc_arr[REGS::EDMA::AM335x_TCS_MAX];
     };
-} // namespace HAL::EDMA
+}
 
 #endif // HAL_EDMA_DIAGNOSTICS_HPP

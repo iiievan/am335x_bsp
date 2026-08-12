@@ -61,6 +61,34 @@ namespace HAL::EDMA
         void  context_save(REGS::EDMA::EDMACONTEXT_t *p_edma_cntx) noexcept;
         void  context_restore(const REGS::EDMA::EDMACONTEXT_t *p_edma_cntx) noexcept;
 
+    [[nodiscard]] inline constexpr uint32_t get_queue_for_DMA_channel(const uint8_t channel) noexcept
+    {
+        if (channel >= REGS::EDMA::AM335X_DMACH_MAX) return 0xFFFFFFFF;
+        const uint8_t reg_index = channel >> 3;         // channel / 8
+        const uint8_t bit_shift = (channel & 0x7) << 2; // (channel % 8) * 4
+        return (REGS::EDMA::AM335X_EDMA3CC->DMAQNUM[reg_index].reg >> bit_shift) & 0x7;
+    }
+
+    [[nodiscard]] inline constexpr uint32_t get_queue_for_QDMA_channel(const uint8_t channel) noexcept
+    {
+        if (channel >= REGS::EDMA::AM335X_QDMACH_MAX) return 0xFFFFFFFF;
+        const uint8_t bit_shift = (channel & 0x7) << 2; // (channel % 8) * 4
+        return (REGS::EDMA::AM335X_EDMA3CC->QDMAQNUM.reg >> bit_shift) & 0x7;
+    }
+
+    [[nodiscard]] inline bool is_channel_mapped_to_DMA_queue(const uint8_t channel, const uint8_t target_queue) noexcept
+    {
+        if (target_queue >= REGS::EDMA::AM335x_TCS_MAX) return false;
+        const uint32_t current_queue = get_queue_for_DMA_channel(channel);
+        return (current_queue == target_queue);
+    }
+
+    [[nodiscard]] inline bool is_channel_mapped_to_QDMA_queue(const uint8_t channel, const uint8_t target_queue) noexcept
+    {
+        if (target_queue >= REGS::EDMA::AM335x_TCS_MAX) return false;
+        const uint32_t current_queue = get_queue_for_QDMA_channel(channel);
+        return (current_queue == target_queue);
+    }
 }
 
 #endif //__HAL_EDMA_HPP
