@@ -143,12 +143,12 @@ namespace HAL::EDMA
         snapshot->region_id = static_cast<uint32_t>(get_region_id());
         if (snapshot->region_id >= REGS::EDMA::REGIONS_MAX) snapshot->region_id = 0;
         snapshot->cc = captureCC();
-        //for (uint32_t i = 0; i < TCS; ++i) s.tc[i] = captureTC(i);
-        //for (uint32_t i = 0; i < DMA_CHANNELS; ++i) s.dma[i] = capture_DMA_ch(i);
-        //for (uint32_t i = 0; i < QDMA_CHANNELS; ++i) s.qdma[i] = capture_QDMA_ch(i);
+        for (uint32_t i = 0; i < TCS; ++i) snapshot->tc[i] = captureTC(i);
+        for (uint32_t i = 0; i < DMA_CHANNELS; ++i) snapshot->dma[i] = capture_DMA_ch(i);
+        for (uint32_t i = 0; i < QDMA_CHANNELS; ++i) snapshot->qdma[i] = capture_QDMA_ch(i);
     }
 
-    size_t EDMA_Diagnostics::decodeCC(const EDMA_DiagnosticSnapshot& s, char* buf, size_t max_len) noexcept
+    size_t EDMA_Diagnostics::decodeCC(const EDMA_DiagnosticSnapshot& s, char* buf, const size_t max_len) noexcept
     {
         const EDMA_CC_Diagnostic& d = s.cc;
         int written = std::snprintf(buf, max_len,
@@ -185,10 +185,10 @@ namespace HAL::EDMA
         return (written > 0) ? static_cast<size_t>(written) : 0;
     }
 
-    size_t EDMA_Diagnostics::decodeChannel(const EDMA_DiagnosticSnapshot& s, char* buf, size_t max_len, uint32_t channel, bool is_qdma) noexcept
+    size_t EDMA_Diagnostics::decodeChannel(const EDMA_DiagnosticSnapshot& s, char* buf, const size_t max_len, const uint32_t channel, const bool is_qdma) noexcept
     {
         const EDMA_Channel_Diagnostic & d = is_qdma ? s.qdma[channel] : s.dma[channel];
-        int written = std::snprintf(buf, max_len,
+        const int written = std::snprintf(buf, max_len,
             "%s CH=%u PaRAM=%u TCC=%u Q=%u OPT=%08X [EV=%u EER=%u SER=%u IPR=%u IER=%u CER=%u ACCESS=%u]",
             d.is_qdma ? "QDMA" : "DMA", (unsigned)d.channel, (unsigned)d.param_id, (unsigned)d.tcc, (unsigned)d.queue, (unsigned)d.param_opt,
             (unsigned)d.event, (unsigned)d.event_enable, (unsigned)d.secondary_event, (unsigned)d.interrupt_pending,
@@ -245,7 +245,7 @@ namespace HAL::EDMA
         return static_cast<int32_t>((address - REGS::EDMA::PARAM_BASE) / 0x20);
     }
 
-    bool EDMA_Diagnostics::diagnoseChannel(const EDMA_DiagnosticSnapshot& s, uint32_t channel, bool is_qdma, EDMA_Channel_Diagnostic& out_diag) noexcept
+    bool EDMA_Diagnostics::diagnoseChannel(const EDMA_DiagnosticSnapshot& s, const uint32_t channel, const bool is_qdma, EDMA_Channel_Diagnostic& out_diag) noexcept
     {
         if (!is_qdma && channel >= REGS::EDMA::AM335X_DMACH_MAX) return false;
         if (is_qdma && channel >= REGS::EDMA::AM335X_QDMACH_MAX) return false;
@@ -255,7 +255,7 @@ namespace HAL::EDMA
         return true;
     }
 
-    bool EDMA_Diagnostics::diagnoseTransfer(const EDMA_DiagnosticSnapshot& s, uint32_t tcc, EDMA_TCC_Path_Trace& out_trace) noexcept
+    bool EDMA_Diagnostics::diagnoseTransfer(const EDMA_DiagnosticSnapshot& s, const uint32_t tcc, EDMA_TCC_Path_Trace& out_trace) noexcept
     {
         out_trace = findChannelByTCC(s, tcc);
         return out_trace.is_param_valid;

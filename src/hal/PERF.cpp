@@ -13,12 +13,12 @@ namespace HAL::PERF
 {
     void init() noexcept
     {
-        // 1. Разрешаем пользователю/супервизору доступ к PMU в CP15
+        // Grant the user/supervisor access to the PMU in CP15
         // PMUSERENR (c9, c14, 0) -> Bit 0 = EN
         uint32_t user_en = 1;
         __asm volatile("mcr p15, 0, %0, c9, c14, 0" :: "r"(user_en));
 
-        // 2. Сброс и конфигурация PMCR (Performance Monitor Control Register)
+        // Resetting and Configuring the PMCR (Performance Monitor Control Register)
         // Bit 0: E (Enable all counters)
         // Bit 1: P (Event counter reset)
         // Bit 2: C (Cycle counter reset)
@@ -26,7 +26,7 @@ namespace HAL::PERF
         uint32_t pmcr = (1 << 0) | (1 << 1) | (1 << 2);
         __asm volatile("mcr p15, 0, %0, c9, c12, 0" :: "r"(pmcr));
 
-        // 3. Включаем счётчик тактов (PMCCNTR) через PMCNTENSET (c9, c12, 1)
+        // Enable the cycle counter (PMCCNTR) using PMCNTENSET (c9, c12, 1)
         uint32_t pmcntenset = (1U << 31);
         __asm volatile("mcr p15, 0, %0, c9, c12, 1" :: "r"(pmcntenset));
 
@@ -37,7 +37,7 @@ namespace HAL::PERF
     {
         uint32_t pmcr;
         __asm volatile("mrc p15, 0, %0, c9, c12, 0" : "=r"(pmcr));
-        pmcr |= (1 << 1) | (1 << 2); // Сброс event-счётчиков и cycle-счётчика
+        pmcr |= (1 << 1) | (1 << 2); // Reset the event counters and the cycle counter
         __asm volatile("mcr p15, 0, %0, c9, c12, 0" :: "r"(pmcr));
     }
 
@@ -70,13 +70,13 @@ namespace HAL::PERF
         auto cnt_idx = static_cast<uint8_t>(counter);
         auto evt_idx = static_cast<uint8_t>(event);
 
-        // Выбираем счетчик через PMSELR (c9, c12, 5)
+        //  Selecting a counter via PMSELR (c9, c12, 5)
         __asm volatile("mcr p15, 0, %0, c9, c12, 5" :: "r"(cnt_idx));
 
-        // Записываем тип события в PMXEVTYPER (c9, c13, 1)
+        // Store the event type in PMXEVTYPER (c9, c13, 1)
         __asm volatile("mcr p15, 0, %0, c9, c13, 1" :: "r"(evt_idx));
 
-        // Разрешаем выбранный счётчик через PMCNTENSET (c9, c12, 1)
+        // Enable the selected counter using PMCNTENSET (c9, c12, 1)
         uint32_t mask = (1U << cnt_idx);
         __asm volatile("mcr p15, 0, %0, c9, c12, 1" :: "r"(mask));
     }
@@ -84,10 +84,10 @@ namespace HAL::PERF
     uint32_t read_event(Counter counter) noexcept
     {
         auto cnt_idx = static_cast<uint8_t>(counter);
-        // Выбираем счетчик
+        // Select counter
         __asm volatile("mcr p15, 0, %0, c9, c12, 5" :: "r"(cnt_idx));
 
-        // Читаем значение из PMXEVCNTR (c9, c13, 2)
+        // Read a value from PMXEVCNTR (c9, c13, 2)
         uint32_t val;
         __asm volatile("mrc p15, 0, %0, c9, c13, 2" : "=r"(val));
         return val;
@@ -106,19 +106,18 @@ namespace HAL::PERF
         constexpr size_t TEST_SIZE_BYTES = 1 * 1024 * 1024; // 1 МБ
         constexpr size_t TEST_WORDS = TEST_SIZE_BYTES / sizeof(uint32_t);
 
-        // Выделяем буферы в области DDR
-        static uint32_t src_buf[TEST_WORDS] __attribute__((section(".ddr_data")));
-        static uint32_t dst_buf[TEST_WORDS] __attribute__((section(".ddr_data")));
+        // Highlighting buffers in the DDR region
+        static uint32_t src_buf[TEST_WORDS] __attribute__((section(".perf_data")));
+        static uint32_t dst_buf[TEST_WORDS] __attribute__((section(".perf_data")));
 
         RTT_LOG_I(TAG, "=== Running Memory Performance Benchmark ===");
 
-        // Заполняем память исходными данными
         for (size_t i = 0; i < TEST_WORDS; ++i)
         {
             src_buf[i] = static_cast<uint32_t>(i);
         }
 
-        // Настраиваем счетчики событий на промахи D-Cache и L2 Cache
+        // Configuring event counters for D-Cache and L2 Cache misses
         configure_event(Counter::COUNTER_0, EventType::L1D_CACHE_REFILL);
         configure_event(Counter::COUNTER_1, EventType::L2D_CACHE_REFILL);
 
@@ -128,7 +127,7 @@ namespace HAL::PERF
         const uint32_t l1_miss_start = read_event(Counter::COUNTER_0);
         const uint32_t l2_miss_start = read_event(Counter::COUNTER_1);
 
-        // Копирование 1 МБ памяти (32-бит)
+        //  Copying 1 MB of memory (32-bit)
         std::memcpy(dst_buf, src_buf, TEST_SIZE_BYTES);
 
         const uint32_t t_end = get_cycle_count();
@@ -139,14 +138,13 @@ namespace HAL::PERF
         const uint32_t l1_misses = l1_miss_end - l1_miss_start;
         const uint32_t l2_misses = l2_miss_end - l2_miss_start;
 
-        // Расчет скорости при 1 ГГц CPU (1 такт = 1 нс)
-        const float seconds = static_cast<float>(elapsed_cycles) / 1000000000.0f;
-        const float mb_per_sec = (1.0f / seconds);
         const uint32_t cpu_freq = get_mpu_freq_hz();
+        const float seconds = static_cast<float>(elapsed_cycles) / static_cast<float>(cpu_freq);
+        const float mb_per_sec = (1.0f / seconds);
         const uint32_t elapsed_ms = ticks_to_ms(elapsed_cycles, cpu_freq);
         RTT_LOG_I(TAG, "Memcpy 1MB Result:");
         RTT_LOG_I(TAG, "  Elapsed CPU Cycles/ms : %u/%u", (unsigned)elapsed_cycles,(unsigned)elapsed_ms);
-        RTT_LOG_I(TAG, "  Calculated Speed   : %u MB/s (at 1 GHz)", (unsigned)mb_per_sec);
+        RTT_LOG_I(TAG, "  Calculated Speed   : %u MB/s (at %u MHz)", (unsigned)mb_per_sec,(unsigned)(static_cast<float>(cpu_freq)/1000000.0f));
         RTT_LOG_I(TAG, "  L1 D-Cache Refills : %u", (unsigned)l1_misses);
         RTT_LOG_I(TAG, "  L2 Cache Refills   : %u", (unsigned)l2_misses);
         RTT_LOG_I(TAG, "===========================================");
@@ -155,23 +153,23 @@ namespace HAL::PERF
     uint32_t get_mpu_freq_hz()
     {
         using namespace REGS::PRCM;
-        auto& wkup = *AM335x_CM_WKUP; //
+        const auto& wkup = *AM335x_CM_WKUP; //
 
-        // Извлекаем N (DPLL_DIV) и M (DPLL_MULT) из CLKSEL_DPLL_MPU
-        uint32_t clksel = wkup.CLKSEL_DPLL_MPU.reg;
-        uint32_t mult = (clksel >> 8) & 0x7FF; // Bits 8..18 (DPLL_MULT)
-        uint32_t div  = (clksel & 0x7F) + 1;   // Bits 0..6 (DPLL_DIV, делитель = N + 1)
+        // Extract N (DPLL_DIV) and M (DPLL_MULT) from CLKSEL_DPLL_MPU
+        const uint32_t clksel = wkup.CLKSEL_DPLL_MPU.reg;
+        const uint32_t mult = (clksel >> 8) & 0x7FF; // Bits 8..18 (DPLL_MULT)
+        const uint32_t div  = (clksel & 0x7F) + 1;   // Bits 0..6 (DPLL_DIV, делитель = N + 1)
 
-        // Извлекаем post-divider M2 из DIV_M2_DPLL_MPU
+        // Extract post-divider M2 from DIV_M2_DPLL_MPU
         uint32_t m2 = wkup.DIV_M2_DPLL_MPU.b.DPLL_CLKOUT_DIV;
         if (m2 == 0) {
-            m2 = 1; // Защита от 0, значение 0/1 по TRM соответствует делителю 1
+            m2 = 1; //  Protection set to 0; a value of 0/1 in the TRM corresponds to a divisor of 1
         }
 
         constexpr uint32_t OSC_FREQ_HZ = 24000000U; // 24 MHz
 
-        // Расчет: (24MHz * M) / (N+1) / M2
-        uint64_t freq = (static_cast<uint64_t>(OSC_FREQ_HZ) * mult) / (div * m2);
+        // Calculation: (24MHz * M) / (N+1) / M2
+        const uint64_t freq = (static_cast<uint64_t>(OSC_FREQ_HZ) * mult) / (div * m2);
         return static_cast<uint32_t>(freq);
     }
 

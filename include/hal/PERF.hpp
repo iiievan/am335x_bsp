@@ -9,7 +9,6 @@
 
 namespace HAL::PERF
 {
-    // События PMU для ARM Cortex-A8 (ARMv7-A)
     enum class EventType : uint8_t
     {
         SW_INCREMENT            = 0x00,
@@ -45,13 +44,11 @@ namespace HAL::PERF
         uint32_t counter1_val;
     };
 
-    // Инициализация и глобальный контроль PMU
     void init() noexcept;
     void reset_all() noexcept;
     void enable() noexcept;
     void disable() noexcept;
 
-    // Счётчик тактов (PMCCNTR)
     inline uint32_t get_cycle_count() noexcept
     {
         uint32_t val;
@@ -61,12 +58,10 @@ namespace HAL::PERF
 
     void reset_cycle_count() noexcept;
 
-    // Конфигурация программируемых счётчиков событий (Event Counters 0..3)
     void configure_event(Counter counter, EventType event) noexcept;
     uint32_t read_event(Counter counter) noexcept;
     void reset_event(Counter counter) noexcept;
 
-    // Синтетический бенчмарк памяти DDR
     void run_ddr_benchmark() noexcept;
 
     uint32_t get_mpu_freq_hz();
@@ -80,7 +75,7 @@ namespace HAL::PERF
         return static_cast<uint32_t>(ticks / (cpu_freq_hz / 1000000U));
     }
 
-    // RAII-профайлер для замера участка кода по тактам и событиям
+    // RAII profiler for measuring code segments by clock cycles and events
     class ScopedProfiler
     {
     public:
