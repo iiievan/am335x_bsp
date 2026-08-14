@@ -6,6 +6,7 @@
 #include "hal/BRANCH_PREDICTION.hpp"
 #include "startup/cp15.h"
 #include "rtt/rtt_log.h"
+#include "hal/PERF.hpp"
 
 #define TAG "MMU"
 
@@ -132,8 +133,15 @@ namespace HAL::MMU
             16384
         );
 
+        // Поскольку обращения к DDR за строкой таблицы страниц при каждом чтении/записи памяти слишком медленные,
+        // MMU сохраняет последние переводы Virtual Adress -> Phys Adress в TLB.
+        // при инициализации или изменении записей таблицы страниц,
+        // чтобы MMU не использовал устаревшие данные из своего кэша инвалидируем его.
         cp15_TLB_invalidate();
         cp15_domain_access_client_set();
+
+        // Translation Table Base Register - Регистр сопроцессора CP15 (c2),
+        // хранящий физический адрес начала таблицы страниц
         cp15_TTB_ctl_TTB0_config();
         cp15_TTB0_set(reinterpret_cast<uint32_t>(s_page_table));
 
@@ -199,6 +207,8 @@ extern "C"
         // 4. Корректный запуск L2 + L1 Caches и Branch Prediction
         HAL::CACHE::enable(HAL::CACHE::Type::ALL);
         HAL::BRANCH_PREDICTION::enable();
+
+        HAL::PERF::init();
 
         RTT_LOG_I(TAG, "=== InitMem complete ===");
         RTT_LOG_I(TAG, "MMU: %s, I-Cache: %s, D-Cache: %s, Branch Pred: %s",
