@@ -65,15 +65,8 @@ namespace HAL::PERF
     void run_ddr_benchmark() noexcept;
 
     uint32_t get_mpu_freq_hz();
-    inline uint32_t ticks_to_ms(const uint64_t ticks, const uint32_t cpu_freq_hz)
-    {
-        return static_cast<uint32_t>(ticks / (cpu_freq_hz / 1000U));
-    }
-
-    inline uint32_t ticks_to_us(const uint64_t ticks, const uint32_t cpu_freq_hz)
-    {
-        return static_cast<uint32_t>(ticks / (cpu_freq_hz / 1000000U));
-    }
+    uint32_t ticks_to_ms(uint64_t ticks);
+    uint32_t ticks_to_us(uint64_t ticks);
 
     // RAII profiler for measuring code segments by clock cycles and events
     class ScopedProfiler

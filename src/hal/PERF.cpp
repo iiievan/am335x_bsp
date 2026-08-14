@@ -11,8 +11,12 @@
 
 namespace HAL::PERF
 {
+    static uint32_t s_cpu_freq_hz = 1000000000U;
+
     void init() noexcept
     {
+        s_cpu_freq_hz = get_mpu_freq_hz();
+
         // Grant the user/supervisor access to the PMU in CP15
         // PMUSERENR (c9, c14, 0) -> Bit 0 = EN
         uint32_t user_en = 1;
@@ -138,13 +142,12 @@ namespace HAL::PERF
         const uint32_t l1_misses = l1_miss_end - l1_miss_start;
         const uint32_t l2_misses = l2_miss_end - l2_miss_start;
 
-        const uint32_t cpu_freq = get_mpu_freq_hz();
-        const float seconds = static_cast<float>(elapsed_cycles) / static_cast<float>(cpu_freq);
+        const float seconds = static_cast<float>(elapsed_cycles) / static_cast<float>(s_cpu_freq_hz);
         const float mb_per_sec = (1.0f / seconds);
-        const uint32_t elapsed_ms = ticks_to_ms(elapsed_cycles, cpu_freq);
+        const uint32_t elapsed_ms = ticks_to_ms(elapsed_cycles);
         RTT_LOG_I(TAG, "Memcpy 1MB Result:");
         RTT_LOG_I(TAG, "  Elapsed CPU Cycles/ms : %u/%u", (unsigned)elapsed_cycles,(unsigned)elapsed_ms);
-        RTT_LOG_I(TAG, "  Calculated Speed   : %u MB/s (at %u MHz)", (unsigned)mb_per_sec,(unsigned)(static_cast<float>(cpu_freq)/1000000.0f));
+        RTT_LOG_I(TAG, "  Calculated Speed   : %u MB/s (at %u MHz)", (unsigned)mb_per_sec,(unsigned)(static_cast<float>(s_cpu_freq_hz)/1000000.0f));
         RTT_LOG_I(TAG, "  L1 D-Cache Refills : %u", (unsigned)l1_misses);
         RTT_LOG_I(TAG, "  L2 Cache Refills   : %u", (unsigned)l2_misses);
         RTT_LOG_I(TAG, "===========================================");
@@ -173,6 +176,16 @@ namespace HAL::PERF
         return static_cast<uint32_t>(freq);
     }
 
+    uint32_t ticks_to_ms(const uint64_t ticks)
+    {
+        return static_cast<uint32_t>((ticks * 1000ULL) / s_cpu_freq_hz );
+    }
+
+    uint32_t ticks_to_us(const uint64_t ticks)
+    {
+        return static_cast<uint32_t>((ticks * 1000000ULL) / s_cpu_freq_hz);
+    }
+
     ScopedProfiler::ScopedProfiler(const char* tag) noexcept
         : m_tag(tag)
     {
@@ -186,9 +199,8 @@ namespace HAL::PERF
         const uint32_t cycles = get_cycle_count() - m_start_cycles;
         const uint32_t evt0   = read_event(Counter::COUNTER_0) - m_start_evt0;
         const uint32_t evt1   = read_event(Counter::COUNTER_1) - m_start_evt1;
-        const uint32_t cpu_freq = get_mpu_freq_hz();
-        const uint32_t elapsed_us = ticks_to_us(cycles, cpu_freq);
-        const uint32_t elapsed_ms = ticks_to_ms(cycles, cpu_freq);
+        const uint32_t elapsed_us = ticks_to_us(cycles);
+        const uint32_t elapsed_ms = ticks_to_ms(cycles);
 
         RTT_LOG_I(m_tag, "Prof: %u cycles | %u us | %u ms | Evt0: %u | Evt1: %u", (unsigned)cycles,
                                                                                   (unsigned)elapsed_us,
