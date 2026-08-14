@@ -5,13 +5,6 @@
 
 namespace HAL::EDMA
 {
-    REGS::EDMA::AM335x_EDMA3TC_Type* EDMA_Diagnostics::tc_arr[REGS::EDMA::AM335x_TCS_MAX] =
-    {
-        REGS::EDMA::AM335X_EDMA3TC0,
-        REGS::EDMA::AM335X_EDMA3TC1,
-        REGS::EDMA::AM335X_EDMA3TC2,
-    };
-
     namespace
     {
         EDMA_Channel_Diagnostic capture_DMA_ch(const uint32_t ch) noexcept
@@ -82,8 +75,8 @@ namespace HAL::EDMA
         EDMA_TC_Diagnostic d{};
         if (tc_idx >= AM335x_TCS_MAX) return d;
 
-        const auto& tc = *tc_arr[tc_idx];
-        d.base = reinterpret_cast<uint32_t>(tc_arr[tc_idx]);
+        const auto& tc = *getTC(tc_idx);
+        d.base = reinterpret_cast<uint32_t>(getTC(tc_idx));
         d.pid = tc.PID.reg;
         d.tccfg = tc.TCCFG.reg;
         d.sysconfig = tc.SYSCONFIG.reg;
@@ -145,16 +138,14 @@ namespace HAL::EDMA
         return d;
     }
 
-    EDMA_DiagnosticSnapshot EDMA_Diagnostics::capture() noexcept
+    void EDMA_Diagnostics::capture(EDMA_DiagnosticSnapshot *snapshot) noexcept
     {
-        EDMA_DiagnosticSnapshot s{};
-        s.region_id = static_cast<uint32_t>(get_region_id());
-        if (s.region_id >= REGS::EDMA::REGIONS_MAX) s.region_id = 0;
-        s.cc = captureCC();
-        for (uint32_t i = 0; i < TCS; ++i) s.tc[i] = captureTC(i);
-        for (uint32_t i = 0; i < DMA_CHANNELS; ++i) s.dma[i] = capture_DMA_ch(i);
-        for (uint32_t i = 0; i < QDMA_CHANNELS; ++i) s.qdma[i] = capture_QDMA_ch(i);
-        return s;
+        snapshot->region_id = static_cast<uint32_t>(get_region_id());
+        if (snapshot->region_id >= REGS::EDMA::REGIONS_MAX) snapshot->region_id = 0;
+        snapshot->cc = captureCC();
+        //for (uint32_t i = 0; i < TCS; ++i) s.tc[i] = captureTC(i);
+        //for (uint32_t i = 0; i < DMA_CHANNELS; ++i) s.dma[i] = capture_DMA_ch(i);
+        //for (uint32_t i = 0; i < QDMA_CHANNELS; ++i) s.qdma[i] = capture_QDMA_ch(i);
     }
 
     size_t EDMA_Diagnostics::decodeCC(const EDMA_DiagnosticSnapshot& s, char* buf, size_t max_len) noexcept
@@ -275,7 +266,7 @@ namespace HAL::EDMA
         using namespace REGS::EDMA;
         if (tc_idx >= AM335x_TCS_MAX) return;
 
-        auto& tc = *tc_arr[tc_idx];
+        auto& tc = *getTC(tc_idx);
         tc.ERRCLR.reg = mask;
     }
 
