@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional> // Можно использовать inplace_function или обычные функции-указатели
 
+#include "EDMA.hpp"
 #include "regs/EDMA.hpp"
 
 namespace HAL::EDMA
@@ -75,6 +76,11 @@ namespace HAL::EDMA
             }
         }
     };
+
+    inline void revaluateInterruptLine() noexcept
+    {
+        REGS::EDMA::AM335X_EDMA3CC->S_IEVAL(get_region_id()).b.EVAL = 1;
+    }
 }
 #ifdef __cplusplus
 extern "C" {

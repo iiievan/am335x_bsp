@@ -3083,7 +3083,7 @@ namespace REGS::EDMA
     constexpr uint32_t  DMAQNUM_SET(const uint32_t ch_num, const e_EVENT_QUEUE que_num)     { return ((0x7u & static_cast<uint32_t>(que_num)) << (((ch_num)%8u)*4u)); }
     constexpr uint32_t  QDMAQNUM_CLR(const uint32_t ch_num)                                 { return (~(0x7u << (ch_num*4u))); }
     constexpr uint32_t  QDMAQNUM_SET(const uint32_t ch_num, const e_EVENT_QUEUE que_num)    { return ((0x7u & static_cast<uint32_t>(que_num)) << (ch_num*4u)); }
-    
+
     struct AM335x_EDMA3TC_Type
     {
         __R   PIDTC_reg_t         PID;                // (0x00)   Peripheral Identification Register

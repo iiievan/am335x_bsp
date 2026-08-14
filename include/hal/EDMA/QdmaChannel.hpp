@@ -91,6 +91,7 @@ namespace HAL::EDMA
             if (is_allocated)
             {
                 disable_QDMA_event(qch_num);
+                disable_evt_intr(tcc_num);
                 free_channel(REGS::EDMA::CHANNEL_TYPE_QDMA,
                                         qch_num,
                                         REGS::EDMA::TRIG_MODE_QDMA,
@@ -102,6 +103,9 @@ namespace HAL::EDMA
 
         void configure(const REGS::EDMA::paRAM_entry_t& param) const noexcept
         {
+            disable_QDMA_event(qch_num);
+            QDMA_clr_miss_evt(qch_num);
+
             QDMA_set_paRAM(param_id, param);
             enable_QDMA_event(qch_num);
         }
@@ -114,6 +118,7 @@ namespace HAL::EDMA
 
         [[nodiscard]] uint32_t getParamId() const noexcept { return param_id; }
     };
+
 }
 
 #endif // HAL_QDMACHANNEL_HPP

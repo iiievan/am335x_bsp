@@ -25,6 +25,8 @@ extern "C" void EDMA_Completion_ISR()
         HAL::EDMA::InterruptDispatcher::dispatchCompletion(static_cast<uint8_t>(tcc));
         iprh &= ~(1u << tcc_high);
     }
+
+    HAL::EDMA::revaluateInterruptLine();
 }
 
 extern "C" void EDMA_Error_ISR()
