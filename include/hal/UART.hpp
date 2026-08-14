@@ -26,7 +26,7 @@ namespace HAL::UART
 
         explicit uart_base(REGS::UART::AM335x_UART_Type* uart_regs)
             : m_instance(*uart_regs),
-              m_LCR_before(uart_regs->LCR.reg)
+              m_LCR_before{}
         {}
 
     public:
@@ -159,9 +159,7 @@ namespace HAL::UART
             , m_rx(rx)
             , m_tx_mode(tx_mode)
             , m_rx_mode(rx_mode)
-            {
-                m_save_LCR();  // Из uart_core
-            }
+            { }
 
             /* @brief initialize UART peripheral and set it up for polling I/O
              * @param callback: user defined RX callback function;
@@ -169,6 +167,7 @@ namespace HAL::UART
             void init(serial_user_callback cb = nullptr) noexcept
             {
                 derived().run_clocks();
+                m_save_LCR();
                 init_pins();
                 config_baudrate();  // Из uart_core
                 setup_interrupts(cb);

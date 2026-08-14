@@ -130,7 +130,14 @@ namespace HAL::MMU
         // Set TTB0 register
         cp15_TTB0_set(reinterpret_cast<uint32_t>(s_page_table));
 
-        // Enable MMU
+        cp15_TLB_invalidate();
+
+        // 2. Инвалидация I-Cache и D-Cache по Set/Way
+        cp15_I_cache_flush();
+        cp15_D_cache_flush(); // Обязательно перед включением SCTLR.C!
+
+        cp15_DSB_ISB_sync_barrier();
+
         cp15_MMU_enable();
 
         // Synchronization barrier
