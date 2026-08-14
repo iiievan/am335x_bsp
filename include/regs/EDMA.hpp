@@ -265,6 +265,17 @@ namespace REGS::EDMA
                             // behavior.
     };
 
+    [[nodiscard]] constexpr e_EVENT_QUEUE extract_queue_from_reg_val(const uint32_t reg_val, const uint8_t channel) noexcept
+    {
+        const uint32_t shift = (channel & 0x7U) * 4U;
+        return static_cast<e_EVENT_QUEUE>((reg_val >> shift) & 0x7U);
+    }
+
+    [[nodiscard]] constexpr e_EVENT_QUEUE get_dma_queue(const DMAQNUM_reg_t& dmaqnum_reg, const uint8_t channel) noexcept
+    {
+        return extract_queue_from_reg_val(dmaqnum_reg.reg, channel);
+    }
+
     /*  @brief      QDMA Queue Number Register
      *  @details    The QDMA channel queue number register (QDMAQNUMn) is used to program all the QDMA channels in
      *              the EDMA3CC to submit the associated QDMA event to any of the event queues in the EDMA3CC.
@@ -292,6 +303,11 @@ namespace REGS::EDMA
         } b;
         uint32_t  reg;
     } QDMAQNUM_reg_t;
+
+    [[nodiscard]] constexpr e_EVENT_QUEUE get_qdma_queue(const QDMAQNUM_reg_t& qdmaqnum_reg, const uint8_t channel) noexcept
+    {
+        return extract_queue_from_reg_val(qdmaqnum_reg.reg, channel);
+    }
 
     /*  @brief      Queue Priority Register
      *  @details    The queue priority register (QUEPRI) allows you to change the priority of the individual queues and the
@@ -2843,13 +2859,16 @@ namespace REGS::EDMA
         REGION_4 = 0x4,
         REGION_5 = 0x5,
         REGION_6 = 0x6,
-        REGION_7 = 0x7
+        REGION_7 = 0x7,
+        REGIONS_MAX
     };
 
     constexpr uint32_t AM335x_EDMA3CC_BASE     = 0x49000000;
     constexpr uint32_t AM335x_EDMA3TC0_BASE    = 0x49800000;
     constexpr uint32_t AM335x_EDMA3TC1_BASE    = 0x49900000;
     constexpr uint32_t AM335x_EDMA3TC2_BASE    = 0x49A00000;
+    constexpr uint32_t SHADOW_BASE             = 0x2000;
+    constexpr uint32_t SHADOW_STRIDE           = 0x200u;
     constexpr uint32_t PARAM_BASE              = 0x4000;
 
     struct paRAM_entry_t;
@@ -3022,11 +3041,13 @@ namespace REGS::EDMA
 
         // ----------------------> shadow region access <----------------------//
         [[nodiscard]] ER_reg_t& S_ER(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] ERH_reg_t& S_ERH(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] ECR_reg_t& S_ECR(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] ECRH_reg_t& S_ECRH(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] ESR_reg_t& S_ESR(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] ESRH_reg_t& S_ESRH(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] CER_reg_t& S_CER(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] CERH_reg_t& S_CERH(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] EER_reg_t& S_EER(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] EERH_reg_t& S_EERH(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] EECR_reg_t& S_EECR(e_REGION_ID region_id) const noexcept;
@@ -3054,6 +3075,8 @@ namespace REGS::EDMA
         [[nodiscard]] QEESR_reg_t& S_QEESR(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] QSER_reg_t& S_QSER(e_REGION_ID region_id) const noexcept;
         [[nodiscard]] QSECR_reg_t& S_QSECR(e_REGION_ID region_id) const noexcept;
+
+        [[nodiscard]] __RW DMAQNUM_reg_t& get_DMAQNUM_idx(uint32_t channel) noexcept;
     };
 
     constexpr uint32_t  DMAQNUM_CLR(const uint32_t ch_num)                                  { return (~(0x7u << (((ch_num)%8u)*4u))); }
@@ -3325,11 +3348,13 @@ namespace REGS::EDMA
     constexpr uint32_t  EDMA_REVID                 = 0x01u;
     constexpr uint32_t  AM335X_DMACH_MAX           = 64;
     constexpr uint32_t  AM335X_QDMACH_MAX          = 8;
-    constexpr uint32_t  AM335x_PARAMSETS_MAX       = 256;
+    constexpr uint32_t  AM335x_PARAMSETS_MAX       = 64;
+    constexpr uint32_t  AM335x_TCS_MAX             = 3;
     constexpr uint32_t  AM335x_EVQUEUE_MAX         = 4;
     constexpr uint32_t  AM335x_CHMAPEXIST          = 0;
     constexpr uint32_t  AM335x_REGIONS_MAX         = 8;
     constexpr uint32_t  AM335x_MEMPROTECT          = 0;
+    constexpr uint32_t  AM335x_QDMA_PARAM_BASE     = 32;
 
     constexpr uint32_t  OPT_PRIVID          = 0x0F000000u;
     constexpr uint32_t  OPT_PRIVID_SHIFT    = 0x00000018u;

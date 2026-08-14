@@ -80,7 +80,7 @@ namespace HAL::EDMA
                                                        queue);
             if (!is_allocated) return false;
 
-            map_QDMA_ch_to_paRAM(qch_num, &param_id);
+            map_QDMA_ch_to_paRAM(qch_num, param_id);
             set_QDMA_trig_word(qch_num, static_cast<uint8_t>(trig_word_field));
 
             return true;

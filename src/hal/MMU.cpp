@@ -86,7 +86,7 @@ namespace HAL::MMU
                                     DDR_START_ADDR,
                               DDR_NUM_SECTIONS,
                             MemoryType::NORMAL_NON_SHAREABLE,
-                            CachePolicy::WT_NOWA,
+                            CachePolicy::WB_WA,
                             CachePolicy::WB_WA,
                             SecureType::NON_SECURE,
                             AccessPermission::PRV_RW_USR_RW,
@@ -127,10 +127,15 @@ namespace HAL::MMU
     {
         RTT_LOG_I(TAG, "Enabling MMU...");
 
-        // Set TTB0 register
-        cp15_TTB0_set(reinterpret_cast<uint32_t>(s_page_table));
+        cp15_D_cache_clean_buff(
+            reinterpret_cast<uint32_t>(s_page_table),
+            16384
+        );
 
         cp15_TLB_invalidate();
+        cp15_domain_access_client_set();
+        cp15_TTB_ctl_TTB0_config();
+        cp15_TTB0_set(reinterpret_cast<uint32_t>(s_page_table));
 
         // 2. Инвалидация I-Cache и D-Cache по Set/Way
         cp15_I_cache_flush();
@@ -140,7 +145,6 @@ namespace HAL::MMU
 
         cp15_MMU_enable();
 
-        // Synchronization barrier
         cp15_DSB_ISB_sync_barrier();
 
         RTT_LOG_I(TAG, "MMU enabled");
@@ -182,14 +186,18 @@ extern "C"
     {
         RTT_LOG_I(TAG, "=== InitMem: MMU & Cache initialization ===");
 
+        // 1. Предварительная инвалидация кэшей и предсказателя ДО включения MMU
+        HAL::CACHE::init();
+        HAL::BRANCH_PREDICTION::invalidate();
+
+        // 2. Инициализация таблиц страниц MMU
         HAL::MMU::init();
 
+        // 3. Включение MMU (только адресация, без запускa D-Cache/L2)
         HAL::MMU::enable();
 
-        HAL::CACHE::init();
+        // 4. Корректный запуск L2 + L1 Caches и Branch Prediction
         HAL::CACHE::enable(HAL::CACHE::Type::ALL);
-
-        HAL::BRANCH_PREDICTION::invalidate();
         HAL::BRANCH_PREDICTION::enable();
 
         RTT_LOG_I(TAG, "=== InitMem complete ===");
