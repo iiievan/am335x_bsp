@@ -5,9 +5,16 @@
 
 #include "rtt/rtt_log.h"
 
+#define TAG "EDMA_DIAG"
 
 namespace HAL::EDMA
 {
+    template <typename T = int32_t>
+    [[nodiscard]] constexpr int32_t set_queue(T q) noexcept
+    {
+        return (static_cast<int32_t>(q) == -1) ? 0xFFFFFFFFU : static_cast<int32_t>(q);
+    }
+
     namespace
     {
         EDMA_Channel_Diagnostic capture_DMA_ch(const uint32_t ch) noexcept
@@ -61,8 +68,7 @@ namespace HAL::EDMA
             d.param = cc.paRAM(d.param_id);
             d.param_opt = d.param.OPT.reg;
             d.tcc = d.param.OPT.b.TCC;
-            d.queue = static_cast<int32_t>(get_queue_for_QDMA_channel(ch));
-            d.queue = (d.queue == static_cast<int32_t>(0xFFFFFFFF)) ? -1 : static_cast<unsigned>(d.queue);
+            d.queue = set_queue<>(get_queue_for_QDMA_channel(ch));
 
             const e_REGION_ID r_id = get_region_id();
             const uint32_t bit = 1u << ch;
@@ -74,6 +80,8 @@ namespace HAL::EDMA
             return d;
         }
     }
+
+
 
     EDMA_TC_Diagnostic EDMA_Diagnostics::captureTC(const uint32_t tc_idx) noexcept
     {
@@ -176,6 +184,36 @@ namespace HAL::EDMA
         for (uint32_t i = 0; i < AM335X_QDMACH_MAX; ++i) snapshot->qdma[i] = capture_QDMA_ch(i);
     }
 
+    void EDMA_Diagnostics::dump_full_diagnostics(EDMA_DiagnosticSnapshot &s,
+                                                 const uint8_t channel,
+                                                 const bool is_qdma,
+                                                 const char* reason) noexcept
+    {
+        using namespace HAL::EDMA;
+
+        capture(&s);
+
+        RTT_LOG_E(TAG, "=== EDMA DIAGNOSTIC DUMP [%s] (%s CH %u) ===",
+                  reason, is_qdma ? "QDMA" : "DMA", channel);
+
+        decodeChannel(s, channel, is_qdma);
+        decodeCC(s);
+
+        findChannelByTCC(s, channel);
+
+        for (uint8_t tc = 0; tc < REGS::EDMA::AM335x_TCS_MAX; ++tc)
+        {
+            decodeTC(s, channel, tc, is_qdma);
+        }
+
+        clearCCErrors(0xFFFFFFFF);
+        for (uint8_t tc = 0; tc < REGS::EDMA::AM335x_TCS_MAX; ++tc)
+        {
+            clearTCError(tc, 0xFFFFFFFF);
+        }
+        RTT_LOG_E(TAG, "===============================================");
+    }
+
     void EDMA_Diagnostics::decodeCC(const EDMA_DiagnosticSnapshot& s) noexcept
     {
         const EDMA_CC_Diagnostic& d = s.cc;
@@ -246,7 +284,7 @@ namespace HAL::EDMA
                                                                         (unsigned)d.channel,
                                                                         (unsigned)d.param_id,
                                                                         (unsigned)d.tcc,
-                                                                        (unsigned)d.queue,
+                                                                        (int)set_queue<>(d.queue),
                                                                         (unsigned)d.param_opt,
                                                                         (unsigned)d.event,
                                                                         (unsigned)d.event_enable,
@@ -272,7 +310,7 @@ namespace HAL::EDMA
                 trace.found_qdma_channel = static_cast<int32_t>(qch);
                 trace.param_id = static_cast<int32_t>(qdma_diag.param_id);
                 trace.is_tcc_channel_matching = (qch == tcc);
-                trace.mapped_queue = qdma_diag.queue;
+                trace.mapped_queue = set_queue<>(qdma_diag.queue);
                 trace.is_param_valid = true;
                 break;
             }
@@ -289,7 +327,7 @@ namespace HAL::EDMA
                     trace.found_dma_channel = static_cast<int32_t>(ch);
                     trace.param_id = static_cast<int32_t>(dma_diag.param_id);
                     trace.is_tcc_channel_matching = (ch == tcc);
-                    trace.mapped_queue = dma_diag.queue;
+                    trace.mapped_queue = set_queue<>(dma_diag.queue);
                     trace.is_param_valid = true;
                     break;
                 }
@@ -299,7 +337,7 @@ namespace HAL::EDMA
         RTT_LOG_I("CH_BY_TCC", "TCC->Mapped Queue:PaRAM:Channel Match");
         RTT_LOG_I("CH_BY_TCC", " %u :       %u     :  %d :     %s    ",
                   static_cast<unsigned>(tcc),
-                  static_cast<unsigned>(trace.mapped_queue),
+                  (int)set_queue<>(trace.mapped_queue),
                    static_cast<int>(trace.param_id),
                   trace.is_tcc_channel_matching ? "YES" : "NO");
     }

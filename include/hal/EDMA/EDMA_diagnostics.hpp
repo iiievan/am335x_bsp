@@ -175,6 +175,10 @@ namespace HAL::EDMA
         static void capture(EDMA_DiagnosticSnapshot *snapshot) noexcept;
         static EDMA_TC_Diagnostic captureTC(uint32_t tc_idx) noexcept;
         static EDMA_CC_Diagnostic captureCC() noexcept;
+        static void dump_full_diagnostics(EDMA_DiagnosticSnapshot &s,
+                                          uint8_t channel,
+                                          bool is_qdma,
+                                          const char *reason) noexcept;
 
         static void findChannelByTCC(const EDMA_DiagnosticSnapshot& s, uint32_t tcc) noexcept;
         static int32_t findParamByAddress(uint32_t address) noexcept;
