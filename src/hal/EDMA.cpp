@@ -224,12 +224,13 @@ namespace HAL::EDMA
 
         if (CHANNEL_TYPE_DMA == ch_type)
         {
-            cc.DMAQNUM[ch_num >> 3u].reg &=  DMAQNUM_CLR(ch_num); // ?
+            cc.DMAQNUM[ch_num >> 3u].reg &=  DMAQNUM_CLR(ch_num);
             cc.DMAQNUM[ch_num >> 3u].reg |=  DMAQNUM_SET(ch_num, evt_Qnum);
         }
         else
         if (CHANNEL_TYPE_QDMA == ch_type)
         {
+            cc.QDMAQNUM.reg &=  QDMAQNUM_CLR(ch_num);
             cc.QDMAQNUM.reg |=  QDMAQNUM_SET(ch_num, evt_Qnum);
         }
     }
