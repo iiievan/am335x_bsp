@@ -3,6 +3,9 @@
 #include <cstdio>
 #include <cstring>
 
+#include "rtt/rtt_log.h"
+
+
 namespace HAL::EDMA
 {
     namespace
@@ -20,7 +23,8 @@ namespace HAL::EDMA
             d.dchmap_or_qchmap = cc->DCHMAP[ch].reg;
             d.param_opt = d.param.OPT.reg;
             d.tcc = d.param.OPT.b.TCC;
-            d.queue = get_queue_for_DMA_channel(ch);
+            d.queue = static_cast<int32_t>(get_queue_for_DMA_channel(ch));
+            d.queue = (d.queue == static_cast<int32_t>(0xFFFFFFFF)) ? -1 : static_cast<unsigned>(d.queue);
 
             e_REGION_ID r_id = get_region_id();
             const uint32_t bit = 1u << (ch & 31u);
@@ -52,23 +56,25 @@ namespace HAL::EDMA
 
             d.channel = ch;
             d.is_qdma = true;
-            d.dchmap_or_qchmap = cc.QDMAQNUM.reg;
+            d.dchmap_or_qchmap = cc.QCHMAP[ch].reg;
             d.param_id = cc.QCHMAP[ch].b.PAENTRY;
             d.param = cc.paRAM(d.param_id);
             d.param_opt = d.param.OPT.reg;
             d.tcc = d.param.OPT.b.TCC;
-            d.queue = get_queue_for_QDMA_channel(ch);
+            d.queue = static_cast<int32_t>(get_queue_for_QDMA_channel(ch));
+            d.queue = (d.queue == static_cast<int32_t>(0xFFFFFFFF)) ? -1 : static_cast<unsigned>(d.queue);
 
             const e_REGION_ID r_id = get_region_id();
             const uint32_t bit = 1u << ch;
             d.event = (cc.S_QER(r_id).reg & bit) != 0;
             d.event_enable = (cc.S_QEER(r_id).reg & bit) != 0;
             d.secondary_event = (cc.S_QSER(r_id).reg & bit) != 0;
-            d.shadow_access = (cc.QRAE[ch].reg & bit) != 0;
+            d.shadow_access = (cc.QRAE[r_id].reg & bit) != 0;
 
             return d;
         }
     }
+
     EDMA_TC_Diagnostic EDMA_Diagnostics::captureTC(const uint32_t tc_idx) noexcept
     {
         using namespace REGS::EDMA;
@@ -85,6 +91,11 @@ namespace HAL::EDMA
         d.erren = tc.ERREN.reg;
         d.errdet = tc.ERRDET.reg;
         d.rdrate = tc.RDRATE.reg;
+
+        d.saopt = tc.SAOPT.reg;
+        d.sasrc = tc.SASRC.reg;
+        d.sacnt = tc.SACNT.reg;
+        d.sadst = tc.SADST.reg;
 
         // Decode TI error struct state
         d.errors.bus_error  = tc.ERRSTAT.b.BUSERR;
@@ -129,112 +140,170 @@ namespace HAL::EDMA
         d.qdma_qnum = cc.QDMAQNUM.reg;
         d.quepri    = cc.QUEPRI.reg;
 
+        d.qstat[0] = cc.QSTAT_0.reg;
+        d.qstat[1] = cc.QSTAT_1.reg;
+        d.qstat[2] = cc.QSTAT_2.reg;
+
         // Event / Missed / Errors
         d.emr   = cc.EMR.reg;
         d.emrh  = cc.EMRH.reg;
         d.qemr  = cc.QEMR.reg;
         d.ccerr = cc.CCERR.reg;
 
+        const volatile DRAE_reg_t* drae = &cc.DRAE0;
+        const volatile DRAEH_reg_t* draeh = &cc.DRAEH0;
+        for (size_t r = 0; r < AM335x_REGIONS_MAX; ++r)
+        {
+            d.drae[r]  = drae->reg;
+            d.draeh[r] = draeh->reg;
+            d.qrae[r]  = cc.QRAE[r].reg;
+
+            drae++;
+            draeh++;
+        }
+
         return d;
     }
 
     void EDMA_Diagnostics::capture(EDMA_DiagnosticSnapshot *snapshot) noexcept
     {
+        using namespace REGS::EDMA;
         snapshot->region_id = static_cast<uint32_t>(get_region_id());
-        if (snapshot->region_id >= REGS::EDMA::REGIONS_MAX) snapshot->region_id = 0;
+        if (snapshot->region_id >= AM335x_REGIONS_MAX) snapshot->region_id = 0;
         snapshot->cc = captureCC();
-        for (uint32_t i = 0; i < TCS; ++i) snapshot->tc[i] = captureTC(i);
-        for (uint32_t i = 0; i < DMA_CHANNELS; ++i) snapshot->dma[i] = capture_DMA_ch(i);
-        for (uint32_t i = 0; i < QDMA_CHANNELS; ++i) snapshot->qdma[i] = capture_QDMA_ch(i);
+        for (uint32_t i = 0; i < AM335x_TCS_MAX; ++i) snapshot->tc[i] = captureTC(i);
+        for (uint32_t i = 0; i < AM335X_DMACH_MAX; ++i) snapshot->dma[i] = capture_DMA_ch(i);
+        for (uint32_t i = 0; i < AM335X_QDMACH_MAX; ++i) snapshot->qdma[i] = capture_QDMA_ch(i);
     }
 
-    size_t EDMA_Diagnostics::decodeCC(const EDMA_DiagnosticSnapshot& s, char* buf, const size_t max_len) noexcept
+    void EDMA_Diagnostics::decodeCC(const EDMA_DiagnosticSnapshot& s) noexcept
     {
         const EDMA_CC_Diagnostic& d = s.cc;
-        int written = std::snprintf(buf, max_len,
-            "EMR=%08X EMRH=%08X QEMR=%08X CCERR=%08X EEVAL=%08X; "
-            "QSTAT={%08X,%08X,%08X} CCSTAT=%08X MPFAR=%08X MPFSR=%08X",
-            (unsigned)d.emr, (unsigned)d.emrh, (unsigned)d.qemr, (unsigned)d.ccerr, (unsigned)d.eeval,
-            (unsigned)d.qstat[0], (unsigned)d.qstat[1], (unsigned)d.qstat[2], (unsigned)d.ccstat, (unsigned)d.mpfar, (unsigned)d.mpfsr);
-        return (written > 0) ? static_cast<size_t>(written) : 0;
+        RTT_LOG_I("CC_STAT","  EMR   :  EMRH  :  QEMR  : CCERR  :  EEVAL {          QSTAT           } CCSTAT : MPFAR  :  MPFSR");
+        RTT_LOG_I("CC_STAT","%08X:%08X:%08X:%08X:%08X{%08X,%08X,%08X}%08X:%08X:%08X", static_cast<unsigned>(d.emr),
+                                                                                        static_cast<unsigned>(d.emrh),
+                                                                                        static_cast<unsigned>(d.qemr),
+                                                                                        static_cast<unsigned>(d.ccerr),
+                                                                                        static_cast<unsigned>(d.eeval),
+                                                                                        static_cast<unsigned>(d.qstat[0]),
+                                                                                        static_cast<unsigned>(d.qstat[1]),
+                                                                                        static_cast<unsigned>(d.qstat[2]),
+                                                                                        static_cast<unsigned>(d.ccstat),
+                                                                                        static_cast<unsigned>(d.mpfar),
+                                                                                        static_cast<unsigned>(d.mpfsr));
     }
 
-    size_t EDMA_Diagnostics::decodeTC(const EDMA_DiagnosticSnapshot& s,
-                                      char* buf,
-                                      size_t max_len,
-                                      uint32_t channel,
-                                      uint8_t tc_idx ,
-                                      bool is_qdma) noexcept
+    void EDMA_Diagnostics::decodeTC(const EDMA_DiagnosticSnapshot& s,
+                                      const uint32_t channel,
+                                      const uint8_t tc_idx ,
+                                      const bool is_qdma) noexcept
     {
-        if (!buf || max_len == 0) return 0;
+        const auto str = "TC";
+        char tc_name[10];
+        std::snprintf(tc_name, sizeof(tc_name), "%s%u_DIAG", str, tc_idx);
 
         const EDMA_TC_Diagnostic & d = s.tc[tc_idx];
         const EDMA_Channel_Diagnostic & cd = is_qdma ? s.qdma[channel] : s.dma[channel];
-        const char* stat = d.errstat == 0 ? "no transaction error" :
-                           (d.errors.mmra_error ? "read error" : "write error");
-        int written = std::snprintf(buf, max_len,
-            "ERRSTAT=%08X [BUSERR=%u TRERR=%u MMRAERR=%u], ERRDET=%08X [STAT=%X (%s), TCC=%u, TCINTEN=%u, TCCHEN=%u]; "
-            "TCSTAT=%08X [PROGBUSY=%u SRCACTV=%u WSACTV=%u DSTACTV=%u DFSTRTPTR=%u]; "
-            "ACTIVE: SRC=%08X DST=%08X SACNT=%08X TCC=%u TCINTEN=%u TCCHEN=%u",
-            (unsigned)d.errstat, (unsigned)d.errors.bus_error, (unsigned)d.errors.tr_error, (unsigned)d.errors.mmra_error, (unsigned)d.errdet, (unsigned)d.errors.stat, stat,
-            (unsigned)d.errors.tcc, (unsigned)d.errors.tcinten, (unsigned)d.errors.tcchen, (unsigned)d.tcstat,
-            (unsigned)d.tcstat_progbusy, (unsigned)d.tcstat_srcactive, (unsigned)d.tcstat_wsactive, (unsigned)d.tcstat_dstactv,
-            (unsigned)d.tcstat_dfstrtptr, (unsigned)d.sasrc, (unsigned)d.sadst, (unsigned)d.sacnt, (unsigned)cd.tcc,
-            (unsigned)cd.param.OPT.b.TCINTEN, (unsigned)cd.param.OPT.b.TCCHEN);
+        const char* stat = d.errstat == 0 ? "no err" : (d.errors.mmra_error ? "rd err" : "wr err");
+        RTT_LOG_I(tc_name, "----------------------------------------------------------------------");
+        RTT_LOG_I("ERROR","ERRSTAT :[BUSERR:TRERR:MMRAERR]: ERRDET :[   STAT():TCC:TCINTEN:TCCHEN]");
+        RTT_LOG_I("ERROR","%08X:[   %u   :  %u  :   %u  ]:%08X:[%X(%s): %u :   %u   :   %u  ]",(unsigned)d.errstat,
+                                                                     (unsigned)d.errors.bus_error,
+                                                                     (unsigned)d.errors.tr_error,
+                                                                     (unsigned)d.errors.mmra_error,
+                                                                     (unsigned)d.errdet,
+                                                                     (unsigned)d.errors.stat,
+                                                                     stat,
+                                                                     (unsigned)d.errors.tcc,
+                                                                     (unsigned)d.errors.tcinten,
+                                                                     (unsigned)d.errors.tcchen);
+        RTT_LOG_I("STAT"," TCSTAT [PROGBUSY:SRCACTV:WSACTV:DSTACTV:DFSTRTPTR]");
+        RTT_LOG_I("STAT","%08X[    %u   :   %u   :   %u  :   %u   :    %u    ]",(unsigned)d.tcstat,
+                                                    (unsigned)d.tcstat_progbusy,
+                                                    (unsigned)d.tcstat_srcactive,
+                                                    (unsigned)d.tcstat_wsactive,
+                                                    (unsigned)d.tcstat_dstactv,
+                                                    (unsigned)d.tcstat_dfstrtptr);
+        RTT_LOG_I("ACTIVE","  SRC   :   DST  :  SACNT [TCC:TCINTEN:TCCHEN]");
+        RTT_LOG_I("ACTIVE","%08X:%08X:%08X[ %u :   %u   :  %u   ]",    (unsigned)d.sasrc,
+                                                       (unsigned)d.sadst,
+                                                       (unsigned)d.sacnt,
+                                                       (unsigned)cd.tcc,
+                                                       (unsigned)cd.param.OPT.b.TCINTEN,
+                                                       (unsigned)cd.param.OPT.b.TCCHEN);
 
-        return (written > 0) ? static_cast<size_t>(written) : 0;
+
     }
 
-    size_t EDMA_Diagnostics::decodeChannel(const EDMA_DiagnosticSnapshot& s, char* buf, const size_t max_len, const uint32_t channel, const bool is_qdma) noexcept
+    void EDMA_Diagnostics::decodeChannel(const EDMA_DiagnosticSnapshot& s, const uint32_t channel, const bool is_qdma) noexcept
     {
         const EDMA_Channel_Diagnostic & d = is_qdma ? s.qdma[channel] : s.dma[channel];
-        const int written = std::snprintf(buf, max_len,
-            "%s CH=%u PaRAM=%u TCC=%u Q=%u OPT=%08X [EV=%u EER=%u SER=%u IPR=%u IER=%u CER=%u ACCESS=%u]",
-            d.is_qdma ? "QDMA" : "DMA", (unsigned)d.channel, (unsigned)d.param_id, (unsigned)d.tcc, (unsigned)d.queue, (unsigned)d.param_opt,
-            (unsigned)d.event, (unsigned)d.event_enable, (unsigned)d.secondary_event, (unsigned)d.interrupt_pending,
-            (unsigned)d.interrupt_enable, (unsigned)d.chained_event, (unsigned)d.shadow_access);
-
-        return (written > 0) ? static_cast<size_t>(written) : 0;
+        const auto str = "CH";
+        char ch_stat[8];
+        std::snprintf(ch_stat, sizeof(ch_stat), "%s%u_STAT", str, (unsigned)channel);
+        RTT_LOG_I(ch_stat,"TYPE:CH:PaRAM:TCC:QUEUE:   OPT  [EV:EER:SER:IPR:IER:CER:SH_ACCESS]");
+        RTT_LOG_I(ch_stat,"%s: %u:  %u : %u :  %d  :%08X[ %u: %u : %u : %u : %u : %u :    %u    ]",  d.is_qdma ? "QDMA" : "DMA ",
+                                                                        (unsigned)d.channel,
+                                                                        (unsigned)d.param_id,
+                                                                        (unsigned)d.tcc,
+                                                                        (unsigned)d.queue,
+                                                                        (unsigned)d.param_opt,
+                                                                        (unsigned)d.event,
+                                                                        (unsigned)d.event_enable,
+                                                                        (unsigned)d.secondary_event,
+                                                                        (unsigned)d.interrupt_pending,
+                                                                        (unsigned)d.interrupt_enable,
+                                                                        (unsigned)d.chained_event,
+                                                                        (unsigned)d.shadow_access);
     }
 
-    EDMA_TCC_Path_Trace EDMA_Diagnostics::findChannelByTCC(const EDMA_DiagnosticSnapshot& s, const uint32_t tcc) noexcept
+    void EDMA_Diagnostics::findChannelByTCC(const EDMA_DiagnosticSnapshot& s, const uint32_t tcc) noexcept
     {
         using namespace REGS::EDMA;
         EDMA_TCC_Path_Trace trace{};
         trace.target_tcc = tcc;
 
-        for (size_t ch = 0; ch < AM335X_DMACH_MAX; ++ch)
-        {
-            const auto& dma_diag = s.dma[ch];
-
-            if (dma_diag.tcc == tcc)
-            {
-                trace.found_dma_channel = static_cast<int32_t>(ch);
-                trace.param_id = static_cast<int32_t>(dma_diag.param_id);
-                trace.is_tcc_channel_matching = (ch == tcc);
-                trace.mapped_queue = dma_diag.queue;
-                trace.is_param_valid = true;
-                return trace;
-            }
-        }
-
+        // First search among the QDMAs
         for (size_t qch = 0; qch < AM335X_QDMACH_MAX; ++qch)
         {
             const auto& qdma_diag = s.qdma[qch];
-
-            if (qdma_diag.tcc == tcc)
+            if (qdma_diag.event_enable && qdma_diag.tcc == tcc)
             {
                 trace.found_qdma_channel = static_cast<int32_t>(qch);
                 trace.param_id = static_cast<int32_t>(qdma_diag.param_id);
-                trace.is_tcc_channel_matching = false; // У QDMA нет аппаратной 1:1 привязки TCC по умолчанию
+                trace.is_tcc_channel_matching = (qch == tcc);
                 trace.mapped_queue = qdma_diag.queue;
                 trace.is_param_valid = true;
-                return trace;
+                break;
             }
         }
 
-        return trace;
+        // If no active ones are found in QDMA - search in DMA
+        if (!trace.is_param_valid)
+        {
+            for (size_t ch = 0; ch < AM335X_DMACH_MAX; ++ch)
+            {
+                const auto& dma_diag = s.dma[ch];
+                if (dma_diag.tcc == tcc)
+                {
+                    trace.found_dma_channel = static_cast<int32_t>(ch);
+                    trace.param_id = static_cast<int32_t>(dma_diag.param_id);
+                    trace.is_tcc_channel_matching = (ch == tcc);
+                    trace.mapped_queue = dma_diag.queue;
+                    trace.is_param_valid = true;
+                    break;
+                }
+            }
+        }
+
+        RTT_LOG_I("CH_BY_TCC", "TCC->Mapped Queue:PaRAM:Channel Match");
+        RTT_LOG_I("CH_BY_TCC", " %u :       %u     :  %d :     %s    ",
+                  static_cast<unsigned>(tcc),
+                  static_cast<unsigned>(trace.mapped_queue),
+                   static_cast<int>(trace.param_id),
+                  trace.is_tcc_channel_matching ? "YES" : "NO");
     }
+
 
     int32_t EDMA_Diagnostics::findParamByAddress(const uint32_t address) noexcept
     {
@@ -253,12 +322,6 @@ namespace HAL::EDMA
         out_diag = is_qdma ? s.qdma[channel] : s.dma[channel];
 
         return true;
-    }
-
-    bool EDMA_Diagnostics::diagnoseTransfer(const EDMA_DiagnosticSnapshot& s, const uint32_t tcc, EDMA_TCC_Path_Trace& out_trace) noexcept
-    {
-        out_trace = findChannelByTCC(s, tcc);
-        return out_trace.is_param_valid;
     }
 
     void EDMA_Diagnostics::clearTCError(const uint32_t tc_idx, const uint32_t mask) noexcept

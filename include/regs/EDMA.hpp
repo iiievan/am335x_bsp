@@ -2856,10 +2856,6 @@ namespace REGS::EDMA
         REGION_1 = 0x1,
         REGION_2 = 0x2,
         REGION_3 = 0x3,
-        REGION_4 = 0x4,
-        REGION_5 = 0x5,
-        REGION_6 = 0x6,
-        REGION_7 = 0x7,
         REGIONS_MAX
     };
 
@@ -3175,9 +3171,10 @@ namespace REGS::EDMA
                 uint32_t    TCCMODE   :1;   // bit: 11         (RW) Transfer complete code mode. Indicates the point at which a transfer is considered completed for
                                             //                      chaining and interrupt generation.
                                             //                      [0x0 = Normal completion; 0x1 = Early completion]
-                uint32_t    TCC       :6;   // bit: 12..17     (RW) Transfer complete code. This 6-bit code sets the relevant bit in the chaining enable register (CER [TCC]
+                uint32_t    TCC       :6;   // bit: 12..17     (RW) Transfer complete code. This 6-bit(0..63) code sets the relevant bit in the chaining enable register (CER [TCC]
                                             //                      CERH [TCC]) for chaining or in the interrupt pending register (IPR [TCC] / IPRH [TCC]) for interrupts.
-                                            //                      [ 0-3Fh]
+                                            //                      [ index from  0 to 63] Когда TC заканчивает физическую прокачку данных по шине, он отправляет обратно в CC сигнал: «Передача завершена для метки TCC!».
+                                            //                      главный вывод: TCC — это не физический канал. TCC — это номер бита в регистре прерываний IPR / IPRH
                 uint32_t              :2;   // bit: 18,19      Reserved
                 uint32_t    TCINTEN   :1;   // bit: 20         (RW) Transfer complete interrupt enable. [ 0x0 = disabled; 0x1 = enabled ]
                 uint32_t    ITCINTEN  :1;   // bit: 21         (RW) Intermediate transfer completion interrupt enable. [ 0x0 = disabled; 0x1 = enabled ]
@@ -3352,7 +3349,7 @@ namespace REGS::EDMA
     constexpr uint32_t  AM335x_TCS_MAX             = 3;
     constexpr uint32_t  AM335x_EVQUEUE_MAX         = 4;
     constexpr uint32_t  AM335x_CHMAPEXIST          = 0;
-    constexpr uint32_t  AM335x_REGIONS_MAX         = 8;
+    constexpr uint32_t  AM335x_REGIONS_MAX         = 4;
     constexpr uint32_t  AM335x_MEMPROTECT          = 0;
     constexpr uint32_t  AM335x_QDMA_PARAM_BASE     = 32;
 

@@ -131,7 +131,7 @@ namespace HAL::EDMA
         uint32_t tcc{};
         uint32_t param_id{};
         uint32_t dchmap_or_qchmap{};
-        uint32_t queue{};
+        int32_t queue{};
         uint32_t param_opt{};
         REGS::EDMA::paRAM_entry_t param{};
         bool event{};
@@ -171,28 +171,20 @@ namespace HAL::EDMA
     class EDMA_Diagnostics final
     {
     public:
-        static constexpr uint32_t DMA_CHANNELS  = 64;
-        static constexpr uint32_t QDMA_CHANNELS = 8;
-        static constexpr uint32_t TCS           = 3;
-        static constexpr uint32_t REGIONS       = 8;
 
-        // Бездинамическое снятие снимков
         static void capture(EDMA_DiagnosticSnapshot *snapshot) noexcept;
         static EDMA_TC_Diagnostic captureTC(uint32_t tc_idx) noexcept;
         static EDMA_CC_Diagnostic captureCC() noexcept;
 
-        // Поисковые методы и диагностика связей (без std::string)
-        static EDMA_TCC_Path_Trace findChannelByTCC(const EDMA_DiagnosticSnapshot& s, uint32_t tcc) noexcept;
+        static void findChannelByTCC(const EDMA_DiagnosticSnapshot& s, uint32_t tcc) noexcept;
         static int32_t findParamByAddress(uint32_t address) noexcept;
 
         static bool diagnoseChannel(const EDMA_DiagnosticSnapshot& s, uint32_t channel, bool is_qdma, EDMA_Channel_Diagnostic& out_diag) noexcept;
-        static bool diagnoseTransfer(const EDMA_DiagnosticSnapshot& s, uint32_t tcc, EDMA_TCC_Path_Trace& out_trace) noexcept;
 
-        // Функция форматирования лога напрямую в буфер (для RTT)
-        static size_t decodeCC(const EDMA_DiagnosticSnapshot& s, char* buf, size_t max_len) noexcept;
-        static size_t decodeTC(const EDMA_DiagnosticSnapshot& s, char* buf, size_t max_len, uint32_t channel, uint8_t tc_idx = 0, bool is_qdma = false) noexcept;
-        static size_t decodeChannel(const EDMA_DiagnosticSnapshot& s, char* buf, size_t max_len, uint32_t channel, bool is_qdma = false) noexcept;
-        // Очистка аппаратных регистров
+        static void decodeCC(const EDMA_DiagnosticSnapshot& s) noexcept;
+        static void decodeTC(const EDMA_DiagnosticSnapshot& s, uint32_t channel, uint8_t tc_idx = 0, bool is_qdma = false) noexcept;
+        static void decodeChannel(const EDMA_DiagnosticSnapshot& s, uint32_t channel, bool is_qdma = false) noexcept;
+
         static void clearTCError(uint32_t tc_idx, uint32_t mask) noexcept;
         static void clearCCErrors(uint32_t mask) noexcept;
     private:

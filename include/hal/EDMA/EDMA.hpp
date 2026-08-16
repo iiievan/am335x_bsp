@@ -65,15 +65,17 @@ namespace HAL::EDMA
     {
         if (channel >= REGS::EDMA::AM335X_DMACH_MAX) return 0xFFFFFFFF;
         const uint8_t reg_index = channel >> 3;         // channel / 8
-        const uint8_t bit_shift = (channel & 0x7) << 2; // (channel % 8) * 4
-        return (REGS::EDMA::AM335X_EDMA3CC->DMAQNUM[reg_index].reg >> bit_shift) & 0x7;
+        const uint8_t bit_shift = (channel & 0x7) << 2; // channel % 8 * 4
+        const uint32_t queue = (REGS::EDMA::AM335X_EDMA3CC->DMAQNUM[reg_index].reg >> bit_shift) & 0x7;
+        return (queue < REGS::EDMA::AM335x_TCS_MAX) ? queue : 0xFFFFFFFF; // Валидация очередей (0..2)
     }
 
     [[nodiscard]] inline constexpr uint32_t get_queue_for_QDMA_channel(const uint8_t channel) noexcept
     {
         if (channel >= REGS::EDMA::AM335X_QDMACH_MAX) return 0xFFFFFFFF;
-        const uint8_t bit_shift = (channel & 0x7) << 2; // (channel % 8) * 4
-        return (REGS::EDMA::AM335X_EDMA3CC->QDMAQNUM.reg >> bit_shift) & 0x7;
+        const uint8_t bit_shift = (channel & 0x7) << 2;     // channel % 8 * 4
+        const uint32_t queue = (REGS::EDMA::AM335X_EDMA3CC->QDMAQNUM.reg >> bit_shift) & 0x7;
+        return (queue < REGS::EDMA::AM335x_TCS_MAX) ? queue : 0xFFFFFFFF; // Валидация очередей (0..2)
     }
 
     [[nodiscard]] inline bool is_channel_mapped_to_DMA_queue(const uint8_t channel, const uint8_t target_queue) noexcept

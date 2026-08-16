@@ -6,7 +6,10 @@ namespace HAL::EDMA
     static e_REGION_ID  region_id = e_REGION_ID::REGION_0;
 
     e_REGION_ID get_region_id() noexcept { return region_id; }
-    void set_region_id(e_REGION_ID regid) noexcept { region_id = regid; }
+    void set_region_id(const e_REGION_ID regid) noexcept
+    {
+        region_id = (regid >= REGIONS_MAX) ? static_cast<e_REGION_ID>(REGIONS_MAX - 1U) : regid;
+    }
 
     void  module_clock_config() noexcept
     {
