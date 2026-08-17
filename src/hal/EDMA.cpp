@@ -1,4 +1,6 @@
 #include "../../include/hal/EDMA/EDMA.hpp"
+#include "hal/EDMA/InterruptDispatcher.hpp"
+#include "hal/INTC.hpp"
 
 namespace HAL::EDMA
 {
@@ -9,6 +11,12 @@ namespace HAL::EDMA
     void set_region_id(const e_REGION_ID regid) noexcept
     {
         region_id = (regid >= REGIONS_MAX) ? static_cast<e_REGION_ID>(REGIONS_MAX - 1U) : regid;
+    }
+
+    inline void check_and_set_bit(volatile uint32_t& reg, uint32_t bit_index) noexcept
+    {
+        const uint32_t mask = (1u << bit_index);
+        if ((reg & mask) == 0u) { reg |= mask; }
     }
 
     void  module_clock_config() noexcept
@@ -64,6 +72,7 @@ namespace HAL::EDMA
      */
     void init(const e_EVENT_QUEUE que_num) noexcept
     {
+        using namespace HAL::INTC;
         auto& cc = *AM335X_EDMA3CC;
         uint32_t count = 0;
 
@@ -104,6 +113,14 @@ namespace HAL::EDMA
              cc.QDMAQNUM.reg &=  QDMAQNUM_CLR(count);
             cc.QDMAQNUM.reg |=  QDMAQNUM_SET(count, que_num);
         }
+
+        register_handler(REGS::INTC::EDMACOMPINT, reinterpret_cast<isr_handler_t>(EDMA_Completion_ISR));
+        priority_set(REGS::INTC::EDMACOMPINT, 0, REGS::INTC::HOSTINT_ROUTE_IRQ);
+        unmask_interrupt(REGS::INTC::EDMACOMPINT);
+
+        register_handler(REGS::INTC::EDMAERRINT, reinterpret_cast<isr_handler_t>(EDMA_Error_ISR));
+        priority_set(REGS::INTC::EDMAERRINT, 0, REGS::INTC::HOSTINT_ROUTE_IRQ);
+        unmask_interrupt(REGS::INTC::EDMAERRINT);
     }
 
     void  set_non_idle_mode() noexcept
@@ -147,17 +164,17 @@ namespace HAL::EDMA
         auto& cc = *AM335X_EDMA3CC;
 
         // Allocate the DMA/QDMA channel
-        if (CHANNEL_TYPE_DMA == ch_type)
+        if (CHANNEL_TYPE_DMA == ch_type || CHANNEL_TYPE_QDMA == ch_type)
         {
              if(ch_num < 32)
-                  cc.DRAE(region_id).reg |= (0x01u << ch_num);
+                 check_and_set_bit(cc.DRAE(region_id).reg, ch_num);
              else
-                  cc.DRAEH(region_id).reg |= (0x01u << (ch_num - 32));
+                 check_and_set_bit(cc.DRAEH(region_id).reg, ch_num - 32u);
         }
-        else
+
         if(CHANNEL_TYPE_QDMA == ch_type)
         {
-            cc.QRAE[region_id].reg |= 0x01u << ch_num;
+            check_and_set_bit(cc.QRAE[region_id].reg, ch_num);
         }
     }
 
@@ -184,17 +201,17 @@ namespace HAL::EDMA
         auto& cc = *AM335X_EDMA3CC;
 
         /* Allocate the DMA/QDMA channel */
-        if (CHANNEL_TYPE_DMA == ch_type)
+        if (CHANNEL_TYPE_DMA == ch_type || CHANNEL_TYPE_QDMA == ch_type)
         {
              if(ch_num < 32)
                   cc.DRAE(region_id).reg &= ~(0x01u << ch_num);
              else
                   cc.DRAEH(region_id).reg &= ~(0x01u << (ch_num - 32));
         }
-        else
+
         if (CHANNEL_TYPE_QDMA == ch_type)
         {
-            cc.QRAE[region_id].reg &= ((~0x01u) << ch_num);
+            cc.QRAE[region_id].reg &= ~(0x01u << ch_num);
         }
     }
 
@@ -256,10 +273,10 @@ namespace HAL::EDMA
         auto& cc = *AM335X_EDMA3CC;
 
         if (CHANNEL_TYPE_DMA == ch_type)
-            cc.DMAQNUM[ch_num >> 3u].reg |=  DMAQNUM_CLR(ch_num);
+            cc.DMAQNUM[ch_num >> 3u].reg &=  DMAQNUM_CLR(ch_num);
         else
         if (CHANNEL_TYPE_QDMA == ch_type)
-            cc.QDMAQNUM.reg |=  QDMAQNUM_CLR(ch_num);
+            cc.QDMAQNUM.reg &=  QDMAQNUM_CLR(ch_num);
     }
 
     /**
