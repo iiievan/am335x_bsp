@@ -7,8 +7,6 @@
 
 namespace HAL::EDMA
 {
-
-
     class QdmaChannel
     {
     private:

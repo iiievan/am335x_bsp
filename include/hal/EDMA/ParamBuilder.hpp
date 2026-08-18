@@ -33,6 +33,12 @@ namespace HAL::EDMA
             return *this;
         }
 
+        constexpr ParamBuilder& setLink(uint16_t link_addr) noexcept
+        {
+            entry.LINK = link_addr;   // адрес следующего PaRAM (обычно param_id * 0x20)
+            return *this;
+        }
+
         constexpr ParamBuilder& setTransferParams(uint16_t acnt, uint16_t bcnt = 1, uint16_t ccnt = 1) noexcept
         {
             entry.ACNT = acnt;
@@ -41,16 +47,29 @@ namespace HAL::EDMA
             return *this;
         }
 
-        constexpr ParamBuilder& enableCompletionInterrupt(uint8_t tcc_channel) noexcept
+        constexpr ParamBuilder& enableCompletionInterrupt(uint8_t tcc_channel, const bool value = true) noexcept
         {
             entry.OPT.b.TCC = tcc_channel;
-            entry.OPT.b.TCINTEN = 1; // Transfer Complete Interrupt Enable
+            entry.OPT.b.TCINTEN = (value) ? 1 : 0;; // Transfer Complete Interrupt Enable
             return *this;
         }
 
-        constexpr ParamBuilder& enableIntermediateCompletionInterrupt() noexcept
+        constexpr ParamBuilder& enableIntermediateCompletionInterrupt(const bool value = true) noexcept
         {
-            entry.OPT.b.ITCINTEN = 1; // Transfer Intermediate Complete Interrupt Enable
+            entry.OPT.b.ITCINTEN = (value) ? 1 : 0;; // Transfer Intermediate Complete Interrupt Enable
+            return *this;
+        }
+
+        constexpr ParamBuilder& enableTransferCompleteChaining(uint8_t tcc,const bool value = true) noexcept
+        {
+            entry.OPT.b.TCC     = tcc;
+            entry.OPT.b.TCCHEN  = (value) ? 1 : 0;;
+            return *this;
+        }
+
+        constexpr ParamBuilder& enableIntermediateTransferCompleteChainingInterrupt(const bool value = true) noexcept
+        {
+            entry.OPT.b.ITCCHEN  = (value) ? 1 : 0;;
             return *this;
         }
 
@@ -64,9 +83,9 @@ namespace HAL::EDMA
             return *this;
         }
 
-        constexpr ParamBuilder& setStatic() noexcept
+        constexpr ParamBuilder& setStatic(const bool value = true) noexcept
         {
-            entry.OPT.b.STATIC = 1;
+            entry.OPT.b.STATIC = (value) ? 1 : 0;
             return *this;
         }
 
