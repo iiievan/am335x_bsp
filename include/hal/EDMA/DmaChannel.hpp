@@ -2,6 +2,8 @@
 #ifndef HAL_DMACHANNEL_HPP
 #define HAL_DMACHANNEL_HPP
 
+#include <initializer_list>
+
 #include "regs/EDMA.hpp"
 #include "hal/EDMA/EDMA.hpp"
 #include "InterruptDispatcher.hpp"
@@ -86,17 +88,22 @@ namespace HAL::EDMA
             return *this;
         }
 
-        bool init() noexcept
+        bool init(Callback_t onComplete = nullptr,
+                  ErrorCallback_t onError = nullptr,
+                  void* context = nullptr) noexcept
         {
             is_allocated = HAL::EDMA::request_channel(REGS::EDMA::CHANNEL_TYPE_DMA,
                                                      ch_num,
                                                      tcc_num,
                                                      queue);
-            if (is_allocated)
-                InterruptDispatcher::registerHandler(tcc_num,
-                                                      m_on_complete,
-                                                      m_on_error,
-                                                      this);
+            if (!is_allocated) return false;
+
+            const auto complete_cb = reinterpret_cast<Callback_t>(onComplete ? onComplete : m_on_complete);
+            const auto error_cb = reinterpret_cast<ErrorCallback_t>(onError ? onError : m_on_error);
+            void* ctx = context ? context : this;
+
+            InterruptDispatcher::registerHandler(tcc_num, complete_cb, error_cb, ctx);
+
             return is_allocated;
         }
 
@@ -118,6 +125,20 @@ namespace HAL::EDMA
             HAL::EDMA::set_paRAM(ch_num, param);
         }
 
+        void configure(std::initializer_list<REGS::EDMA::PaRAMConfig> configs) const noexcept
+        {
+            for (const auto& cfg : configs)
+            {
+                HAL::EDMA::set_paRAM(cfg.param_id, cfg.entry);
+            }
+        }
+
+        template <typename... Configs>
+        void configure(const REGS::EDMA::PaRAMConfig& first, const Configs&... rest) const noexcept
+        {
+            configure({first, rest...});
+        }
+
         void trigger(const TriggerMode mode = TriggerMode::TRIG_MODE_MANUAL) noexcept
         {
             m_transfer_done = false;
@@ -126,7 +147,7 @@ namespace HAL::EDMA
         }
 
         // Blocking wait
-        [[nodiscard]] bool wait_completion(uint32_t timeout_loops = 5'000'000) noexcept
+        [[nodiscard]] bool wait_completion(uint32_t timeout_loops = 5'000'000) const noexcept
         {
             while (!m_transfer_done && --timeout_loops)
             {

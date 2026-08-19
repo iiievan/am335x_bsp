@@ -1,6 +1,8 @@
 #ifndef HAL_QDMACHANNEL_HPP
 #define HAL_QDMACHANNEL_HPP
 
+#include <initializer_list>
+
 #include "regs/EDMA.hpp"
 #include "hal/EDMA/EDMA.hpp"
 #include "InterruptDispatcher.hpp"
@@ -16,10 +18,6 @@ namespace HAL::EDMA
         REGS::EDMA::e_paRAM_entry_field trig_word_field;
         REGS::EDMA::e_EVENT_QUEUE queue;
         bool is_allocated{false};
-
-        volatile bool m_transfer_done{false};
-        volatile bool m_transfer_error{false};
-        ErrorType     m_last_error{};
 
         static void m_on_complete(void* context) noexcept
         {
@@ -40,6 +38,11 @@ namespace HAL::EDMA
         }
 
     public:
+
+        volatile bool m_transfer_done{false};
+        volatile bool m_transfer_error{false};
+        ErrorType     m_last_error{};
+
         explicit QdmaChannel(const uint8_t qdma_channel,
                              const uint8_t tcc,
                              const REGS::EDMA::e_paRAM_entry_field trigger = REGS::EDMA::e_paRAM_entry_field::CCNT,
@@ -92,7 +95,9 @@ namespace HAL::EDMA
             return *this;
         }
 
-        bool init() noexcept
+        bool init(Callback_t onComplete = nullptr,
+                  ErrorCallback_t onError = nullptr,
+                  void* context = nullptr) noexcept
         {
             is_allocated = request_channel(REGS::EDMA::CHANNEL_TYPE_QDMA,
                                                        qch_num,
@@ -103,9 +108,11 @@ namespace HAL::EDMA
             map_QDMA_ch_to_paRAM(qch_num, param_id);
             set_QDMA_trig_word(qch_num, static_cast<uint8_t>(trig_word_field));
 
-            InterruptDispatcher::registerHandler(tcc_num, m_on_complete,
-                                                          m_on_error,
-                                                  this);
+            const auto complete_cb = reinterpret_cast<Callback_t>(onComplete ? onComplete : m_on_complete);
+            const auto error_cb = reinterpret_cast<ErrorCallback_t>(onError ? onError : m_on_error);
+            void* ctx = context ? context : this;
+
+            InterruptDispatcher::registerHandler(tcc_num, complete_cb, error_cb, ctx);
 
             return true;
         }
@@ -128,11 +135,26 @@ namespace HAL::EDMA
 
         void configure(const REGS::EDMA::paRAM_entry_t& param) const noexcept
         {
+            configure({{param_id, param}});
+        }
+
+        void configure(const std::initializer_list<REGS::EDMA::PaRAMConfig> configs) const noexcept
+        {
             disable_QDMA_event(qch_num);
             QDMA_clr_miss_evt(qch_num);
 
-            QDMA_set_paRAM(param_id, param);
+            for (const auto& cfg : configs)
+            {
+                QDMA_set_paRAM(cfg.param_id, cfg.entry);
+            }
+
             enable_QDMA_event(qch_num);
+        }
+
+        template <typename... Configs>
+        void configure(const REGS::EDMA::PaRAMConfig& first, const Configs&... rest) const noexcept
+        {
+            configure({first, rest...});
         }
 
         void trigger() noexcept
@@ -143,8 +165,15 @@ namespace HAL::EDMA
             QDMA_set_paRAM_entry(param_id, static_cast<uint32_t>(trig_word_field), val);
         }
 
+        void reset_flags() noexcept
+        {
+            m_transfer_done = false;
+            m_transfer_error = false;
+            m_last_error = {};
+        }
+
         // Blocking wait
-        [[nodiscard]] bool wait_completion(uint32_t timeout_loops = 5'000'000) noexcept
+        [[nodiscard]] bool wait_completion(uint32_t timeout_loops = 5'000'000) const noexcept
         {
             while (!m_transfer_done && --timeout_loops)
             {

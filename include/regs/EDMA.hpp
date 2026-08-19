@@ -3265,6 +3265,12 @@ namespace REGS::EDMA
         }
     };
 
+    struct PaRAMConfig
+    {
+        uint32_t param_id;
+        paRAM_entry_t entry;
+    };
+
     enum e_paRAM_FIFO_WIDTH : uint32_t
     {
         FIFO_WIDTH_8BIT     = 0x0,
@@ -3388,14 +3394,15 @@ namespace REGS::EDMA
 
     enum class e_paRAM_entry_field : uint8_t
     {
-        OPT             = 0,
-        SRC             = 1,
-        ACNT_BCNT       = 2,
-        DST             = 3,
-        SRC_DST_BIDX    = 4,
-        LINK_BCNTRLD    = 5,
-        SRC_DST_CIDX    = 6,
-        CCNT            = 7
+        OPT              = 0,
+        SRC              = 1,
+        ACNT_BCNT        = 2,
+        DST              = 3,
+        SRC_DST_BIDX     = 4,
+        LINK_BCNTRLD     = 5,
+        SRC_DST_CIDX     = 6,
+        CCNT             = 7,
+        paRAMfieldsMAX   = 8
     };
 
     // Structure to store the EDMA context

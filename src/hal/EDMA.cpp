@@ -639,8 +639,9 @@ namespace HAL::EDMA
 
         auto* dst = reinterpret_cast<volatile uint32_t*>(&AM335X_EDMA3CC->paRAM(paRAM_id));
         const auto* src = reinterpret_cast<const uint32_t*>(new_paRAM);
+        constexpr auto fieldsMAX = static_cast<uint32_t>(REGS::EDMA::e_paRAM_entry_field::paRAMfieldsMAX);
 
-        for (uint32_t i = 0; i < 8; ++i)
+        for (uint32_t i = 0; i < fieldsMAX; ++i)
         {
             dst[i] = src[i];
         }
