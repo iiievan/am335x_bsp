@@ -2,9 +2,15 @@
 #define HAL_PARAMBUILDER_HPP
 
 #include "regs/EDMA.hpp"
+#include <cstdint>
 
 namespace HAL::EDMA
 {
+    /**
+     * @brief Fluent builder for EDMA3 PaRAM entries (AM335x).
+     *
+     * Low-level setters + high-level presets for common transfer patterns.
+     */
     class ParamBuilder
     {
     private:
@@ -14,8 +20,12 @@ namespace HAL::EDMA
         ParamBuilder() noexcept
         {
             entry.OPT.reg = 0;
-            entry.LINK = 0xFFFF; // No link
+            entry.LINK = 0xFFFF; // No link by default
         }
+
+        // -----------------------------------------------------------------
+        // Low-level setters (original API, kept for full control)
+        // -----------------------------------------------------------------
 
         constexpr ParamBuilder& setSource(uintptr_t src_addr, int16_t bidx = 0, int16_t cidx = 0) noexcept
         {
@@ -35,7 +45,7 @@ namespace HAL::EDMA
 
         constexpr ParamBuilder& setLink(uint16_t link_addr) noexcept
         {
-            entry.LINK = link_addr;   // адрес следующего PaRAM (обычно param_id * 0x20)
+            entry.LINK = link_addr;   // address of next PaRAM (usually param_id * 0x20)
             return *this;
         }
 
@@ -50,26 +60,26 @@ namespace HAL::EDMA
         constexpr ParamBuilder& enableCompletionInterrupt(uint8_t tcc_channel, const bool value = true) noexcept
         {
             entry.OPT.b.TCC = tcc_channel;
-            entry.OPT.b.TCINTEN = (value) ? 1 : 0;; // Transfer Complete Interrupt Enable
+            entry.OPT.b.TCINTEN = value ? 1u : 0u;
             return *this;
         }
 
         constexpr ParamBuilder& enableIntermediateCompletionInterrupt(const bool value = true) noexcept
         {
-            entry.OPT.b.ITCINTEN = (value) ? 1 : 0;; // Transfer Intermediate Complete Interrupt Enable
+            entry.OPT.b.ITCINTEN = value ? 1u : 0u;
             return *this;
         }
 
-        constexpr ParamBuilder& enableTransferCompleteChaining(uint8_t tcc,const bool value = true) noexcept
+        constexpr ParamBuilder& enableTransferCompleteChaining(uint8_t tcc, const bool value = true) noexcept
         {
-            entry.OPT.b.TCC     = tcc;
-            entry.OPT.b.TCCHEN  = (value) ? 1 : 0;;
+            entry.OPT.b.TCC    = tcc;
+            entry.OPT.b.TCCHEN = value ? 1u : 0u;
             return *this;
         }
 
-        constexpr ParamBuilder& enableIntermediateTransferCompleteChainingInterrupt(const bool value = true) noexcept
+        constexpr ParamBuilder& enableIntermediateTransferCompleteChaining(const bool value = true) noexcept
         {
-            entry.OPT.b.ITCCHEN  = (value) ? 1 : 0;;
+            entry.OPT.b.ITCCHEN = value ? 1u : 0u;
             return *this;
         }
 
@@ -79,33 +89,285 @@ namespace HAL::EDMA
                 entry.OPT.b.FWID = REGS::EDMA::FIFO_WIDTH_8BIT;
             else
                 entry.OPT.b.FWID = fwid;
-
             return *this;
         }
 
         constexpr ParamBuilder& setStatic(const bool value = true) noexcept
         {
-            entry.OPT.b.STATIC = (value) ? 1 : 0;
+            entry.OPT.b.STATIC = value ? 1u : 0u;
             return *this;
         }
 
         constexpr ParamBuilder& setSrcDstDestinationMode(const bool DAM = false, const bool SAM = false) noexcept
         {
-            entry.OPT.b.DAM = DAM ? 1 : 0;
-            entry.OPT.b.SAM = SAM ? 1 : 0;
+            entry.OPT.b.DAM = DAM ? 1u : 0u;
+            entry.OPT.b.SAM = SAM ? 1u : 0u;
             return *this;
         }
 
         constexpr ParamBuilder& setSyncType(const bool is_ab_sync) noexcept
         {
-            entry.OPT.b.SYNCDIM = is_ab_sync ? 1 : 0; // 0 = A-Sync, 1 = AB-Sync
+            entry.OPT.b.SYNCDIM = is_ab_sync ? 1u : 0u; // 0 = A-Sync, 1 = AB-Sync
             return *this;
         }
 
-        [[nodiscard]] REGS::EDMA::paRAM_entry_t build() const noexcept {
+        // -----------------------------------------------------------------
+        // High-level presets (reduce boilerplate)
+        // -----------------------------------------------------------------
+
+        /**
+         * @brief Classic A-synchronized transfer (1-D).
+         * BIDX is set to @p size so address advances after each A-transfer
+         * when BCNT > 1 (though for pure A-Sync BCNT is usually 1).
+         */
+        constexpr ParamBuilder& setASyncTransfer(uintptr_t src, uintptr_t dst,
+                                                 uint16_t size,
+                                                 bool increment = true) noexcept
+        {
+            const int16_t bidx = increment ? static_cast<int16_t>(size) : 0;
+            return setSource(src, bidx, 0)
+                  .setDest(dst, bidx, 0)
+                  .setTransferParams(size, 1, 1)
+                  .setSyncType(false);
+        }
+
+        /**
+         * @brief AB-synchronized transfer (2-D).
+         * BIDX = ACNT so rows are contiguous.
+         */
+        constexpr ParamBuilder& setABSyncTransfer(uintptr_t src, uintptr_t dst,
+                                                  uint16_t acnt, uint16_t bcnt) noexcept
+        {
+            return setSource(src, static_cast<int16_t>(acnt), 0)
+                  .setDest(dst, static_cast<int16_t>(acnt), 0)
+                  .setTransferParams(acnt, bcnt, 1)
+                  .setSyncType(true);
+        }
+
+        /**
+         * @brief Point LINK to another PaRAM set (param_id * 0x20) and clear STATIC.
+         * Required for linking / chaining / self-link.
+         */
+        constexpr ParamBuilder& linkTo(uint8_t next_param_id) noexcept
+        {
+            return setStatic(false)
+                  .setLink(static_cast<uint16_t>(next_param_id * 0x20));
+        }
+
+        /**
+         * @brief Self-link: reload the same PaRAM after completion.
+         */
+        constexpr ParamBuilder& setSelfLink(uint8_t param_id) noexcept
+        {
+            return linkTo(param_id);
+        }
+
+        /**
+         * @brief Mark as final entry of a chain (STATIC=1, LINK=0xFFFF).
+         */
+        constexpr ParamBuilder& endOfChain() noexcept
+        {
+            return setStatic(true)
+                  .setLink(0xFFFF);
+        }
+
+        [[nodiscard]] REGS::EDMA::paRAM_entry_t build() const noexcept
+        {
             return entry;
         }
     };
-}
 
-#endif //HAL_PARAMBUILDER_HPP
+    // =====================================================================
+    // Factory of ready-to-use PaRAM configurations
+    // =====================================================================
+
+    /**
+     * @brief Static factory for the most common EDMA3 transfer patterns
+     * used in the test suite (A, AB, Chain, Ping-Pong, Self-link).
+     *
+     * All addresses are byte addresses; sizes are in bytes.
+     * TCC is the Transfer Complete Code (usually equal to the channel number).
+     */
+    class PaRAMFactory
+    {
+    public:
+        // -----------------------------------------------------------------
+        // Simple single transfers
+        // -----------------------------------------------------------------
+
+        /**
+         * @brief A-Sync transfer (most common case).
+         * @param is_static  true for one-shot / QDMA, false when linking is needed
+         */
+        static REGS::EDMA::paRAM_entry_t makeASync(const uintptr_t src,
+                                                   const uintptr_t dst,
+                                                   const uint16_t size,
+                                                   const uint8_t tcc,
+                                                   const bool enable_irq = true,
+                                                   const bool is_static  = true,
+                                                   const bool increment  = true)
+        {
+            return ParamBuilder()
+                .setASyncTransfer(src, dst, size, increment)
+                .enableCompletionInterrupt(tcc, enable_irq)
+                .setStatic(is_static)
+                .build();
+        }
+
+        /**
+         * @brief AB-Sync transfer.
+         */
+        static REGS::EDMA::paRAM_entry_t makeABSync(const uintptr_t src,
+                                                    const uintptr_t dst,
+                                                    const uint16_t acnt,
+                                                    const uint16_t bcnt,
+                                                    const uint8_t tcc,
+                                                    const bool enable_irq = true,
+                                                    const bool is_static  = true)
+        {
+            return ParamBuilder()
+                .setABSyncTransfer(src, dst, acnt, bcnt)
+                .enableCompletionInterrupt(tcc, enable_irq)
+                .setStatic(is_static)
+                .build();
+        }
+
+        // -----------------------------------------------------------------
+        // Chain (two PaRAM sets)
+        // -----------------------------------------------------------------
+
+        struct ChainPair
+        {
+            REGS::EDMA::paRAM_entry_t first; // STATIC=0, TCCHEN, LINK → last
+            REGS::EDMA::paRAM_entry_t last;  // STATIC=1, TCINTEN, LINK=0xFFFF
+        };
+
+        /**
+         * @brief Two-element chain that copies [src .. src+2*half) → [dst .. dst+2*half).
+         * First half uses chaining (TCCHEN), second half raises the completion interrupt.
+         */
+        static ChainPair makeChain(const uintptr_t src,
+                                   const uintptr_t dst,
+                                   const uint16_t half_size,
+                                   const uint8_t param0,
+                                   const uint8_t param1,
+                                   const uint8_t tcc)
+        {
+            (void)param0;
+            const auto last = ParamBuilder()
+                .setSource(src + half_size, static_cast<int16_t>(half_size), 0)
+                .setDest  (dst + half_size, static_cast<int16_t>(half_size), 0)
+                .setTransferParams(half_size, 1, 1)
+                .setSyncType(false)                         // <- Async
+                .enableCompletionInterrupt(tcc, true)
+                .endOfChain()
+                .build();
+
+            const auto first = ParamBuilder()
+                .setSource(src, static_cast<int16_t>(half_size), 0)
+                .setDest  (dst, static_cast<int16_t>(half_size), 0)
+                .setTransferParams(half_size, 1, 1)
+                .setSyncType(false)                         // <- Async
+                .enableTransferCompleteChaining(tcc, true) // no interrupt on first
+                .linkTo(param1)
+                .build();
+
+            return {first, last};
+        }
+
+        // -----------------------------------------------------------------
+        // Ping-Pong
+        // -----------------------------------------------------------------
+
+        struct PingPongPair
+        {
+            REGS::EDMA::paRAM_entry_t ping; // LINK → pong
+            REGS::EDMA::paRAM_entry_t pong; // LINK → ping
+        };
+
+        /**
+         * @brief Classic hardware ping-pong.
+         * Both sets raise TCC interrupt and point to each other (STATIC=0).
+         */
+        static PingPongPair makePingPong(const uintptr_t src,
+                                         const uintptr_t dst_a,
+                                         const uintptr_t dst_b,
+                                         const uint16_t half,
+                                         const uint8_t ping_id,
+                                         const uint8_t pong_id,
+                                         const uint8_t tcc)
+        {
+            const auto pong = ParamBuilder()
+                .setSource(src + half, static_cast<int16_t>(half), 0)
+                .setDest  (dst_b,      static_cast<int16_t>(half), 0)
+                .setTransferParams(half, 1, 1)
+                .setSyncType(false)
+                .enableCompletionInterrupt(tcc, true)
+                .linkTo(ping_id)
+                .build();
+
+            const auto ping = ParamBuilder()
+                .setSource(src,   static_cast<int16_t>(half), 0)
+                .setDest  (dst_a, static_cast<int16_t>(half), 0)
+                .setTransferParams(half, 1, 1)
+                .setSyncType(false)
+                .enableCompletionInterrupt(tcc, true)
+                .linkTo(pong_id)
+                .build();
+
+            return {ping, pong};
+        }
+
+        // -----------------------------------------------------------------
+        // Self-link
+        // -----------------------------------------------------------------
+
+        /**
+         * @brief Single PaRAM that reloads itself after every completion.
+         * Useful for continuous / multi-shot transfers driven by manual or event triggers.
+         */
+        static REGS::EDMA::paRAM_entry_t makeSelfLink(const uintptr_t src,
+                                                      const uintptr_t dst,
+                                                      const uint16_t size,
+                                                      const uint8_t param_id,
+                                                      const uint8_t tcc,
+                                                      const bool enable_irq = true)
+        {
+            return ParamBuilder()
+                .setASyncTransfer(src, dst, size)
+                .enableCompletionInterrupt(tcc, enable_irq)
+                .setSelfLink(param_id)
+                .build();
+        }
+
+        // -----------------------------------------------------------------
+        // QDMA helpers (usually STATIC=1)
+        // -----------------------------------------------------------------
+
+        /**
+         * @brief A-Sync ready for QDMA (STATIC forced to true).
+         */
+        static REGS::EDMA::paRAM_entry_t makeQdmaASync(
+            uintptr_t src, uintptr_t dst, uint16_t size,
+            uint8_t tcc,
+            bool enable_irq = true)
+        {
+            return makeASync(src, dst, size, tcc, enable_irq, /*is_static=*/true);
+        }
+
+        /**
+         * @brief AB-Sync ready for QDMA (STATIC forced to true).
+         */
+        static REGS::EDMA::paRAM_entry_t makeQdmaABSync(
+            uintptr_t src, uintptr_t dst,
+            uint16_t acnt, uint16_t bcnt,
+            uint8_t tcc,
+            bool enable_irq = true)
+        {
+            return makeABSync(src, dst, acnt, bcnt, tcc, enable_irq, /*is_static=*/true);
+        }
+    };
+
+} // namespace HAL::EDMA
+
+#endif // HAL_PARAMBUILDER_HPP
