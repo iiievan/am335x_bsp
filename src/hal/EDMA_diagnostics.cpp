@@ -199,7 +199,8 @@ namespace HAL::EDMA
         decodeChannel(s, channel, is_qdma);
         decodeCC(s);
 
-        findChannelByTCC(s, channel);
+        const auto& ch = is_qdma ? s.qdma[channel] : s.dma[channel];
+        findChannelByTCC(s, ch.tcc);
 
         for (uint8_t tc = 0; tc < REGS::EDMA::AM335x_TCS_MAX; ++tc)
         {

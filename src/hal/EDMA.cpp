@@ -380,11 +380,18 @@ namespace HAL::EDMA
      */
     void QDMA_clr_miss_evt(const uint32_t ch_num) noexcept
     {
+        if (ch_num >= AM335X_QDMACH_MAX)
+        {
+            return;
+        }
+
+        const uint32_t mask = 1u << ch_num;
         auto& cc = *AM335X_EDMA3CC;
 
-        // clear SECR and EMCR to clean any previous NULL request
-        cc.S_QSECR(region_id).reg = (0x01u << ch_num);
-        cc.QEMCR.reg |= (0x01u <<  ch_num);
+        cc.S_QSECR(region_id).reg = mask;
+        cc.QEMCR.reg = mask;
+
+        __asm__ volatile("dsb" ::: "memory");
     }
 
     /**
@@ -498,6 +505,34 @@ namespace HAL::EDMA
     void disable_QDMA_event(const uint32_t ch_num) noexcept
     {
          AM335X_EDMA3CC->S_QEECR(region_id).reg = (0x01u << ch_num);
+    }
+
+    bool disable_QDMA_event_and_wait(const uint32_t qch) noexcept
+    {
+        if (qch >= REGS::EDMA::AM335X_QDMACH_MAX)
+        {
+            return false;
+        }
+
+        const uint32_t mask = 1u << qch;
+        auto& cc = *REGS::EDMA::AM335X_EDMA3CC;
+        const auto region = get_region_id();
+
+        cc.S_QEECR(region).reg = mask;
+
+        __asm__ volatile("dsb" ::: "memory");
+
+        uint32_t timeout = 1000;
+
+        while ((cc.S_QEER(region).reg & mask) != 0u)
+        {
+            if (--timeout == 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -617,6 +652,16 @@ namespace HAL::EDMA
     {
         if (src) AM335X_EDMA3CC->paRAM(ch_num) = *src;
     }
+
+    bool is_QDMA_event_enabled(const uint32_t qch) noexcept
+    {
+        if (qch >= AM335X_QDMACH_MAX)
+            return false;
+
+        const uint32_t mask = 1u << qch;
+        return (AM335X_EDMA3CC->S_QEER(get_region_id()).reg & mask) != 0u;
+    }
+
     /**
      * @brief   Copy the user specified PaRAM Set onto the PaRAM Set associated
      *          with the logical channel (QDMA only).
@@ -632,26 +677,32 @@ namespace HAL::EDMA
      * @param   src               Parameter RAM set to be copied onto existing
      *                                 PaRAM.
      */
-    // Перегрузка с передачей указателя и выбором trigger_word (по умолчанию 7 - CCNT)
-    void QDMA_set_paRAM(const uint32_t paRAM_id, const paRAM_entry_t* new_paRAM) noexcept
+    void QDMA_set_paRAM(const uint32_t param_id, const paRAM_entry_t& param, const e_paRAM_entry_field trigger_field) noexcept
     {
-        if (!new_paRAM) return;
+        constexpr uint32_t field_count = static_cast<uint32_t>(e_paRAM_entry_field::paRAMfieldsMAX);
+        static_assert(sizeof(paRAM_entry_t) == field_count * sizeof(uint32_t));
+        const uint32_t trigger = static_cast<uint32_t>(trigger_field);
 
-        auto* dst = reinterpret_cast<volatile uint32_t*>(&AM335X_EDMA3CC->paRAM(paRAM_id));
-        const auto* src = reinterpret_cast<const uint32_t*>(new_paRAM);
-        constexpr auto fieldsMAX = static_cast<uint32_t>(REGS::EDMA::e_paRAM_entry_field::paRAMfieldsMAX);
-
-        for (uint32_t i = 0; i < fieldsMAX; ++i)
+        if (param_id >= AM335x_PARAMSETS_MAX || trigger >= field_count)
         {
-            dst[i] = src[i];
+            return;
         }
 
-        __asm__ volatile("dmb" ::: "memory");
-    }
+        uint32_t words[field_count]{};
+        __builtin_memcpy(words, &param, sizeof(param));
+        auto* const dst = reinterpret_cast<volatile uint32_t*>(&AM335X_EDMA3CC->paRAM(param_id));
 
-    void QDMA_set_paRAM(const uint32_t paRAM_id, const paRAM_entry_t& src) noexcept
-    {
-        QDMA_set_paRAM(paRAM_id, &src);
+        for (uint32_t field = 0; field < field_count; ++field)
+        {
+            if (field != trigger)
+            {
+                dst[field] = words[field];
+            }
+        }
+
+        __asm__ volatile("dsb" ::: "memory");
+        dst[trigger] = words[trigger];
+        __asm__ volatile("dsb" ::: "memory");
     }
 
     /**
@@ -686,7 +737,7 @@ namespace HAL::EDMA
     {
         if (paRAM_entry <= static_cast<uint32_t> (e_paRAM_entry_field::CCNT))  // 0..7
         {
-            auto* dist = reinterpret_cast<uint32_t*>(&AM335X_EDMA3CC->paRAM(paRAM_id));
+            auto* dist = reinterpret_cast<volatile uint32_t*>(&AM335X_EDMA3CC->paRAM(paRAM_id));
             dist[paRAM_entry] = new_paRAM_entry_val;
         }
     }
@@ -725,7 +776,7 @@ namespace HAL::EDMA
     {
         if (paRAM_entry > static_cast<uint32_t> (e_paRAM_entry_field::CCNT)) return 0;
 
-        const auto* src = reinterpret_cast<uint32_t*>(&AM335X_EDMA3CC->paRAM(paRAM_id));
+        const auto* src = reinterpret_cast<const volatile uint32_t*>(&AM335X_EDMA3CC->paRAM(paRAM_id));
         return src[paRAM_entry];
     }
 
@@ -858,24 +909,24 @@ namespace HAL::EDMA
         if (ch_num <  AM335X_DMACH_MAX)
         {
             disable_transfer(ch_num, trig_mode);
-            disable_ch_in_shadow_reg(ch_type, ch_num); // Also disable the DMA channel in the shadow region specific register
+            //disable_ch_in_shadow_reg(ch_type, ch_num); // Also disable the DMA channel in the shadow region specific register
             unmap_ch_to_evtQ(ch_type, ch_num);
 
             if (CHANNEL_TYPE_DMA == ch_type)
             {
                 // Interrupt channel nums are < 32
-                if (tcc_num <  AM335X_DMACH_MAX)
+                if (ch_num <  AM335X_DMACH_MAX)
                 {
-                    disable_evt_intr(ch_num);
+                    disable_evt_intr(tcc_num);
                     result = true;
                 }
             }
             else if (CHANNEL_TYPE_QDMA == ch_type)
             {
                 // Interrupt channel nums are < 8
-                if (tcc_num <  AM335X_QDMACH_MAX)
+                if (ch_num <  AM335X_QDMACH_MAX)
                 {
-                    disable_evt_intr(ch_num);
+                    disable_evt_intr(tcc_num);
                     result = true;
                 }
             }

@@ -15,7 +15,6 @@ namespace HAL::EDMA
         uint8_t qch_num;
         uint8_t tcc_num;
         uint32_t param_id;
-        REGS::EDMA::e_paRAM_entry_field trig_word_field;
         REGS::EDMA::e_EVENT_QUEUE queue;
         bool is_allocated{false};
 
@@ -39,6 +38,9 @@ namespace HAL::EDMA
 
     public:
 
+        REGS::EDMA::e_paRAM_entry_field trig_word_field;
+        uint32_t trigger_word_value;
+
         volatile bool m_transfer_done{false};
         volatile bool m_transfer_error{false};
         ErrorType     m_last_error{};
@@ -48,7 +50,8 @@ namespace HAL::EDMA
                              const REGS::EDMA::e_paRAM_entry_field trigger = REGS::EDMA::e_paRAM_entry_field::CCNT,
                              const REGS::EDMA::e_EVENT_QUEUE q = REGS::EDMA::EVENT_Q0) noexcept
             : qch_num(qdma_channel), tcc_num(tcc), param_id(32 + qdma_channel),
-              trig_word_field(trigger), queue(q) {}
+              queue(q), trig_word_field(trigger), trigger_word_value(0)
+        { }
 
         ~QdmaChannel() noexcept
         {
@@ -61,39 +64,9 @@ namespace HAL::EDMA
 
         QdmaChannel(const QdmaChannel&) = delete;
         QdmaChannel& operator=(const QdmaChannel&) = delete;
+        QdmaChannel(QdmaChannel&&) = delete;
+        QdmaChannel& operator=(QdmaChannel&&) = delete;
 
-        QdmaChannel(QdmaChannel&& other) noexcept
-            : qch_num(other.qch_num), tcc_num(other.tcc_num), param_id(other.param_id),
-              trig_word_field(other.trig_word_field), queue(other.queue), is_allocated(other.is_allocated),
-              m_transfer_done(other.m_transfer_done), m_transfer_error(other.m_transfer_error),
-              m_last_error(other.m_last_error)
-        {
-            other.is_allocated = false;
-        }
-
-        QdmaChannel& operator=(QdmaChannel&& other) noexcept
-        {
-            if (this != &other)
-            {
-                if (is_allocated)
-                {
-                    InterruptDispatcher::unregisterHandler(tcc_num);
-                    free();
-                }
-                qch_num = other.qch_num;
-                tcc_num = other.tcc_num;
-                param_id = other.param_id;
-                trig_word_field = other.trig_word_field;
-                queue = other.queue;
-                is_allocated = other.is_allocated;
-                m_transfer_done = other.m_transfer_done;
-                m_transfer_error = other.m_transfer_error;
-                m_last_error = other.m_last_error;
-
-                other.is_allocated = false;
-            }
-            return *this;
-        }
 
         bool init(Callback_t onComplete = nullptr,
                   ErrorCallback_t onError = nullptr,
@@ -133,36 +106,41 @@ namespace HAL::EDMA
             }
         }
 
-        void configure(const REGS::EDMA::paRAM_entry_t& param) const noexcept
+        bool configure(const REGS::EDMA::paRAM_entry_t& param) noexcept
         {
-            configure({{param_id, param}});
-        }
+            if (!disable_QDMA_event_and_wait(qch_num))
+                return false;
 
-        void configure(const std::initializer_list<REGS::EDMA::PaRAMConfig> configs) const noexcept
-        {
-            disable_QDMA_event(qch_num);
             QDMA_clr_miss_evt(qch_num);
 
-            for (const auto& cfg : configs)
-            {
-                QDMA_set_paRAM(cfg.param_id, cfg.entry);
-            }
+            constexpr uint32_t field_count = static_cast<uint32_t>(REGS::EDMA::e_paRAM_entry_field::paRAMfieldsMAX);
 
+            static_assert(sizeof(REGS::EDMA::paRAM_entry_t) == field_count * sizeof(uint32_t));
+
+            uint32_t words[field_count]{};
+            __builtin_memcpy(words, &param, sizeof(param));
+
+            const uint32_t trigger_index = static_cast<uint32_t>(trig_word_field);
+            trigger_word_value = words[trigger_index];
+
+            QDMA_set_paRAM(param_id, param, trig_word_field);
+
+            __asm__ volatile("dsb" ::: "memory");
             enable_QDMA_event(qch_num);
-        }
+            __asm__ volatile("dsb" ::: "memory");
 
-        template <typename... Configs>
-        void configure(const REGS::EDMA::PaRAMConfig& first, const Configs&... rest) const noexcept
-        {
-            configure({first, rest...});
+            return is_QDMA_event_enabled(qch_num);
         }
 
         void trigger() noexcept
         {
-            m_transfer_done = false;
+            m_transfer_done  = false;
             m_transfer_error = false;
-            const auto val = QDMA_get_paRAM_entry(param_id,static_cast<uint32_t>(trig_word_field));
-            QDMA_set_paRAM_entry(param_id, static_cast<uint32_t>(trig_word_field), val);
+            m_last_error     = {};
+
+            __asm__ volatile("dmb" ::: "memory");
+            QDMA_set_paRAM_entry(param_id,static_cast<uint32_t>(trig_word_field),trigger_word_value);
+            __asm__ volatile("dsb" ::: "memory");
         }
 
         void reset_flags() noexcept
