@@ -158,6 +158,24 @@ namespace HAL::EDMA
         bool is_param_valid{false};
     };
 
+    struct QdmaProgrammingState
+    {
+        uint8_t  qdma_channel{0};
+        uint8_t  trigger_word{0};
+        uint16_t reserved{0};
+
+        uint32_t qchmap{0};
+        uint32_t param_id{0};
+        uint32_t param_words[8]{};
+
+        uint32_t qeer{0};
+        uint32_t qer{0};
+        uint32_t qser{0};
+        uint32_t qemr{0};
+
+        uint32_t queue{0xFFFFFFFFu};
+    };
+
     struct EDMA_DiagnosticSnapshot
     {
         uint32_t region_id{};
@@ -180,10 +198,15 @@ namespace HAL::EDMA
                                           bool is_qdma,
                                           const char *reason) noexcept;
 
+
+
         static void findChannelByTCC(const EDMA_DiagnosticSnapshot& s, uint32_t tcc) noexcept;
         static int32_t findParamByAddress(uint32_t address) noexcept;
 
-        static bool diagnoseChannel(const EDMA_DiagnosticSnapshot& s, uint32_t channel, bool is_qdma, EDMA_Channel_Diagnostic& out_diag) noexcept;
+        [[nodiscard]] static bool diagnoseChannel(const EDMA_DiagnosticSnapshot& s, uint32_t channel, bool is_qdma, EDMA_Channel_Diagnostic& out_diag) noexcept;
+        [[nodiscard]] static bool captureQdmaProgrammingState(uint8_t qdma_channel, QdmaProgrammingState& state) noexcept;
+        static void dumpQdmaProgrammingState(uint8_t qdma_channel, const char* reason) noexcept;
+        static void dumpQdmaProgrammingState(const QdmaProgrammingState& state, const char* reason) noexcept;
 
         static void decodeCC(const EDMA_DiagnosticSnapshot& s) noexcept;
         static void decodeTC(const EDMA_DiagnosticSnapshot& s, uint32_t channel, uint8_t tc_idx = 0, bool is_qdma = false) noexcept;

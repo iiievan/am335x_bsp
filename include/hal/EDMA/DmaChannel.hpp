@@ -7,6 +7,7 @@
 #include "regs/EDMA.hpp"
 #include "hal/EDMA/EDMA.hpp"
 #include "InterruptDispatcher.hpp"
+#include "startup/cp15.h"
 
 namespace HAL::EDMA
 {
@@ -123,6 +124,8 @@ namespace HAL::EDMA
         void configure(const REGS::EDMA::paRAM_entry_t& param) const noexcept
         {
             HAL::EDMA::set_paRAM(ch_num, param);
+
+            cp15_DSB_barrier();
         }
 
         void configure(std::initializer_list<REGS::EDMA::PaRAMConfig> configs) const noexcept
@@ -131,6 +134,8 @@ namespace HAL::EDMA
             {
                 HAL::EDMA::set_paRAM(cfg.param_id, cfg.entry);
             }
+
+            cp15_DSB_barrier();
         }
 
         template <typename... Configs>
@@ -143,7 +148,10 @@ namespace HAL::EDMA
         {
             m_transfer_done = false;
             m_transfer_error = false;
+
+            cp15_DMB_barrier();
             HAL::EDMA::enable_transfer(ch_num, mode);
+            cp15_DSB_barrier();
         }
 
         // Blocking wait

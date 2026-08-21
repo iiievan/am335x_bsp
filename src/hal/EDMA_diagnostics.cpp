@@ -363,6 +363,101 @@ namespace HAL::EDMA
         return true;
     }
 
+    bool EDMA_Diagnostics::captureQdmaProgrammingState(uint8_t qdma_channel, QdmaProgrammingState& state) noexcept
+    {
+        using namespace REGS::EDMA;
+
+        if (qdma_channel >= AM335X_QDMACH_MAX)
+            return false;
+
+        const auto region = get_region_id();
+        auto& cc = *AM335X_EDMA3CC;
+
+        state = {};
+        state.qdma_channel = qdma_channel;
+
+        // Сначала фиксируем mapping: последующие чтения должны относиться
+        // к тому PaRAM, который был отображён в этот момент.
+        state.qchmap = cc.QCHMAP[qdma_channel].reg;
+        state.param_id =(state.qchmap >> 5u) & 0x1FFu;
+
+        state.trigger_word = static_cast<uint8_t>((state.qchmap >> 2u) & 0x7u);
+
+        if (state.param_id >= AM335x_PARAMSETS_MAX)
+            return false;
+
+        const auto* words = reinterpret_cast<const volatile uint32_t*>(&cc.paRAM(state.param_id));
+
+        for (uint32_t i = 0; i < 8; ++i)
+        {
+            state.param_words[i] = words[i];
+        }
+
+        state.qeer = cc.S_QEER(region).reg;
+        state.qer  = cc.S_QER(region).reg;
+        state.qser = cc.S_QSER(region).reg;
+        state.qemr = cc.QEMR.reg;
+
+        state.queue = get_queue_for_QDMA_channel(qdma_channel);
+
+        return true;
+    }
+
+    void EDMA_Diagnostics::dumpQdmaProgrammingState(uint8_t qdma_channel, const char* reason = nullptr) noexcept
+    {
+        QdmaProgrammingState state{};
+
+        if (!captureQdmaProgrammingState(qdma_channel, state))
+        {
+            RTT_LOG_E(TAG, "Cannot capture QDMA channel %u", static_cast<unsigned>(qdma_channel));
+            return;
+        }
+
+        dumpQdmaProgrammingState(state, reason);
+    }
+
+
+    void EDMA_Diagnostics::dumpQdmaProgrammingState(const QdmaProgrammingState& s, const char* reason = nullptr) noexcept
+    {
+        static constexpr const char* field_names[8] =
+        {
+            "OPT",
+            "SRC",
+            "ACNT_BCNT",
+            "DST",
+            "SRC_DST_BIDX",
+            "LINK_BCNTRLD",
+            "SRC_DST_CIDX",
+            "CCNT"
+        };
+
+        const uint32_t mask = 1u << s.qdma_channel;
+
+        RTT_LOG_I(TAG, "=== QDMA%u PROGRAMMING STATE [%s] ===", static_cast<unsigned>(s.qdma_channel), reason ? reason : "snapshot");
+
+        RTT_LOG_I(TAG, "QCHMAP=%08X PaRAM=%u TRWORD=%u(%s) QUEUE=%u", static_cast<unsigned>(s.qchmap),
+                                                                      static_cast<unsigned>(s.param_id),
+                                                                      static_cast<unsigned>(s.trigger_word),
+                                                                      field_names[s.trigger_word],
+                                                                      static_cast<unsigned>(s.queue));
+
+        for (uint32_t i = 0; i < 8; ++i)
+        {
+            RTT_LOG_I(TAG,"PaRAM[%u].%s [%u] = %08X%s", static_cast<unsigned>(s.param_id),
+                                                        field_names[i],
+                                                        static_cast<unsigned>(i),
+                                                        static_cast<unsigned>(s.param_words[i]),
+                                                        i == s.trigger_word ? "  <TRIGGER>" : "");
+        }
+
+        RTT_LOG_I(TAG,"EVENTS QEER=%u QER=%u QSER=%u QEMR=%u", (s.qeer & mask) != 0u,
+                                                               (s.qer  & mask) != 0u,
+                                                               (s.qser & mask) != 0u,
+                                                               (s.qemr & mask) != 0u);
+
+        RTT_LOG_I(TAG, "==================================");
+    }
+
     void EDMA_Diagnostics::clearTCError(const uint32_t tc_idx, const uint32_t mask) noexcept
     {
         using namespace REGS::EDMA;
