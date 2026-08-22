@@ -59,6 +59,7 @@ extern "C" void EDMA_Error_ISR()
     if (ccerr != 0)
     {
         HAL::EDMA::clr_CC_Err(ccerr);
-        HAL::EDMA::CC_Err_evaluate(); // Re-evaluate logic
     }
+
+    HAL::EDMA::CC_Err_evaluate(); // Re-evaluate logic
 }

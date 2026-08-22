@@ -400,9 +400,9 @@ namespace REGS::EDMA
         {
                                 /* Register EMCR */
 
-            uint32_t    En :32; // bits:0..31 (W) Event missed 0 to 31 clear. All error bits must be cleared before additional error
-                                //               interrupts will be asserted by the EDMA3CC. 0h = No effect. 1h = Corresponding missed
-                                //               event bit in the event missed register (EMR) is cleared (En = 0).
+            uint32_t    En :32; // bits:0..31 (W1C) Event missed 0 to 31 clear. All error bits must be cleared before additional error
+                                //                  interrupts will be asserted by the EDMA3CC. 0h = No effect. 1h = Corresponding missed
+                                //                  event bit in the event missed register (EMR) is cleared (En = 0).
         } b;
         uint32_t  reg;
     } EMCR_reg_t;
@@ -421,9 +421,9 @@ namespace REGS::EDMA
         {
                                 /* Register EMCRH */
 
-            uint32_t    En :32; // bits:0..31 (W) Event missed 32 to 63 clear. All error bits must be cleared before additional error
-                                //               interrupts will be asserted by the EDMA3CC. 0h = No effect. 1h = Corresponding missed
-                                //               event bit in the event missed register high (EMRH) is cleared (En = 0).
+            uint32_t    En :32; // bits:0..31 (W1C) Event missed 32 to 63 clear. All error bits must be cleared before additional error
+                                //                  interrupts will be asserted by the EDMA3CC. 0h = No effect. 1h = Corresponding missed
+                                //                  event bit in the event missed register high (EMRH) is cleared (En = 0).
         } b;
         uint32_t  reg;
     } EMCRH_reg_t;
@@ -467,10 +467,10 @@ namespace REGS::EDMA
         {
                                             /* Register QEMCR */
 
-            uint32_t    En : 8;             // bits:0..7  (W) QDMA event missed clear. All error bits must be cleared before additional error
-                                            //               interrupts will be asserted by the EDMA3CC. 0h = No effect. 1h = Corresponding missed
-                                            //               event bit in the QDMA event missed register (QEMR) is cleared (En= 0).
-            uint32_t            :24;        // bits 8..31 (R) Reserved.
+            uint32_t    En : 8;             // bits:0..7  (W1C) QDMA event missed clear. All error bits must be cleared before additional error
+                                            //                  interrupts will be asserted by the EDMA3CC. 0h = No effect. 1h = Corresponding missed
+                                            //                  event bit in the QDMA event missed register (QEMR) is cleared (En= 0).
+            uint32_t            :24;        // bits 8..31   (R) Reserved.
         } b;
         uint32_t  reg;
     } QEMCR_reg_t;
@@ -520,9 +520,9 @@ namespace REGS::EDMA
         /*  Error flags for the Channel Controller Error Register.
          *  Each flag corresponds to a specific error condition.
          */
-        F_QTHRXCD0 = 0x0,  // Queue 0 threshold crossing error flag
-        F_QTHRXCD1 = 0x1,  // Queue 1 threshold crossing error flag
-        F_QTHRXCD2 = 0x2,  // Queue 2 threshold crossing error flag
+        F_QTHRXCD0 = BIT(0),  // Queue 0 threshold crossing error flag
+        F_QTHRXCD1 = BIT(1),  // Queue 1 threshold crossing error flag
+        F_QTHRXCD2 = BIT(2),  // Queue 2 threshold crossing error flag
         F_TCCERR   = BIT(16)  // Transfer completion code error flag
     };
 
@@ -539,16 +539,16 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    QTHRXCD0      :1;         // bit 0        (W) Queue 0 threshold exceeded error clear
-                                                  //                  Writing 1 clears the QTHRXCD0 bit in CCERR.
-            uint32_t    QTHRXCD1      :1;         // bit 1        (W) Queue 1 threshold exceeded error clear
-                                                  //                  Writing 1 clears the QTHRXCD1 bit in CCERR.
-            uint32_t    QTHRXCD2      :1;         // bit 2        (W) Queue 2 threshold exceeded error clear
-                                                  //                  Writing 1 clears the QTHRXCD2 bit in CCERR.
-            uint32_t                  :13;        // bits 3..15   (R) Reserved.
-            uint32_t    TCCERR        :1;         // bit 16       (W) Transfer completion code error clear
-                                                  //                  Writing 1 clears the TCCERR bit in CCERR.
-            uint32_t                  :15;        // bits 17..31  (R) Reserved.
+            uint32_t    QTHRXCD0      :1;         // bit 0        (W1C) Queue 0 threshold exceeded error clear
+                                                  //                    Writing 1 clears the QTHRXCD0 bit in CCERR.
+            uint32_t    QTHRXCD1      :1;         // bit 1        (W1C) Queue 1 threshold exceeded error clear
+                                                  //                    Writing 1 clears the QTHRXCD1 bit in CCERR.
+            uint32_t    QTHRXCD2      :1;         // bit 2        (W1C) Queue 2 threshold exceeded error clear
+                                                  //                    Writing 1 clears the QTHRXCD2 bit in CCERR.
+            uint32_t                  :13;        // bits 3..15   (R)   Reserved.
+            uint32_t    TCCERR        :1;         // bit 16       (W1C) Transfer completion code error clear
+                                                  //                    Writing 1 clears the TCCERR bit in CCERR.
+            uint32_t                  :15;        // bits 17..31  (R)   Reserved.
         } b;
         uint32_t  reg;
     } CCERRCLR_reg_t;
@@ -898,7 +898,7 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    MPFCLR      :1;         // bit 0       (W) Memory protection fault clear
+            uint32_t    MPFCLR      :1;         // bit 0       (W1C) Memory protection fault clear
                                                 //                 Writing 1 clears the protection fault status.
                                                 //                 [0x0 = No action;
                                                 //                  0x1 = Clear fault status in MPFAR and MPFSR]
@@ -1096,11 +1096,11 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :32;         // bit: 0..31        (W) Event clear for event 0 to 31.
-                                             //                       Any of the event bits in ECR is set to clear the event (En) in the
-                                             //                       event register (ER).A write of 0 has no effect.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = EDMA3CC event is cleared in the event register (ER).]
+            uint32_t    En      :32;         // bit: 0..31        (W1C) Event clear for event 0 to 31.
+                                             //                         Any of the event bits in ECR is set to clear the event (En) in the
+                                             //                         event register (ER).A write of 0 has no effect.
+                                             //                         [0x0 = No effect.
+                                             //                          0x1 = EDMA3CC event is cleared in the event register (ER).]
         } b;
         uint32_t  reg;
     } ECR_reg_t;
@@ -1127,12 +1127,12 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :32;         // bit: 0..31        (W) Event clear control
-                                             //                       Event clear for event 32 to 63.
-                                             //                       Any of the event bits in ECRH are set to clear the event (En) in the
-                                             //                       event register high (ERH).A write of 0 has no effect.
-                                             //                       [0x0 = No effect.
-                                             //                       0x1 = EDMA3CC event is cleared in the event register high (ERH).]
+            uint32_t    En      :32;         // bit: 0..31        (W1C) Event clear control
+                                             //                         Event clear for event 32 to 63.
+                                             //                         Any of the event bits in ECRH are set to clear the event (En) in the
+                                             //                         event register high (ERH).A write of 0 has no effect.
+                                             //                         [0x0 = No effect.
+                                             //                         0x1 = EDMA3CC event is cleared in the event register high (ERH).]
         } b;
         uint32_t  reg;
     } ECRH_reg_t;
@@ -1169,10 +1169,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :32;         // bit: 0..31        (RW) Event set for event 0 to 31.
-                                             //                        [0x0 = No effect.
-                                             //                         0x1 = Corresponding DMA event is prioritized versus other pending
-                                             //                             DMA/QDMA events for submission to the EDMA3TC.]
+            uint32_t    En      :32;         // bit: 0..31        (R/W1S) Event set for event 0 to 31.
+                                             //                           [0x0 = No effect.
+                                             //                            0x1 = Corresponding DMA event is prioritized versus other pending
+                                             //                                DMA/QDMA events for submission to the EDMA3TC.]
         } b;
         uint32_t  reg;
     } ESR_reg_t;
@@ -1209,10 +1209,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :32;         // bit: 0..31       (RW) Event set for event 32 to 63.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = Corresponding DMA event is prioritized versus other pending
-                                             //                              DMA/QDMA events for submission to the EDMA3TC.]
+            uint32_t    En      :32;         // bit: 0..31       (R/W1S) Event set for event 32 to 63.
+                                             //                          [0x0 = No effect.
+                                             //                           0x1 = Corresponding DMA event is prioritized versus other pending
+                                             //                                 DMA/QDMA events for submission to the EDMA3TC.]
         } b;
         uint32_t  reg;
     } ESRH_reg_t;
@@ -1378,10 +1378,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :32;         // bit: 0..31        (W) Event enable clear for events 0 to 31.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = Event is disabled. Corresponding bit in the event enable
-                                             //                       register (EER) is cleared (En = 0).]
+            uint32_t    En      :32;         // bit: 0..31        (W1C) Event enable clear for events 0 to 31.
+                                             //                         [0x0 = No effect.
+                                             //                          0x1 = Event is disabled. Corresponding bit in the event enable
+                                             //                         register (EER) is cleared (En = 0).]
         } b;
         uint32_t  reg;
     } EECR_reg_t;
@@ -1405,9 +1405,9 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :32;         // bit: 0..31        (W) Event enable clear for events 32 to 63.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = Event is disabled. Corresponding bit in the event enable
+            uint32_t    En      :32;         // bit: 0..31        (W1C) Event enable clear for events 32 to 63.
+                                             //                         [0x0 = No effect.
+                                             //                          0x1 = Event is disabled. Corresponding bit in the event enable
                                              //                              register high (EERH) is cleared (En = 0).]
         } b;
         uint32_t  reg;
@@ -1432,10 +1432,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :32;         // bit: 0..31        (W) Event enable set for events 0 to 31.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = Event is enabled. Corresponding bit in the event enable register
-                                             //                       (EER) is set (En = 1).]
+            uint32_t    En      :32;         // bit: 0..31        (W1S) Event enable set for events 0 to 31.
+                                             //                         [0x0 = No effect.
+                                             //                          0x1 = Event is enabled. Corresponding bit in the event enable register
+                                             //                         (EER) is set (En = 1).]
         } b;
         uint32_t  reg;
     } EESR_reg_t;
@@ -1459,10 +1459,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :32;         // bit: 0..31       (W) Event enable set for events 32 to 63.
-                                             //                      [0x0 = No effect.
-                                             //                       0x1 = Event is enabled. Corresponding bit in the event enable register
-                                             //                             high (EERH) is set (En= 1).]
+            uint32_t    En      :32;         // bit: 0..31       (W1S) Event enable set for events 32 to 63.
+                                             //                        [0x0 = No effect.
+                                             //                         0x1 = Event is enabled. Corresponding bit in the event enable register
+                                             //                               high (EERH) is set (En= 1).]
         } b;
         uint32_t  reg;
     } EESRH_reg_t;
@@ -1555,9 +1555,9 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :32;         // bit: 0..31        (W) Secondary event clear register.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = Corresponding bit in the secondary event register (SER) is
+            uint32_t    En      :32;         // bit: 0..31        (W1C) Secondary event clear register.
+                                             //                         [0x0 = No effect.
+                                             //                          0x1 = Corresponding bit in the secondary event register (SER) is
                                              //                              cleared (En = 0).]
         } b;
         uint32_t  reg;
@@ -1580,10 +1580,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :32;         // bit: 0..31        (W) Secondary event clear register.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = Corresponding bit in the secondary event registers high (SERH)
-                                             //                              is cleared (En = 0).]
+            uint32_t    En      :32;         // bit: 0..31        (W1C) Secondary event clear register.
+                                             //                         [0x0 = No effect.
+                                             //                          0x1 = Corresponding bit in the secondary event registers high (SERH)
+                                             //                                is cleared (En = 0).]
         } b;
         uint32_t  reg;
     } SECRH_reg_t;
@@ -1644,10 +1644,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    In      :32;         // bit: 0..31        (R) Interrupt enable clear for channels 0 to 31.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = Corresponding bit in the interrupt enable register (IER) is
-                                             //                              cleared (In = 0).]
+            uint32_t    In      :32;         // bit: 0..31        (W1C) Interrupt enable clear for channels 0 to 31.
+                                             //                         [0x0 = No effect.
+                                             //                          0x1 = Corresponding bit in the interrupt enable register (IER) is
+                                             //                                cleared (In = 0).]
         } b;
         uint32_t  reg;
     } IECR_reg_t;
@@ -1664,10 +1664,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    In      :32;         // bit: 0..31        (W) Interrupt enable clear for channels 32 to 63.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = Corresponding bit in the interrupt enable register high (IERH) is
-                                             //                              cleared (In = 0).]
+            uint32_t    In      :32;         // bit: 0..31        (W1C) Interrupt enable clear for channels 32 to 63.
+                                             //                         [0x0 = No effect.
+                                             //                          0x1 = Corresponding bit in the interrupt enable register high (IERH) is
+                                             //                                cleared (In = 0).]
         } b;
         uint32_t  reg;
     } IECRH_reg_t;
@@ -1684,10 +1684,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    In      :32;         // bit: 0..31        (W) Interrupt enable set for channels 0 to 31.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = Corresponding bit in the interrupt enable register (IER)
-                                             //                              is set (In = 1).]
+            uint32_t    In      :32;         // bit: 0..31        (W1S) Interrupt enable set for channels 0 to 31.
+                                             //                         [0x0 = No effect.
+                                             //                          0x1 = Corresponding bit in the interrupt enable register (IER)
+                                             //                                is set (In = 1).]
         } b;
         uint32_t  reg;
     } IESR_reg_t;
@@ -1704,10 +1704,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    In      :32;         // bit: 0..31        (W) Interrupt enable clear for channels 32 to 63.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = Corresponding bit in the interrupt enable register high (IERH) is
-                                             //                              set (In = 1).]
+            uint32_t    In      :32;         // bit: 0..31        (W1S) Interrupt enable clear for channels 32 to 63.
+                                             //                         [0x0 = No effect.
+                                             //                          0x1 = Corresponding bit in the interrupt enable register high (IERH) is
+                                             //                                set (In = 1).]
         } b;
         uint32_t  reg;
     } IESRH_reg_t;
@@ -1781,10 +1781,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    In      :32;         // bit: 0..31        (W) Interrupt clear register for TCC = 0 to 31.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = Corresponding bit in the interrupt pending register (IPR) is
-                                             //                              cleared (In = 0).]
+            uint32_t    In      :32;         // bit: 0..31        (W1C) Interrupt clear register for TCC = 0 to 31.
+                                             //                         [0x0 = No effect.
+                                             //                          0x1 = Corresponding bit in the interrupt pending register (IPR) is
+                                             //                                cleared (In = 0).]
         } b;
         uint32_t  reg;
     } ICR_reg_t;
@@ -1802,10 +1802,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    In      :32;         // bit: 0..31        (W) Interrupt clear register for TCC = 32 to 63.
-                                             //                       [0x0 = No effect.
-                                             //                        0x1 = Corresponding bit in the interrupt pending register high (IPRH)
-                                             //                              is cleared (In = 0).]
+            uint32_t    In      :32;         // bit: 0..31        (W1C) Interrupt clear register for TCC = 32 to 63.
+                                             //                         [0x0 = No effect.
+                                             //                          0x1 = Corresponding bit in the interrupt pending register high (IPRH)
+                                             //                                is cleared (In = 0).]
         } b;
         uint32_t  reg;
     } ICRH_reg_t;
@@ -1917,10 +1917,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :8;         // bit: 0..7     (R) QDMA event enable clear for channels 0 to 7.
-                                            //                   [0x0 = No effect.
-                                            //                    0x1 = QDMA event is disabled. Corresponding bit in the QDMA event
-                                            //                          enable register (QEER) is cleared (En = 0).]
+            uint32_t    En      :8;         // bit: 0..7     (W1C) QDMA event enable clear for channels 0 to 7.
+                                            //                     [0x0 = No effect.
+                                            //                      0x1 = QDMA event is disabled. Corresponding bit in the QDMA event
+                                            //                            enable register (QEER) is cleared (En = 0).]
             uint32_t            :24;        // bit: 8..31    (R) Reserved.
         } b;
         uint32_t  reg;
@@ -1936,7 +1936,7 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :8;         // bit: 0..7     (R) QDMA event enable set for channels 0 to 7.
+            uint32_t    En      :8;         // bit: 0..7     (W1S) QDMA event enable set for channels 0 to 7.
                                             //                   [0x0 = No effect.
                                             //                    0x1 = QDMA event is enabled. Corresponding bit in the QDMA event
                                             //                          enable register (QEER) is set (En = 1).]
@@ -1991,10 +1991,10 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    En      :8;         // bit: 0..7     (W) QDMA secondary event clear register for channels 0 to 7.
-                                            //                   [0x0 = No effect.
-                                            //                    0x1 = Corresponding bit in the QDMA secondary event register
-                                            //                          (QSER) and the QDMA event register (QER) is cleared (En = 0).]
+            uint32_t    En      :8;         // bit: 0..7     (W1C) QDMA secondary event clear register for channels 0 to 7.
+                                            //                     [0x0 = No effect.
+                                            //                      0x1 = Corresponding bit in the QDMA secondary event register
+                                            //                            (QSER) and the QDMA event register (QER) is cleared (En = 0).]
             uint32_t            :24;        // bit: 8..31    (R) Reserved.
         } b;
         uint32_t  reg;
@@ -2228,22 +2228,22 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    BUSERR      :1;     // bit  0      (W) Interrupt clear for the BUSERR bit in the error status register
-                                            //                 (ERRSTAT).
-                                            //                 [0x0 = No effect.
-                                            //                  0x1 = Clears the BUSERR bit in ERRSTAT and clears the error
-                                            //                        details register (ERRDET).]
+            uint32_t    BUSERR      :1;     // bit  0      (W1C) Interrupt clear for the BUSERR bit in the error status register
+                                            //                   (ERRSTAT).
+                                            //                   [0x0 = No effect.
+                                            //                    0x1 = Clears the BUSERR bit in ERRSTAT and clears the error
+                                            //                          details register (ERRDET).]
             uint32_t                :1;     // bit  1      (R) Reserved.
-            uint32_t    TRERR       :1;     // bit  2      (W) Interrupt enable clear for the TRERR bit in the error status register
-                                            //                 (ERRSTAT).
-                                            //                 [0x0 = No effect.
-                                            //                  0x1 = Clears the TRERR bit in ERRSTAT but does not clear the error
-                                            //                        details register (ERRDET).]
-            uint32_t    MMRAERR     :1;     // bit  3      (W) Interrupt enable clear for the MMRAERR bit in the error status
-                                            //                 register (ERRSTAT).
-                                            //                 [0x0 = No effect.
-                                            //                  0x1 = Clears the MMRAERR bit in ERRSTAT but does not clear the
-                                            //                        error details register (ERRDET).]
+            uint32_t    TRERR       :1;     // bit  2      (W1C) Interrupt enable clear for the TRERR bit in the error status register
+                                            //                   (ERRSTAT).
+                                            //                   [0x0 = No effect.
+                                            //                    0x1 = Clears the TRERR bit in ERRSTAT but does not clear the error
+                                            //                          details register (ERRDET).]
+            uint32_t    MMRAERR     :1;     // bit  3      (W1C) Interrupt enable clear for the MMRAERR bit in the error status
+                                            //                   register (ERRSTAT).
+                                            //                   [0x0 = No effect.
+                                            //                    0x1 = Clears the MMRAERR bit in ERRSTAT but does not clear the
+                                            //                          error details register (ERRDET).]
             uint32_t                :28;    // bits 4..31  (R) Reserved
         } b;
         uint32_t  reg;
@@ -2318,9 +2318,9 @@ namespace REGS::EDMA
     {
         struct
         {
-            uint32_t    RDRATE      :3;     // bits 0..2    (W) Read rate.
-                                            //                  Controls the number of cycles between read commands.
-                                            //                  This is a global setting that applies to all TRs for this EDMA3TC. [ see e_READRATE ]
+            uint32_t    RDRATE      :3;     // bits 0..2    (R/W) Read rate.
+                                            //                    Controls the number of cycles between read commands.
+                                            //                    This is a global setting that applies to all TRs for this EDMA3TC. [ see e_READRATE ]
             uint32_t                :29;    // bits 3..31   (R) Reserved
         } b;
         uint32_t  reg;
@@ -3036,41 +3036,41 @@ namespace REGS::EDMA
         [[nodiscard]] DRAEH_reg_t& DRAEH(e_REGION_ID region_id) const noexcept;
 
         // ----------------------> shadow region access <----------------------//
-        [[nodiscard]] ER_reg_t& S_ER(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] ERH_reg_t& S_ERH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] ECR_reg_t& S_ECR(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] ECRH_reg_t& S_ECRH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] ESR_reg_t& S_ESR(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] ESRH_reg_t& S_ESRH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] CER_reg_t& S_CER(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] CERH_reg_t& S_CERH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] EER_reg_t& S_EER(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] EERH_reg_t& S_EERH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] EECR_reg_t& S_EECR(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] EECRH_reg_t& S_EECRH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] EESR_reg_t& S_EESR(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] EESRH_reg_t& S_EESRH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] SER_reg_t& S_SER(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] SERH_reg_t& S_SERH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] SECR_reg_t& S_SECR(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] SECRH_reg_t& S_SECRH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] IER_reg_t& S_IER(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] IERH_reg_t& S_IERH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] IECR_reg_t& S_IECR(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] IECRH_reg_t& S_IECRH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] IESR_reg_t& S_IESR(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] IESRH_reg_t& S_IESRH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] IPR_reg_t& S_IPR(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] IPRH_reg_t& S_IPRH(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] ICR_reg_t& S_ICR(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] ICRH_reg_t& S_ICRH(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] ER_reg_t& S_ER(e_REGION_ID region_id) const noexcept;         // (W)
+        [[nodiscard]] ERH_reg_t& S_ERH(e_REGION_ID region_id) const noexcept;       // (W)
+        [[nodiscard]] ECR_reg_t& S_ECR(e_REGION_ID region_id) const noexcept;       // (W1C)
+        [[nodiscard]] ECRH_reg_t& S_ECRH(e_REGION_ID region_id) const noexcept;     // (W1C)
+        [[nodiscard]] ESR_reg_t& S_ESR(e_REGION_ID region_id) const noexcept;       // (R/W1S)
+        [[nodiscard]] ESRH_reg_t& S_ESRH(e_REGION_ID region_id) const noexcept;     // (R/W1S)
+        [[nodiscard]] CER_reg_t& S_CER(e_REGION_ID region_id) const noexcept;       // (W)
+        [[nodiscard]] CERH_reg_t& S_CERH(e_REGION_ID region_id) const noexcept;     // (W)
+        [[nodiscard]] EER_reg_t& S_EER(e_REGION_ID region_id) const noexcept;       // (W)
+        [[nodiscard]] EERH_reg_t& S_EERH(e_REGION_ID region_id) const noexcept;     // (W)
+        [[nodiscard]] EECR_reg_t& S_EECR(e_REGION_ID region_id) const noexcept;     // (W1C)
+        [[nodiscard]] EECRH_reg_t& S_EECRH(e_REGION_ID region_id) const noexcept;   // (W1C)
+        [[nodiscard]] EESR_reg_t& S_EESR(e_REGION_ID region_id) const noexcept;     // (W1S)
+        [[nodiscard]] EESRH_reg_t& S_EESRH(e_REGION_ID region_id) const noexcept;   // (W1S)
+        [[nodiscard]] SER_reg_t& S_SER(e_REGION_ID region_id) const noexcept;       // (W)
+        [[nodiscard]] SERH_reg_t& S_SERH(e_REGION_ID region_id) const noexcept;     // (W)
+        [[nodiscard]] SECR_reg_t& S_SECR(e_REGION_ID region_id) const noexcept;     // (W1C)
+        [[nodiscard]] SECRH_reg_t& S_SECRH(e_REGION_ID region_id) const noexcept;   // (W1C)
+        [[nodiscard]] IER_reg_t& S_IER(e_REGION_ID region_id) const noexcept;       // (W)
+        [[nodiscard]] IERH_reg_t& S_IERH(e_REGION_ID region_id) const noexcept;     // (W)
+        [[nodiscard]] IECR_reg_t& S_IECR(e_REGION_ID region_id) const noexcept;     // (W1C)
+        [[nodiscard]] IECRH_reg_t& S_IECRH(e_REGION_ID region_id) const noexcept;   // (W1C)
+        [[nodiscard]] IESR_reg_t& S_IESR(e_REGION_ID region_id) const noexcept;     // (W1S)
+        [[nodiscard]] IESRH_reg_t& S_IESRH(e_REGION_ID region_id) const noexcept;   // (W1S)
+        [[nodiscard]] IPR_reg_t& S_IPR(e_REGION_ID region_id) const noexcept;       // (W)
+        [[nodiscard]] IPRH_reg_t& S_IPRH(e_REGION_ID region_id) const noexcept;     // (W)
+        [[nodiscard]] ICR_reg_t& S_ICR(e_REGION_ID region_id) const noexcept;       // (W1C)
+        [[nodiscard]] ICRH_reg_t& S_ICRH(e_REGION_ID region_id) const noexcept;     // (W1C)
         [[nodiscard]] IEVAL_reg_t& S_IEVAL(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] QER_reg_t& S_QER(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] QEER_reg_t& S_QEER(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] QEECR_reg_t& S_QEECR(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] QEESR_reg_t& S_QEESR(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] QSER_reg_t& S_QSER(e_REGION_ID region_id) const noexcept;
-        [[nodiscard]] QSECR_reg_t& S_QSECR(e_REGION_ID region_id) const noexcept;
+        [[nodiscard]] QER_reg_t& S_QER(e_REGION_ID region_id) const noexcept;       // (W)
+        [[nodiscard]] QEER_reg_t& S_QEER(e_REGION_ID region_id) const noexcept;     // (W)
+        [[nodiscard]] QEECR_reg_t& S_QEECR(e_REGION_ID region_id) const noexcept;   // (W1C)
+        [[nodiscard]] QEESR_reg_t& S_QEESR(e_REGION_ID region_id) const noexcept;   // (W1S)
+        [[nodiscard]] QSER_reg_t& S_QSER(e_REGION_ID region_id) const noexcept;     // (W)
+        [[nodiscard]] QSECR_reg_t& S_QSECR(e_REGION_ID region_id) const noexcept;   // (W1C)
 
         [[nodiscard]] __RW DMAQNUM_reg_t& get_DMAQNUM_idx(uint32_t channel) noexcept;
     };

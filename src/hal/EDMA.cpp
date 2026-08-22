@@ -76,11 +76,14 @@ namespace HAL::EDMA
         auto& cc = *AM335X_EDMA3CC;
         uint32_t count = 0;
 
+        constexpr uint32_t QEMCR_VALID_MASK = 0x000000FFu;
+        constexpr uint32_t CCERRCLR_VALID_MASK = (1u << 0u) | (1u << 1u) | (1u << 2u) | (1u << 16u);
+
         // Clear the Event miss Registers
         cc.EMCR.reg     =  SET_ALL_BITS;
         cc.EMCRH.reg    =  SET_ALL_BITS;
-        cc.QEMCR.reg    =  SET_ALL_BITS;
-        cc.CCERRCLR.reg =  SET_ALL_BITS;
+        cc.QEMCR.reg    =  QEMCR_VALID_MASK;
+        cc.CCERRCLR.reg =  CCERRCLR_VALID_MASK;
 
         // FOR TYPE EDMA
         // Enable the DMA (0 - 64) channels in the DRAE and DRAEH register
@@ -89,14 +92,13 @@ namespace HAL::EDMA
 
         if(EDMA_REVID == version_get())
         {
-            for(uint32_t i = 0; i <  AM335X_DMACH_MAX; i++)
+            for(uint32_t i = 0; i < AM335X_DMACH_MAX; i++)
             {
                 cc.DCHMAP[i].reg = i << 5;
             }
         }
 
         // Initialize the DMA Queue Number Registers
-        //for (uint32_t count = 0; count < SOC_EDMA3_NUM_DMACH; count++)
         for (count = 0; count <  AM335X_DMACH_MAX; count++)
         {
             cc.DMAQNUM[count >> 3u].reg &=  DMAQNUM_CLR(count);
@@ -110,7 +112,7 @@ namespace HAL::EDMA
         // Initialize the QDMA Queue Number Registers
         for (count = 0; count <  AM335X_QDMACH_MAX; count++)
         {
-             cc.QDMAQNUM.reg &=  QDMAQNUM_CLR(count);
+            cc.QDMAQNUM.reg &=  QDMAQNUM_CLR(count);
             cc.QDMAQNUM.reg |=  QDMAQNUM_SET(count, que_num);
         }
 
@@ -166,7 +168,7 @@ namespace HAL::EDMA
         // Allocate the DMA/QDMA channel
         if (CHANNEL_TYPE_DMA == ch_type || CHANNEL_TYPE_QDMA == ch_type)
         {
-             if(ch_num < 32)
+             if(ch_num < 32u)
                  check_and_set_bit(cc.DRAE(region_id).reg, ch_num);
              else
                  check_and_set_bit(cc.DRAEH(region_id).reg, ch_num - 32u);
@@ -203,15 +205,15 @@ namespace HAL::EDMA
         /* Allocate the DMA/QDMA channel */
         if (CHANNEL_TYPE_DMA == ch_type || CHANNEL_TYPE_QDMA == ch_type)
         {
-             if(ch_num < 32)
-                  cc.DRAE(region_id).reg &= ~(0x01u << ch_num);
+             if(ch_num < 32u)
+                  cc.DRAE(region_id).reg &= ~(1u << ch_num);
              else
-                  cc.DRAEH(region_id).reg &= ~(0x01u << (ch_num - 32));
+                  cc.DRAEH(region_id).reg &= ~(1u << (ch_num - 32));
         }
 
         if (CHANNEL_TYPE_QDMA == ch_type)
         {
-            cc.QRAE[region_id].reg &= ~(0x01u << ch_num);
+            cc.QRAE[region_id].reg &= ~(1u << ch_num);
         }
     }
 
@@ -341,13 +343,28 @@ namespace HAL::EDMA
      *                             will start the QDMA transfer automatically.
      *
      */
-    void set_QDMA_trig_word(const uint32_t ch_num, const uint8_t trig_word) noexcept
+    bool set_QDMA_trig_word(const uint32_t ch_num, const uint8_t trig_word) noexcept
     {
-        constexpr uint32_t MSK   = 0x0000001Cu;
-        constexpr uint32_t SHIFT = 2u;
+        using namespace REGS::EDMA;
 
-        auto& reg = AM335X_EDMA3CC->QCHMAP[ch_num].reg;
-        reg = (reg & ~MSK) | ((static_cast<uint32_t>(trig_word) << SHIFT) & MSK);
+        if (ch_num >= AM335X_QDMACH_MAX)
+            return false;
+
+        if (trig_word >= static_cast<uint8_t>(e_paRAM_entry_field::paRAMfieldsMAX))
+        {
+            return false;
+        }
+
+        constexpr uint32_t TRWORD_MASK   = 0x0000001Cu;
+        constexpr uint32_t TRWORD_SHIFT = 2u;
+
+        auto& qchmap = AM335X_EDMA3CC->QCHMAP[ch_num].reg;
+        qchmap = (qchmap & ~TRWORD_MASK) | ((static_cast<uint32_t>(trig_word) << TRWORD_SHIFT) & TRWORD_MASK);
+
+        const uint32_t expected = static_cast<uint32_t>(trig_word) & 0x7u;
+        const uint32_t actual = (AM335X_EDMA3CC->QCHMAP[ch_num].reg >> 2u) & 0x7u;
+
+        return actual == expected;
     }
 
     /**
@@ -358,17 +375,22 @@ namespace HAL::EDMA
      */
     void clr_miss_evt(const uint32_t ch_num) noexcept
     {
+        if (ch_num >= AM335X_DMACH_MAX)
+            return;
+
         auto& cc = *AM335X_EDMA3CC;
 
-        if(ch_num < 32)
+        if(ch_num < 32u)
         {
-             cc.S_SECR(region_id).reg = (0x01u << ch_num);    // clear SECR to clean any previous NULL request
-             cc.EMCR.reg |= (0x01u <<  ch_num);               // clear EMCR to clean any previous NULL request
+             const uint32_t mask = 1u << ch_num;
+             cc.S_SECR(region_id).reg = mask;
+             cc.EMCR.reg = mask;
         }
         else
         {
-             cc.S_SECRH(region_id).reg = (0x01u << (ch_num - 32));
-             cc.EMCRH.reg |= (0x01u <<  (ch_num - 32));               // clear EMCRH to clean any previous NULL request
+             const uint32_t mask = 1u << (ch_num - 32u);
+             cc.S_SECRH(region_id).reg = mask;
+             cc.EMCRH.reg = mask;
         }
     }
 
@@ -408,8 +430,6 @@ namespace HAL::EDMA
     void clr_CC_Err(const uint32_t flags) noexcept
     {
         auto& cc = *AM335X_EDMA3CC;
-
-        // (CCERRCLR) - clear channel controller error register
         cc.CCERRCLR.reg = flags;
     }
 
@@ -423,11 +443,14 @@ namespace HAL::EDMA
      */
     void set_event(const uint32_t ch_num) noexcept
     {
+        if (ch_num >= AM335X_DMACH_MAX)
+            return;
+
         const auto& cc = *AM335X_EDMA3CC;
-        if(ch_num < 32)
-              cc.S_ESR(region_id).reg |= (0x01u <<  ch_num);
+        if(ch_num < 32u)
+              cc.S_ESR(region_id).reg = (1u <<  ch_num);
         else
-              cc.S_ESRH(region_id).reg |= (0x01u << (ch_num - 32));
+              cc.S_ESRH(region_id).reg = (1u << (ch_num - 32u));
     }
 
     /**
@@ -439,11 +462,14 @@ namespace HAL::EDMA
      */
     void clr_event(const uint32_t ch_num) noexcept
     {
+        if (ch_num >= AM335X_DMACH_MAX)
+            return;
+
         const auto& cc = *AM335X_EDMA3CC;
-        if(ch_num < 32)
-              cc.S_ECR(region_id).reg |= (0x01u <<  ch_num);
+        if(ch_num < 32u)
+              cc.S_ECR(region_id).reg = (1u <<  ch_num);
         else
-              cc.S_ECRH(region_id).reg |= (0x01u << (ch_num - 32));
+              cc.S_ECRH(region_id).reg = (1u << (ch_num - 32u));
     }
 
     /**
@@ -456,11 +482,14 @@ namespace HAL::EDMA
      */
     void enable_DMA_event(const uint32_t ch_num) noexcept
     {
+        if (ch_num >= AM335X_DMACH_MAX)
+            return;
+
         const auto& cc = *AM335X_EDMA3CC;
-        if(ch_num < 32)
-             cc.S_EESR(region_id).reg |= (0x01u <<  ch_num);
+        if(ch_num < 32u)
+             cc.S_EESR(region_id).reg = (1u <<  ch_num);
         else
-             cc.S_EESRH(region_id).reg |= (0x01u << (ch_num - 32));
+             cc.S_EESRH(region_id).reg = (1u << (ch_num - 32u));
     }
 
     /**
@@ -474,11 +503,14 @@ namespace HAL::EDMA
      */
     void disable_DMA_event(const uint32_t ch_num) noexcept
     {
+        if (ch_num >= AM335X_DMACH_MAX)
+            return;
+
         const auto& cc = *AM335X_EDMA3CC;
-        if(ch_num < 32)
-             cc.S_EECR(region_id).reg |= (0x01u <<  ch_num);
+        if(ch_num < 32u)
+             cc.S_EECR(region_id).reg = (1u <<  ch_num);
         else
-             cc.S_EECRH(region_id).reg |= (0x01u <<  ch_num);
+             cc.S_EECRH(region_id).reg = (1u << (ch_num - 32u));;
     }
 
     /**
@@ -491,7 +523,7 @@ namespace HAL::EDMA
      */
     void enable_QDMA_event(const uint32_t ch_num) noexcept
     {
-         AM335X_EDMA3CC->S_QEESR(region_id).reg = (0x01u << ch_num);
+         AM335X_EDMA3CC->S_QEESR(region_id).reg = (1u << ch_num);
     }
 
     /**
@@ -504,7 +536,7 @@ namespace HAL::EDMA
      */
     void disable_QDMA_event(const uint32_t ch_num) noexcept
     {
-         AM335X_EDMA3CC->S_QEECR(region_id).reg = (0x01u << ch_num);
+         AM335X_EDMA3CC->S_QEECR(region_id).reg = (1u << ch_num);
     }
 
     bool disable_QDMA_event_and_wait(const uint32_t qch) noexcept
@@ -551,52 +583,61 @@ namespace HAL::EDMA
      *  @brief   Enables the user to enable the transfer completion interrupt
      *           generation by the EDMA3CC for all DMA/QDMA channels.
      *
-     *  @param   ch_num                  Allocated channel number.
+     *  @param   tcc                  Allocated tcc number.
      *
      *  Note :   To set any interrupt bit in IER, a 1 must be written to the
      *           corresponding interrupt bit in the interrupt enable set register.
      */
-    void enable_evt_intr(const uint32_t ch_num) noexcept
+    void enable_evt_intr(const uint32_t tcc) noexcept
     {
+        if (tcc >= AM335X_DMACH_MAX)
+            return;
+
         const auto& cc = *AM335X_EDMA3CC;
-        if(ch_num < 32)
-            cc.S_IESR(region_id).reg |= (0x01u <<  ch_num);
+        if(tcc < 32u)
+            cc.S_IESR(region_id).reg = (1u <<  tcc);
         else
-            cc.S_IESRH(region_id).reg |= (0x01u << (ch_num - 32));
+            cc.S_IESRH(region_id).reg = (1u << (tcc - 32u));
     }
 
     /**
      *  @brief   Enables the user to clear CC interrupts
      *
-     *  @param   ch_num                  Allocated channel number.
+     *  @param   tcc                  Allocated tcc number.
      *
      *  Note :   Writes of 1 to the bits in IECR clear the corresponding interrupt
      *           bits in the interrupt enable registers (IER); writes of 0 have
      *           no effect.
      */
-    void disable_evt_intr(const uint32_t ch_num) noexcept
+    void disable_evt_intr(const uint32_t tcc) noexcept
     {
+        if (tcc >= AM335X_DMACH_MAX)
+            return;
+
         const auto& cc = *AM335X_EDMA3CC;
-        if(ch_num < 32)
-             cc.S_IECR(region_id).reg |= (0x01u <<  ch_num);
+        if(tcc < 32u)
+             cc.S_IECR(region_id).reg = (1u <<  tcc);
         else
-             cc.S_IECRH(region_id).reg |= (0x01u << (ch_num - 32));
+             cc.S_IECRH(region_id).reg = (1u << (tcc - 32u));
     }
 
     /**
      *  @brief   Enables the user to Clear an Interrupt.
      *
-     *  @param   value                  Value to be set to clear the Interrupt Status.
+     *  @param   tcc - Value to be set to clear the Interrupt Status.
      *
      */
-    void clr_intr(const uint32_t value) noexcept
+    void clr_intr(const uint32_t tcc) noexcept
     {
+        if (tcc >= AM335X_DMACH_MAX)
+            return;
+
         const auto& cc = *AM335X_EDMA3CC;
 
-        if(value < 32)
-            cc.S_ICR(region_id).reg = (1u << value);
+        if(tcc < 32u)
+            cc.S_ICR(region_id).reg = (1u << tcc);
         else
-            cc.S_ICRH(region_id).reg = (1u << (value - 32));
+            cc.S_ICRH(region_id).reg = (1u << (tcc - 32u));
     }
 
     /**
@@ -671,17 +712,16 @@ namespace HAL::EDMA
      * first and the CCNT field is written last.
      *
      *
-     * @param   ch_num                 Logical Channel whose PaRAM set is
-     *                                 requested.
+     * @param   param_id       Logical Channel whose PaRAM set is requested.
      *
-     * @param   src               Parameter RAM set to be copied onto existing
-     *                                 PaRAM.
+     * @param   param          Parameter RAM set to be copied onto existing PaRAM.
+     * @param   trigger_field  - trigger field num 0..7
      */
     void QDMA_set_paRAM(const uint32_t param_id, const paRAM_entry_t& param, const e_paRAM_entry_field trigger_field) noexcept
     {
-        constexpr uint32_t field_count = static_cast<uint32_t>(e_paRAM_entry_field::paRAMfieldsMAX);
+        constexpr auto field_count = static_cast<uint32_t>(e_paRAM_entry_field::paRAMfieldsMAX);
         static_assert(sizeof(paRAM_entry_t) == field_count * sizeof(uint32_t));
-        const uint32_t trigger = static_cast<uint32_t>(trigger_field);
+        const auto trigger = static_cast<uint32_t>(trigger_field);
 
         if (param_id >= AM335x_PARAMSETS_MAX || trigger >= field_count)
         {
@@ -830,7 +870,6 @@ namespace HAL::EDMA
 
         #define OPT_TCC_SET(tcc) (((OPT_TCC_MSK >> OPT_TCC_SHIFT) & (tcc)) << OPT_TCC_SHIFT)
 
-        // TCC валиден в диапазоне всех каналов EDMA (0..63)
         if (tcc_num >= AM335X_DMACH_MAX)
         {
             return false;
@@ -842,9 +881,9 @@ namespace HAL::EDMA
             map_ch_to_evtQ(ch_type, ch_num, evt_Qnum);
 
             enable_evt_intr(tcc_num); // Включаем прерывание по TCC!
-
-            AM335X_EDMA3CC->OPT(ch_num) &= (~OPT_TCC_MSK);
-            AM335X_EDMA3CC->OPT(ch_num) |= OPT_TCC_SET(tcc_num);
+            auto& opt = AM335X_EDMA3CC->OPT(ch_num);
+            const uint32_t new_opt = (opt & ~OPT_TCC_MSK) | OPT_TCC_SET(tcc_num);
+            opt = new_opt;
             result = true;
         }
         else if (CHANNEL_TYPE_QDMA == ch_type && ch_num < AM335X_QDMACH_MAX)
@@ -854,9 +893,10 @@ namespace HAL::EDMA
 
             enable_evt_intr(tcc_num); // Включаем прерывание по TCC!
 
-            const uint32_t qdma_param_id = 32 + ch_num; // PaRAM 32..39 для QDMA
-            AM335X_EDMA3CC->OPT(qdma_param_id) &= (~OPT_TCC_MSK);
-            AM335X_EDMA3CC->OPT(qdma_param_id) |= OPT_TCC_SET(tcc_num);
+            const uint32_t param_id = 32u + ch_num; // PaRAM 32..39 для QDMA
+            auto& opt = AM335X_EDMA3CC->OPT(param_id);
+            const uint32_t new_opt = (opt & ~OPT_TCC_MSK) | OPT_TCC_SET(tcc_num);
+            opt = new_opt;
             result = true;
         }
 
@@ -909,21 +949,19 @@ namespace HAL::EDMA
         if (ch_num <  AM335X_DMACH_MAX)
         {
             disable_transfer(ch_num, trig_mode);
-            //disable_ch_in_shadow_reg(ch_type, ch_num); // Also disable the DMA channel in the shadow region specific register
+
+            // this is StarterWare specific bug, don't uncomment it!
+            /* disable_ch_in_shadow_reg(ch_type, ch_num); */
+
             unmap_ch_to_evtQ(ch_type, ch_num);
 
             if (CHANNEL_TYPE_DMA == ch_type)
             {
-                // Interrupt channel nums are < 32
-                if (ch_num <  AM335X_DMACH_MAX)
-                {
-                    disable_evt_intr(tcc_num);
-                    result = true;
-                }
+                disable_evt_intr(tcc_num);
+                result = true;
             }
             else if (CHANNEL_TYPE_QDMA == ch_type)
             {
-                // Interrupt channel nums are < 8
                 if (ch_num <  AM335X_QDMACH_MAX)
                 {
                     disable_evt_intr(tcc_num);
@@ -1103,44 +1141,47 @@ namespace HAL::EDMA
      */
     void clear_error_bits(const uint32_t ch_num, const e_EVENT_QUEUE evt_Qnum) noexcept
     {
+        if (ch_num >= AM335X_DMACH_MAX)
+            return;
+
         auto& cc = *AM335X_EDMA3CC;
-        constexpr uint32_t CCERRCLR_TCCERR    = 0x00010000u;
-        constexpr uint32_t CCERRCLR_QTHRXCD2  = 0x00000004u;
-        constexpr uint32_t CCERRCLR_QTHRXCD1  = 0x00000002u;
-        constexpr uint32_t CCERRCLR_QTHRXCD0  = 0x00000001u;
 
-        if(ch_num <  AM335X_DMACH_MAX)
+        if(ch_num < 32u)
         {
-             if(ch_num < 32)
-             {
-                  cc.S_EECR(region_id).reg = (0x01u << ch_num);
-                  cc.EMCR.reg = (0x01u << ch_num);                  // Write to EMCR to clear the corresponding EMR bit
-                  cc.S_SECR(region_id).reg = (0x01u << ch_num);     // Clears the SER
-
-             }
-             else
-             {
-                  cc.S_EECRH(region_id).reg = (0x01u << (ch_num - 32));
-                  cc.EMCRH.reg = (0x01u << (ch_num - 32));                // Write to EMCRH to clear the corresponding EMR bi
-                  cc.S_SECRH(region_id).reg = (0x01u << (ch_num - 32));   // Clears the SER
-             }
+             const uint32_t mask = 1u << ch_num;
+             cc.S_EECR(region_id).reg = mask;
+             cc.EMCR.reg = mask;
+             cc.S_SECR(region_id).reg = mask;
         }
+        else
+        {
+             const uint32_t mask = 1u << (ch_num - 32u);
+             cc.S_EECRH(region_id).reg = mask;
+             cc.EMCRH.reg = mask;
+             cc.S_SECRH(region_id).reg = mask;
+        }
+
+        constexpr uint32_t CCERRCLR_TCCERR   = 1u << 16u;
+        constexpr uint32_t CCERRCLR_QTHRXCD0 = 1u << 0u;
+        constexpr uint32_t CCERRCLR_QTHRXCD1 = 1u << 1u;
+        constexpr uint32_t CCERRCLR_QTHRXCD2 = 1u << 2u;
+        uint32_t ccerr_mask = CCERRCLR_TCCERR;
 
         switch(evt_Qnum)
         {
             case  EVENT_Q0:
-              cc.CCERRCLR.reg &= (CCERRCLR_QTHRXCD0 |CCERRCLR_TCCERR);
-              break;
+                ccerr_mask &= CCERRCLR_QTHRXCD0;
+                break;
             case  EVENT_Q1:
-              cc.CCERRCLR.reg &= (CCERRCLR_QTHRXCD1 |CCERRCLR_TCCERR);
-              break;
+                ccerr_mask &= CCERRCLR_QTHRXCD1;
+                break;
             case  EVENT_Q2:
-              cc.CCERRCLR.reg &= (CCERRCLR_QTHRXCD2|CCERRCLR_TCCERR);
-              break;
+                ccerr_mask &= CCERRCLR_QTHRXCD2;
+                break;
             default:
-                cc.CCERRCLR.reg &= (CCERRCLR_QTHRXCD2|CCERRCLR_TCCERR);
-              break;
+                break;
         }
+        cc.CCERRCLR.reg = ccerr_mask;
     }
 
     /**
@@ -1196,12 +1237,7 @@ namespace HAL::EDMA
      *           error conditions.
      *
      */
-    void CC_Err_evaluate() noexcept
-    {
-        constexpr uint32_t EEVAL_EVAL        = 0x00000001u;
-        constexpr uint32_t EEVAL_EVAL_SHIFT  = 0x00000000u;
-        AM335X_EDMA3CC->EEVAL.reg = EEVAL_EVAL << EEVAL_EVAL_SHIFT;
-    }
+    void CC_Err_evaluate() noexcept { AM335X_EDMA3CC->EEVAL.b.EVAL = 1; }
 
     /**
      *  @brief   EDMA3 Deinitialization
@@ -1224,18 +1260,17 @@ namespace HAL::EDMA
         uint32_t count = 0;
         constexpr uint32_t CCERRCLR_TCCERR = 0x00010000u;
 
-
         // Disable the DMA (0 - 62) channels in the DRAE register
         cc.DRAE(region_id).reg =  CLR_ALL_BITS;
         cc.DRAEH(region_id).reg =  CLR_ALL_BITS;
 
         clr_CC_Err(CCERRCLR_TCCERR);
-
+        constexpr uint32_t CCERRCLR_VALID_MASK = (1u << 0u) | (1u << 1u) | (1u << 2u) | (1u << 16u);
         // Clear the Event miss Registers
         cc.EMCR.reg =  SET_ALL_BITS;
         cc.EMCRH.reg =  SET_ALL_BITS;
         // Clear CCERR register
-        cc.CCERRCLR.reg =  SET_ALL_BITS;
+        cc.CCERRCLR.reg =  CCERRCLR_VALID_MASK;
 
         // Deinitialize the Queue Number Registers
         for (count = 0;count <  AM335X_DMACH_MAX; count++)
@@ -1315,6 +1350,7 @@ namespace HAL::EDMA
 
         uint32_t i;
         uint32_t max_par = 128;
+        const e_REGION_ID region = get_region_id();
 
         // Get the Channel mapping reg Val
         for(i = 0; i <  AM335X_DMACH_MAX; i++)
@@ -1329,20 +1365,20 @@ namespace HAL::EDMA
         }
 
         // Get the DMA Region Access Enable Register val
-        p_edma_cntx->reg_acc_enable_low =  cc.DRAE(static_cast<e_REGION_ID>(0)).reg;
-        p_edma_cntx->reg_acc_enable_high =  cc.DRAEH(static_cast<e_REGION_ID>(0)).reg;
+        p_edma_cntx->reg_acc_enable_low =  cc.DRAE(region).reg;
+        p_edma_cntx->reg_acc_enable_high =  cc.DRAEH(region).reg;
 
         // Get Event Set Register value
-        p_edma_cntx->event_set_reg_low  =  cc.S_ESR(static_cast<e_REGION_ID>(0)).reg;
-        p_edma_cntx->event_set_reg_high =  cc.S_ESRH(static_cast<e_REGION_ID>(0)).reg;
+        p_edma_cntx->event_set_reg_low  = cc.S_ER(region).reg;
+        p_edma_cntx->event_set_reg_high = cc.S_ERH(region).reg;
 
         // Get Event Enable Set Register value
-        p_edma_cntx->enable_evt_set_reg_low =   cc.S_EER(static_cast<e_REGION_ID>(0)).reg;
-        p_edma_cntx->enable_evt_set_reg_high =  cc.S_EERH(static_cast<e_REGION_ID>(0)).reg;
+        p_edma_cntx->enable_evt_set_reg_low =   cc.S_EER(region).reg;
+        p_edma_cntx->enable_evt_set_reg_high =  cc.S_EERH(region).reg;
 
         // Get Interrupt Enable Set Register value
-        p_edma_cntx->int_enable_set_reg_low  =   cc.S_IER(static_cast<e_REGION_ID>(0)).reg;
-        p_edma_cntx->int_enable_set_reg_high =   cc.S_IERH(static_cast<e_REGION_ID>(0)).reg;
+        p_edma_cntx->int_enable_set_reg_low  =   cc.S_IER(region).reg;
+        p_edma_cntx->int_enable_set_reg_high =   cc.S_IERH(region).reg;
 
         if(EDMA_REVID == version_get())
         {
@@ -1384,19 +1420,25 @@ namespace HAL::EDMA
          cc.DRAE(region_id).reg = p_edma_cntx->reg_acc_enable_low;
          cc.DRAEH(region_id).reg = p_edma_cntx->reg_acc_enable_high;
 
-        // set Event Set Register value
+         // set Event Set Register value
+         cc.S_ECR(region_id).reg  = SET_ALL_BITS;
+         cc.S_ECRH(region_id).reg = SET_ALL_BITS;
          cc.S_ESR(region_id).reg = p_edma_cntx->event_set_reg_low;
          cc.S_ESRH(region_id).reg = p_edma_cntx->event_set_reg_high;
 
         // set Event Enable Set Register value
-         cc.S_EER(region_id).reg = p_edma_cntx->enable_evt_set_reg_low;
-         cc.S_EERH(region_id).reg = p_edma_cntx->enable_evt_set_reg_high;
+        cc.S_EECR(region_id).reg  = SET_ALL_BITS;
+        cc.S_EECRH(region_id).reg = SET_ALL_BITS;
+        cc.S_EESR(region_id).reg = p_edma_cntx->enable_evt_set_reg_low;
+        cc.S_EESRH(region_id).reg = p_edma_cntx->enable_evt_set_reg_high;
 
         // set Interrupt Enable Set Register value
-         cc.S_IER(region_id).reg = p_edma_cntx->int_enable_set_reg_low;
-         cc.S_IERH(region_id).reg = p_edma_cntx->int_enable_set_reg_high;
+        cc.S_IECR(region_id).reg  = SET_ALL_BITS;
+        cc.S_IECRH(region_id).reg = SET_ALL_BITS;
+        cc.S_IESR(region_id).reg = p_edma_cntx->int_enable_set_reg_low;
+        cc.S_IESRH(region_id).reg = p_edma_cntx->int_enable_set_reg_high;
 
-        if( EDMA_REVID == version_get())
+        if(EDMA_REVID == version_get())
         {
             max_par = 256;
         }

@@ -128,7 +128,7 @@ namespace HAL::EDMA
             cp15_DSB_barrier();
         }
 
-        void configure(std::initializer_list<REGS::EDMA::PaRAMConfig> configs) const noexcept
+        void configure(const std::initializer_list<REGS::EDMA::PaRAMConfig> configs) const noexcept
         {
             for (const auto& cfg : configs)
             {
