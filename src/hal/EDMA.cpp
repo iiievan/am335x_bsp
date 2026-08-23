@@ -1,6 +1,7 @@
 #include "../../include/hal/EDMA/EDMA.hpp"
 #include "hal/EDMA/InterruptDispatcher.hpp"
 #include "hal/INTC.hpp"
+#include "startup/cp15.h"
 
 namespace HAL::EDMA
 {
@@ -943,34 +944,35 @@ namespace HAL::EDMA
      */
     bool  free_channel(const e_EDMA3_CH_TYPE ch_type, const uint32_t ch_num, const uint32_t trig_mode, const uint32_t tcc_num, const e_EVENT_QUEUE evt_Qnum) noexcept
     {
-        bool result = false;
         (void)evt_Qnum;
 
-        if (ch_num <  AM335X_DMACH_MAX)
+        if (tcc_num >= AM335X_DMACH_MAX)
+            return false;
+
+        if (ch_type == CHANNEL_TYPE_DMA)
         {
-            disable_transfer(ch_num, trig_mode);
-
-            // this is StarterWare specific bug, don't uncomment it!
-            /* disable_ch_in_shadow_reg(ch_type, ch_num); */
-
-            unmap_ch_to_evtQ(ch_type, ch_num);
-
-            if (CHANNEL_TYPE_DMA == ch_type)
-            {
-                disable_evt_intr(tcc_num);
-                result = true;
-            }
-            else if (CHANNEL_TYPE_QDMA == ch_type)
-            {
-                if (ch_num <  AM335X_QDMACH_MAX)
-                {
-                    disable_evt_intr(tcc_num);
-                    result = true;
-                }
-            }
+            if (ch_num >= AM335X_DMACH_MAX)
+                return false;
+        }
+        else if (ch_type == CHANNEL_TYPE_QDMA)
+        {
+            if (ch_num >= AM335X_QDMACH_MAX)
+                return false;
+        }
+        else
+        {
+            return false;
         }
 
-        return result;
+        disable_transfer(ch_num, trig_mode);
+        unmap_ch_to_evtQ(ch_type, ch_num);
+
+        disable_evt_intr(tcc_num);
+        clr_intr(tcc_num);
+
+        cp15_DSB_barrier();
+
+        return true;
     }
 
     /**
@@ -1216,6 +1218,22 @@ namespace HAL::EDMA
     }
 
     /**
+    *  @brief   This returns error interrupt status for those events whose
+    *           event number is greater than 32.
+    *
+    *  @return  value                  Status of the Interrupt Pending Register
+    *
+    */
+    uint32_t get_Err_intr_high_status() noexcept
+    {
+        uint32_t intr_sts_val = 0;
+
+        intr_sts_val = AM335X_EDMA3CC->EMRH.reg;
+
+        return intr_sts_val;
+    }
+
+    /**
      *  @brief   This returns QDMA error interrupt status.
      *
      *  @return  value              Status of the QDMA Interrupt Pending Register
@@ -1304,22 +1322,6 @@ namespace HAL::EDMA
         uint32_t intr_sts_val = 0;
 
         intr_sts_val = AM335X_EDMA3CC->S_IPRH(region_id).reg;
-
-        return intr_sts_val;
-    }
-
-    /**
-     *  @brief   This returns error interrupt status for those events whose
-     *           event number is greater than 32.
-     *
-     *  @return  value                  Status of the Interrupt Pending Register
-     *
-     */
-    uint32_t Err_intr_high_status_get() noexcept
-    {
-        uint32_t intr_sts_val = 0;
-
-        intr_sts_val = AM335X_EDMA3CC->EMRH.reg;
 
         return intr_sts_val;
     }

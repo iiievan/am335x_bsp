@@ -19,8 +19,19 @@ namespace HAL::EDMA
     public:
         ParamBuilder() noexcept
         {
-            entry.OPT.reg = 0;
-            entry.LINK = 0xFFFF; // No link by default
+            entry.OPT.reg = 0u;
+
+            entry.SRC = 0u;
+            entry.ACNT = 0u;
+            entry.BCNT = 0u;
+            entry.DST = 0u;
+            entry.SRCBIDX = 0;
+            entry.DSTBIDX = 0;
+            entry.LINK = 0xFFFFu;
+            entry.BCNTRLD = 0u;
+            entry.SRCCIDX = 0;
+            entry.DSTCIDX = 0;
+            entry.CCNT = 0u;
         }
 
         // -----------------------------------------------------------------
@@ -196,6 +207,52 @@ namespace HAL::EDMA
         // -----------------------------------------------------------------
 
         /**
+         * @brief Legal zero-byte transfer used to absorb a peripheral event.
+         *
+         * At least one count is zero and at least one count is nonzero.
+         * The request is serviced without setting EMR/EMRH/QEMR.
+         *
+         * Intended primarily as the terminal linked PaRAM for UART TX.
+         */
+        static REGS::EDMA::paRAM_entry_t makeDummy(const uint8_t tcc)
+        {
+            return ParamBuilder()
+                .setSource(0u, 0, 0)
+                .setDest(0u, 0, 0)
+                .setTransferParams(0u, 1u, 1u)
+                .setSyncType(false)
+                .enableCompletionInterrupt(tcc, false)
+                .enableIntermediateCompletionInterrupt(false)
+                .enableTransferCompleteChaining(tcc, false)
+                .enableIntermediateTransferCompleteChaining(false)
+                .endOfChain()
+                .build();
+        }
+
+        /**
+         * @brief Null PaRAM used for Event Missed error-path testing.
+         *
+         * Triggering this PaRAM is intentionally an error condition:
+         * EMR/EMRH/QEMR is set and the secondary event remains latched.
+         *
+         * !!!Do not use as an idle or terminal UART PaRAM!!!
+         */
+        static REGS::EDMA::paRAM_entry_t makeNullforTest(const uint8_t tcc)
+        {
+            return ParamBuilder()
+                .setSource(0u, 0, 0)
+                .setDest(0u, 0, 0)
+                .setTransferParams(0u, 0u, 0u)
+                .setSyncType(false)
+                .enableCompletionInterrupt(tcc, false)
+                .enableIntermediateCompletionInterrupt(false)
+                .enableTransferCompleteChaining(tcc, false)
+                .enableIntermediateTransferCompleteChaining(false)
+                .endOfChain()
+                .build();
+        }
+
+        /**
          * @brief A-Sync transfer (most common case).
          * @param is_static  true for one-shot / QDMA, false when linking is needed
          */
@@ -285,6 +342,12 @@ namespace HAL::EDMA
             REGS::EDMA::paRAM_entry_t pong; // LINK → ping
         };
 
+        struct QdmaLinkPair
+        {
+            REGS::EDMA::paRAM_entry_t first;    // STATIC=0, TCINTEN=0, TCCHEN=0, LINK → last
+            REGS::EDMA::paRAM_entry_t last;     // STATIC=1, TCINTEN=1, TCCHEN=0, LINK=0xFFFF
+        };
+
         /**
          * @brief Classic hardware ping-pong.
          * Both sets raise TCC interrupt and point to each other (STATIC=0).
@@ -347,10 +410,11 @@ namespace HAL::EDMA
         /**
          * @brief A-Sync ready for QDMA (STATIC forced to true).
          */
-        static REGS::EDMA::paRAM_entry_t makeQdmaASync(
-            uintptr_t src, uintptr_t dst, uint16_t size,
-            uint8_t tcc,
-            bool enable_irq = true)
+        static REGS::EDMA::paRAM_entry_t makeQdmaASync(const uintptr_t src,
+                                                       const uintptr_t dst,
+                                                       const uint16_t size,
+                                                       const uint8_t tcc,
+                                                       const bool enable_irq = true)
         {
             return makeASync(src, dst, size, tcc, enable_irq, /*is_static=*/true);
         }
@@ -358,16 +422,53 @@ namespace HAL::EDMA
         /**
          * @brief AB-Sync ready for QDMA (STATIC forced to true).
          */
-        static REGS::EDMA::paRAM_entry_t makeQdmaABSync(
-            uintptr_t src, uintptr_t dst,
-            uint16_t acnt, uint16_t bcnt,
-            uint8_t tcc,
-            bool enable_irq = true)
+        static REGS::EDMA::paRAM_entry_t makeQdmaABSync(const uintptr_t src,
+                                                        const uintptr_t dst,
+                                                        const uint16_t acnt,
+                                                        const uint16_t bcnt,
+                                                        const uint8_t tcc,
+                                                        const bool enable_irq = true)
         {
             return makeABSync(src, dst, acnt, bcnt, tcc, enable_irq, /*is_static=*/true);
         }
-    };
 
+        /**
+        * @brief Two-element QDMA linked transfer.
+        *
+        * The first transfer performs no completion chaining. Its link reload
+        * writes the second PaRAM into the QCHMAP-mapped PaRAM set, thereby
+        * producing the next QDMA event when the selected trigger word is written.
+        * The second transfer generates the final completion interrupt.
+        */
+        static QdmaLinkPair makeQdmaLink(const uintptr_t src,
+                                          const uintptr_t dst,
+                                          const uint16_t half_size,
+                                          const uint8_t next_param,
+                                          const uint8_t tcc)
+        {
+            const auto last = ParamBuilder()
+                .setSource(src + half_size,static_cast<int16_t>(half_size),0)
+                .setDest(dst + half_size, static_cast<int16_t>(half_size),0)
+                .setTransferParams(half_size, 1, 1)
+                .setSyncType(false)
+                .enableCompletionInterrupt(tcc, true)
+                .endOfChain()
+                .build();
+
+            const auto first = ParamBuilder()
+                .setSource(src,static_cast<int16_t>(half_size),0)
+                .setDest(dst,static_cast<int16_t>(half_size),0)
+                .setTransferParams(half_size, 1, 1)
+                .setSyncType(false)
+                // Сохраняем правильный TCC для диагностики и Error ISR,
+                // но прерывание после первого элемента не создаём.
+                .enableCompletionInterrupt(tcc, false)
+                .linkTo(next_param)// TCCHEN остаётся равным нулю.
+                .build();
+
+            return {first, last};
+        }
+    };
 } // namespace HAL::EDMA
 
 #endif // HAL_PARAMBUILDER_HPP

@@ -158,6 +158,10 @@ namespace HAL::EDMA
         d.qemr  = cc.QEMR.reg;
         d.ccerr = cc.CCERR.reg;
 
+        d.ccstat = cc.CCSTAT.reg;
+        d.mpfar  = cc.MPFAR.reg;
+        d.mpfsr  = cc.MPFSR.reg;
+
         const volatile DRAE_reg_t* drae = &cc.DRAE0;
         const volatile DRAEH_reg_t* draeh = &cc.DRAEH0;
         for (size_t r = 0; r < AM335x_REGIONS_MAX; ++r)
@@ -219,11 +223,10 @@ namespace HAL::EDMA
     {
         const EDMA_CC_Diagnostic& d = s.cc;
         RTT_LOG_I("CC_STAT","  EMR   :  EMRH  :  QEMR  : CCERR  :  EEVAL {          QSTAT           } CCSTAT : MPFAR  :  MPFSR");
-        RTT_LOG_I("CC_STAT","%08X:%08X:%08X:%08X:%08X{%08X,%08X,%08X}%08X:%08X:%08X", static_cast<unsigned>(d.emr),
+        RTT_LOG_I("CC_STAT","%08X:%08X:%08X:%08X: W/O{%08X,%08X,%08X}%08X:%08X:%08X", static_cast<unsigned>(d.emr),
                                                                                         static_cast<unsigned>(d.emrh),
                                                                                         static_cast<unsigned>(d.qemr),
                                                                                         static_cast<unsigned>(d.ccerr),
-                                                                                        static_cast<unsigned>(d.eeval),
                                                                                         static_cast<unsigned>(d.qstat[0]),
                                                                                         static_cast<unsigned>(d.qstat[1]),
                                                                                         static_cast<unsigned>(d.qstat[2]),

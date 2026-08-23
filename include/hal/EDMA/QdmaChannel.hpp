@@ -20,6 +20,7 @@ namespace HAL::EDMA
         bool is_allocated{false};
         REGS::EDMA::e_paRAM_entry_field trig_word_field;
         uint32_t trigger_word_value;
+        bool is_configured{false};
 
         static void m_on_complete(void* context) noexcept
         {
@@ -49,17 +50,17 @@ namespace HAL::EDMA
                              const uint8_t tcc,
                              const REGS::EDMA::e_paRAM_entry_field trigger = REGS::EDMA::e_paRAM_entry_field::CCNT,
                              const REGS::EDMA::e_EVENT_QUEUE q = REGS::EDMA::EVENT_Q0) noexcept
-            : qch_num(qdma_channel), tcc_num(tcc), param_id(32 + qdma_channel),
-              queue(q), trig_word_field(trigger), trigger_word_value(0)
+            : qch_num(qdma_channel),
+            tcc_num(tcc),
+            param_id(32 + qdma_channel),
+            queue(q),
+            trig_word_field(trigger),
+            trigger_word_value(0)
         { }
 
         ~QdmaChannel() noexcept
         {
-            if (is_allocated)
-            {
-                InterruptDispatcher::unregisterHandler(tcc_num);
-                free();
-            }
+            free();
         }
 
         QdmaChannel(const QdmaChannel&) = delete;
@@ -72,14 +73,38 @@ namespace HAL::EDMA
                   ErrorCallback_t onError = nullptr,
                   void* context = nullptr) noexcept
         {
-            is_allocated = request_channel(REGS::EDMA::CHANNEL_TYPE_QDMA,
-                                                       qch_num,
-                                                       tcc_num,
-                                                       queue);
-            if (!is_allocated) return false;
+            using namespace REGS::EDMA;
 
-            map_QDMA_ch_to_paRAM(qch_num, param_id);
-            set_QDMA_trig_word(qch_num, static_cast<uint8_t>(trig_word_field));
+            if (qch_num >= AM335X_QDMACH_MAX ||
+                tcc_num >= AM335X_DMACH_MAX ||
+                static_cast<uint32_t>(queue) >= AM335x_TCS_MAX ||
+                trig_word_field >= e_paRAM_entry_field::paRAMfieldsMAX)
+            {
+                return false;
+            }
+
+            if (is_allocated)
+                return true;
+
+            if (!request_channel(CHANNEL_TYPE_QDMA,
+                                 qch_num,
+                                 tcc_num,
+                                 queue))
+            {
+                return false;
+            }
+
+            is_allocated = true;
+            is_configured = false;
+
+            if (!map_QDMA_ch_to_paRAM(qch_num, param_id) ||
+                !set_QDMA_trig_word(
+                    qch_num,
+                    static_cast<uint8_t>(trig_word_field)))
+            {
+                free();
+                return false;
+            }
 
             const auto complete_cb = reinterpret_cast<Callback_t>(onComplete ? onComplete : m_on_complete);
             const auto error_cb = reinterpret_cast<ErrorCallback_t>(onError ? onError : m_on_error);
@@ -94,15 +119,19 @@ namespace HAL::EDMA
         {
             if (is_allocated)
             {
-                disable_QDMA_event(qch_num);
-                REGS::EDMA::AM335X_EDMA3CC->QDMAQNUM.reg &=  REGS::EDMA::QDMAQNUM_CLR(qch_num);
-
                 free_channel(REGS::EDMA::CHANNEL_TYPE_QDMA,
                                         qch_num,
                                         REGS::EDMA::TRIG_MODE_QDMA,
                                         tcc_num,
                                         queue);
-                is_allocated = false;
+
+                cp15_DSB_barrier();
+
+                InterruptDispatcher::unregisterHandler(tcc_num);
+
+                is_allocated  = false;
+                is_configured = false;
+                trigger_word_value = 0u;
             }
         }
 
@@ -113,6 +142,8 @@ namespace HAL::EDMA
 
             if (!is_allocated || configs.size() == 0u)
                 return false;
+
+            is_configured = false;
 
             // Найти конфигурацию PaRAM, непосредственно отображённую
             // на этот QDMA-канал через QCHMAP.
@@ -173,7 +204,8 @@ namespace HAL::EDMA
             enable_QDMA_event(qch_num);
             cp15_DSB_barrier();
 
-            return is_QDMA_event_enabled(qch_num);
+            is_configured = is_QDMA_event_enabled(qch_num);
+            return is_configured;
         }
 
         [[nodiscard]]
@@ -182,8 +214,15 @@ namespace HAL::EDMA
         [[nodiscard]]
         bool configure(const REGS::EDMA::PaRAMConfig& first, const Configs&... rest) noexcept { return configure({first, rest...}); }
 
-        void trigger() noexcept
+        [[nodiscard]]
+        bool trigger() noexcept
         {
+            if (!is_allocated || !is_configured)
+                return false;
+
+            if (!is_QDMA_event_enabled(qch_num))
+                return false;
+
             m_transfer_done  = false;
             m_transfer_error = false;
             m_last_error     = {};
@@ -191,20 +230,15 @@ namespace HAL::EDMA
             cp15_DMB_barrier();
             QDMA_set_paRAM_entry(param_id,static_cast<uint32_t>(trig_word_field),trigger_word_value);
             cp15_DSB_barrier();
-        }
-
-        void reset_flags() noexcept
-        {
-            m_transfer_done = false;
-            m_transfer_error = false;
-            m_last_error = {};
+            return true;
         }
 
         // Blocking wait
         [[nodiscard]] bool wait_completion(uint32_t timeout_loops = 5'000'000) const noexcept
         {
-            while (!m_transfer_done && --timeout_loops)
+            while (!m_transfer_done && timeout_loops != 0u)
             {
+                --timeout_loops;
                 asm volatile("nop");
             }
             return m_transfer_done && !m_transfer_error;

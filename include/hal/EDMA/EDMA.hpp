@@ -4,6 +4,16 @@
 #include <cstdint>
 #include "../../regs/REGS.hpp"
 
+/**
+ *   EDMA-core-v1.0
+ *   - Нет bitmap-резервирования DMA/QDMA/TCC/PaRAM.
+ *   - Два объекта всё ещё могут запросить одинаковый канал или TCC.
+ *   - Нет ISR для ошибок трёх Transfer Controller.
+ *   - CCERR очищается, но ThresholdExceeded пока не доставляется объекту.
+ *   - ISR-флаги остаются volatile bool.
+ *   - Регистрация callback не защищена критической секцией.
+ */
+
 namespace HAL::EDMA
 {
         void revaluateInterruptLine() noexcept;
@@ -51,13 +61,13 @@ namespace HAL::EDMA
         void  clear_error_bits(uint32_t ch_num, REGS::EDMA::e_EVENT_QUEUE evt_Qnum) noexcept;
     uint32_t  get_CC_Err_status() noexcept;
     uint32_t  get_Err_intr_status() noexcept;
+    uint32_t  get_Err_intr_high_status() noexcept;
     uint32_t  QDMA_get_Err_intr_status() noexcept;
         void  CC_Err_evaluate() noexcept;
         void  deinit(uint32_t que_num) noexcept;
     inline uint32_t  version_get() noexcept  { return 1; } // This returns a number '2' which is unique to EDMA IP in AM335x.
     uint32_t  peripheral_id_get() noexcept;
     uint32_t  intr_status_high_get() noexcept;
-    uint32_t  Err_intr_high_status_get() noexcept;
         void  channel_to_param_map(uint32_t channel, uint32_t param_set) noexcept;
         void  context_save(REGS::EDMA::EDMACONTEXT_t *p_edma_cntx) noexcept;
         void  context_restore(const REGS::EDMA::EDMACONTEXT_t *p_edma_cntx) noexcept;

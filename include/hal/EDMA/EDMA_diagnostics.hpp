@@ -93,7 +93,6 @@ namespace HAL::EDMA
         uint32_t emrh{};
         uint32_t qemr{};
         uint32_t ccerr{};
-        uint32_t eeval{};
 
         std::array<uint32_t, 8> drae{};
         std::array<uint32_t, 8> draeh{};
