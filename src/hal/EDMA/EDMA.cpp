@@ -1,4 +1,4 @@
-#include "../../include/hal/EDMA/EDMA.hpp"
+#include "hal/EDMA/EDMA.hpp"
 #include "hal/EDMA/InterruptDispatcher.hpp"
 #include "hal/INTC.hpp"
 #include "startup/cp15.h"
