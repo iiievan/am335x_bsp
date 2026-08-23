@@ -1,4 +1,4 @@
-#include "hal/INTC.hpp"
+#include "INTC.hpp"
 #include "startup/cpu.h"
 #include "startup/cp15.h"
 

@@ -400,13 +400,6 @@ namespace REGS
                 uint32_t                    :24;       // bit: 8..32   Reserved  
             } b;                                       // Structure used for bit access 
             uint32_t  reg;                             // Type used for register access
-
-            LCR_reg_t() : reg(0) {}
-
-            explicit LCR_reg_t(const volatile uint32_t& hw_reg) : reg(hw_reg) {}
-
-            bool operator==(const LCR_reg_t& other) const { return reg == other.reg; }
-            bool operator!=(const LCR_reg_t& other) const { return reg != other.reg; }
         };
     
         enum e_CHAR_LENGHT : uint32_t

@@ -18,5 +18,8 @@
 #include "UART.hpp"
 #include "MMCHS.hpp"
 #include "GPIO.hpp"
+#include "EDMA.hpp"
+
+#define AM335X_CACHELINE_SIZE_MAX  (64)
 
 #endif //__AM335X_REGISTERS_H

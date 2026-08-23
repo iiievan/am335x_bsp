@@ -118,6 +118,16 @@ PERIPHERAL_CONFIG = {
         'base_address': '0x44E01200',
         'description': 'Power Reset Module - CEFUSE'
     },
+    'EDMACC': {
+        'struct_pattern': 'AM335x_EDMA3CC_Type',
+        'base_address': '0x49000000',
+        'description': 'EDMA channel controller module'
+    },
+    'EDMATC0': {
+        'struct_pattern': 'AM335x_EDMA3TC_Type',
+        'base_address': '0x49800000',
+        'description': 'EDMA transfer controller module'
+    },
     'UART': {
         'struct_pattern': 'AM335x_UART_Type',
         'base_address': '0x44E09000',
@@ -513,6 +523,98 @@ def generate_svd(registers_info, peripherals_info):
     pretty_xml = dom.toprettyxml(indent="  ")
     return pretty_xml
 
+def postprocess_bit_offsets(svd_content, original_content):
+    """
+    Постпроцессинг SVD файла: исправляет bitOffset для полей,
+    извлекая реальные битовые смещения из комментариев вида "bits 2,3" или "bits 5..13".
+    """
+    from xml.dom.minidom import parseString
+    import re
+
+    # Сначала собираем информацию из исходного файла: для каждого регистра и поля - реальное смещение
+    field_offsets = {}  # {(reg_name, field_name): offset}
+
+    # Ищем все typedef union с битовыми полями
+    union_pattern = r'typedef\s+union\s*\{\s*struct\s*\{\s*(.*?)\s*\}\s*b\s*;\s*uint32_t\s+reg\s*;\s*\}\s*(\w+_reg_t)\s*;'
+
+    for union_match in re.finditer(union_pattern, original_content, re.DOTALL):
+        struct_body = union_match.group(1)
+        reg_type = union_match.group(2).replace('_reg_t', '')
+
+        # Парсим все поля в структуре
+        current_offset = 0
+        lines = struct_body.split('\n')
+
+        for line in lines:
+            # Безымянное поле
+            unnamed = re.search(r'uint32_t\s+:\s*(\d+)\s*;', line)
+            if unnamed:
+                current_offset += int(unnamed.group(1))
+                continue
+
+            # Именованное поле
+            named = re.search(r'uint32_t\s+(\w+)\s*:\s*(\d+)\s*;', line)
+            if named:
+                name = named.group(1)
+                width = int(named.group(2))
+
+                # Ищем комментарий с указанием битов
+                bit_info = re.search(r'//.*?bit[s]?\s*([\d\.]+)\s*', line)
+                if bit_info:
+                    bit_str = bit_info.group(1)
+                    if '..' in bit_str:
+                        start_bit = int(bit_str.split('..')[0])
+                    elif ',' in bit_str:
+                        start_bit = int(bit_str.split(',')[0])
+                    else:
+                        start_bit = int(bit_str)
+
+                    field_offsets[(reg_type, name)] = start_bit
+                    print(f"  Найдено смещение для {reg_type}.{name}: бит {start_bit}")
+
+                current_offset += width
+
+    # Теперь применяем исправления к SVD
+    dom = parseString(svd_content)
+
+    for register in dom.getElementsByTagName('register'):
+        reg_name = register.getElementsByTagName('name')[0].firstChild.data
+
+        # Нужно определить тип регистра по его имени или родительской периферии
+        # Для простоты - ищем по соответствию имён
+
+        for field in register.getElementsByTagName('field'):
+            field_name = field.getElementsByTagName('name')[0].firstChild.data
+
+            # Пытаемся найти смещение для этого поля
+            for (reg_type, f_name), offset in field_offsets.items():
+                if f_name == field_name and (reg_type in reg_name or reg_name in reg_type):
+                    bitOffset_elem = field.getElementsByTagName('bitOffset')[0]
+                    if bitOffset_elem.firstChild:
+                        print(f"  Исправление: {reg_name}.{field_name}: {bitOffset_elem.firstChild.data} -> {offset}")
+                        bitOffset_elem.firstChild.data = str(offset)
+                    break
+
+    # Возвращаем компактный XML
+    lines = []
+    for line in dom.toprettyxml(indent="", newl="").split('\n'):
+        line = line.rstrip()
+        if line.strip():
+            line = re.sub(r'>\s+<', '><', line)
+            lines.append(line)
+
+    return '\n'.join(lines)
+
+def minify_xml(xml_content):
+    """Убирает лишние пробелы и пустые строки из XML."""
+    lines = []
+    for line in xml_content.split('\n'):
+        line = line.rstrip()
+        if line.strip():  # Пропускаем пустые строки
+            # Убираем пробелы между закрывающим '>' и открывающим '<'
+            line = re.sub(r'>\s+<', '><', line)
+            lines.append(line)
+    return '\n'.join(lines)
 
 def main(hpp_filepath):
     if not os.path.exists(hpp_filepath):
@@ -534,6 +636,11 @@ def main(hpp_filepath):
 
     print("\n=== Генерация SVD ===")
     svd_content = generate_svd(registers_info, peripherals_info)
+
+    # --- ПОСТПРОЦЕССИНГ: исправление битовых смещений ---
+    print("\n=== Постпроцессинг: исправление bitOffset ===")
+    svd_content = postprocess_bit_offsets(svd_content,content)
+    svd_content = minify_xml(svd_content)
 
     # Имя выходного файла на основе входного
     base_name = os.path.splitext(os.path.basename(hpp_filepath))[0]

@@ -1,4 +1,3 @@
-# am335x_bsp/CMakeLists.txt (упрощенная версия)
 cmake_minimum_required(VERSION 3.24)
 
 if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/toolchain.cmake)
@@ -30,19 +29,31 @@ set(BSP_SOURCES
         src/hal/hwTimer.cpp
         src/hal/pins/am335x_pins.cpp
         src/hal/boards/beaglebone_black.cpp
-        src/regs/CONTROL_MODULE.cpp
-        src/regs/REGS.cpp
         src/rtt/rtt_log.c
         src/rtt/rtt_log_capi.cpp
         src/startup/cp15.s
         src/startup/cpu.s
         src/startup/cxx_support.cpp
         src/hal/UART.cpp
+        src/hal/EDMA/EDMA.cpp
+        src/hal/MMCSD.hpp
+        src/hal/MMCSD.cpp
+        src/hal/EDMA/EDMA.hpp
+        src/hal/EDMA/ParamBuilder.hpp
+        src/hal/EDMA/DmaChannel.hpp
+        src/hal/EDMA/InterruptDispatcher.hpp
+        src/hal/EDMA/edma_interrupt_handlers.cpp
+        src/hal/EDMA/QdmaChannel.hpp
+        src/hal/EDMA/EDMA_diagnostics.cpp
+        src/hal/EDMA/EDMA_diagnostics.hpp
+        src/hal/PERF.cpp
+        src/hal/PERF.hpp
+        src/regs/CONTROL_MODULE.cpp
+        src/regs/REGS.cpp
+        src/regs/EDMA.cpp
 )
 
-
 add_library(am335x_bsp STATIC ${BSP_SOURCES})
-
 
 target_link_libraries(am335x_bsp PUBLIC SEGGER_RTT)
 
@@ -109,7 +120,7 @@ endif()
 
 
 target_include_directories(am335x_bsp PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 message(STATUS "Building am335x_bsp version ${PROJECT_VERSION}")
