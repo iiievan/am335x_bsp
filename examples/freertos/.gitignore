@@ -1,0 +1,11 @@
+*.idea
+*.venv
+/.idea
+/cmake-*
+tests/cmake-*
+/Debug
+/Release
+/build
+*.jdebug.user
+
+
