@@ -27,7 +27,7 @@ void OnProjectLoad (void)
   Project.AddSvdFile("Cortex-A8.svd");
   Project.AddSvdFile ("AM335x.svd");
 
-  File.Open("../../../cmake-build-debug/am335x_boot.elf");
+  File.Open("../../../cmake-build-debug/examples/bootloader/am335x_boot.elf");
 
   // Используем числовое значение 1 для режима "Halt after reset"
   Debug.SetResetMode(1);
@@ -136,7 +136,7 @@ void TargetDownload (void)
    Util.Log("Loading Bootloader application");
    
    Edit.SysVar(VAR_RESET_MODE, RM_RESET_HALT);
-   Exec.Download("../../../cmake-build-debug/am335x_boot.hex");
+   Exec.Download("../../../cmake-build-debug/examples/bootloader/am335x_boot.elf");
 }
 
 /*********************************************************************

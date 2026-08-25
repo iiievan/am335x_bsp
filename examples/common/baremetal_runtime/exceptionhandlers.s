@@ -4,13 +4,15 @@
 
 .global UndefInstHandler
 .global SVC_Handler
-.global AbortHandler
+.global PrefetchAbortHandler
+.global DataAbortHandler
 .global IRQHandler
 .global FIQHandler
 
 @ Внешние символы из C-кода
 .extern interrupt_vectors        @ Таблица векторов прерываний
-.extern CPUAbortHandler          @ C-обработчик для Abort
+.extern c_prefetch_abort_handler  @ C-обработчик Prefetch Abort
+.extern c_data_abort_handler      @ C-обработчик Data Abort
 
 .section .text.handlers, "ax"
 .code 32
@@ -44,15 +46,12 @@
 .equ ADDR_CONTROL,      (SOC_AINTC_REGS + INTC_CONTROL)
 .equ ADDR_THRESHOLD,    (SOC_AINTC_REGS + INTC_THRESHOLD)
 .equ ADDR_IRQ_PRIORITY, (SOC_AINTC_REGS + INTC_IRQ_PRIORITY)
-@******************************************************************************
-@ Undefined Instruction Handler
-@******************************************************************************
-UndefInstHandler:
-    @ Можно добавить отладочный код
-    bkpt #0
-    b infinite_loop
 
-@ SVC Handler - как в IAR, поддерживает переключение в System режим
+@******************************************************************************
+@ SVC Handler (Supervisor Call)
+@ Обработчик системных вызовов (ранее SWI)
+@ Переключает в System режим при SVC #458752 (используется в TI-RTOS/SYSBIOS)
+@******************************************************************************
 SVC_Handler:
     @ Сохраняем контекст в стеке SVC
     STMFD   sp!, {r0-r1, lr}        @ Сохраняем r0, r1 и lr (адрес возврата)
@@ -77,25 +76,6 @@ SVC_Handler:
     ADD     sp, sp, #4              @ Восстанавливаем указатель стека
     LDMFD   sp!, {r0-r1, pc}^       @ Восстанавливаем регистры и возвращаемся
                                     @ '^' означает копирование SPSR в CPSR
-
-@******************************************************************************
-@ SVC Handler (Supervisor Call)
-@ Обработчик системных вызовов (ранее SWI)
-@ Переключает в System режим при SVC #458752 (используется в TI-RTOS/SYSBIOS)
-@******************************************************************************
-AbortHandler:
-    STMFD   sp!, {r0, lr}           @ Сохраняем регистры
-
-    @ Определяем тип Abort по биту в SPSR
-    MRS     r0, spsr                @ Читаем SPSR
-    TST     r0, #(1 << 10)          @ Тестируем бит 10 (I/D статус)
-                                    @ 0 = Prefetch Abort, 1 = Data Abort
-    BNE     DataAbortHandler        @ Если 1, переходим к Data Abort
-    BEQ     PrefetchAbortHandler    @ Если 0, переходим к Prefetch Abort
-
-    @ Сюда не должны попасть
-    LDMFD   sp!, {r0, pc}           @ Восстанавливаем и возвращаемся
-
 
 @******************************************************************************
 @ IRQ Handler - ПОЛНАЯ ВЕРСИЯ С ПОДДЕРЖКОЙ ВЛОЖЕННЫХ ПРЕРЫВАНИЙ
@@ -224,52 +204,77 @@ IRQHandler:
 FIQHandler:
     subs pc, lr, #4
 
-@******************************************************************************
-@ Prefetch Abort Handler
-@ Вызывается при ошибке выборки инструкции
-@******************************************************************************
+.type PrefetchAbortHandler, %function
+.align 5                            @ Выравнивание по строке кэша (32 байта)
 PrefetchAbortHandler:
-    @ Сохраняем рабочие регистры и адрес возврата
-    STMFD   sp!, {r0-r3, r12, lr}
+    SUB     lr, lr, #4              @ Корректируем LR для Prefetch Abort (адрес упавшей инструкции)
 
-    @ Сохраняем SPSR_abt для анализа причины ошибки
-    MRS     r0, spsr                @ Читаем SPSR режима Abort
-    STMFD   sp!, {r0}               @ Сохраняем на стеке
+    @ Читаем системные регистры CP15 (Instruction faults)
+    MRS     r0, spsr
+    MRC     p15, 0, r1, c5, c0, 1   @ IFSR
+    MRC     p15, 0, r2, c6, c0, 2   @ IFAR
 
-    @ Получаем адрес инструкции, вызвавшей ошибку
-    SUB     r0, lr, #4              @ lr в Abort режиме указывает на инструкцию+4
+    @ Сохраняем все на стек в единую структуру FaultContext
+    STMFD   sp!, {r0-r2}            @ Сохраняем IFAR, IFSR, SPSR
+    STMFD   sp!, {r0-r12, lr}       @ Сохраняем R0-R12 и fault_pc
 
-    @ Вызываем C-обработчик (если нужно)
-    @ BL     CPU_PrefetchAbortHandler
+    MOV     r0, sp                  @ arg0 (R0) = const FaultContext* ctx
 
-    @ Восстанавливаем контекст и возвращаемся
-    LDMFD   sp!, {r0}               @ Восстанавливаем SPSR
-    MSR     spsr_cxsf, r0           @ Записываем обратно в SPSR
-    LDMFD   sp!, {r0-r3, r12, pc}^  @ Восстанавливаем и возвращаемся
+    @ Выравниваем стек по 8 байт для безопасного вызова C++ / RTT
+    MOV     r4, sp
+    AND     r5, sp, #4
+    SUB     sp, sp, r5
 
-@******************************************************************************
-@ Data Abort Handler
-@ Вызывается при ошибке доступа к данным
-@******************************************************************************
+    BL      c_prefetch_abort_handler
+
+    MOV     sp, r4                  @ Восстанавливаем SP
+    ADD     sp, sp, #64             @ Снимаем со стека FaultContext (16 * 4 байта)
+    MOVS    pc, lr                  @ Возврат из исключения
+
+
+.type DataAbortHandler, %function
+.align 5                            @ Выравнивание по строке кэша (32 байта)
 DataAbortHandler:
-    @ Сохраняем рабочие регистры и адрес возврата
-    STMFD   sp!, {r0-r3, r12, lr}
+    SUB     lr, lr, #8              @ Корректируем LR (fault_pc)
 
-    @ Сохраняем SPSR_abt для анализа причины ошибки
-    MRS     r0, spsr                @ Читаем SPSR режима Abort
-    STMFD   sp!, {r0}               @ Сохраняем на стеке
+    @ Читаем системные регистры CP15
+    MRS     r0, spsr
+    MRC     p15, 0, r1, c5, c0, 0   @ DFSR
+    MRC     p15, 0, r2, c6, c0, 0   @ DFAR
 
-    @ lr в Data Abort указывает на инструкцию+8, корректируем
-    SUB     r0, lr, #8              @ Получаем адрес инструкции, вызвавшей ошибку
+    @ Сохраняем все на стек в виде структуры FaultContext
+    STMFD   sp!, {r0-r2}            @ Сохраняем DFAR, DFSR, SPSR
+    STMFD   sp!, {r0-r12, lr}       @ Сохраняем R0-R12 и fault_pc
 
-    @ Вызываем C-обработчик (если нужно)
-    @ BL     CPU_DataAbortHandler
+    MOV     r0, sp                  @ arg0 (R0) = указатель на FaultContext (наш SP)
 
-    @ Восстанавливаем контекст и возвращаемся
-    LDMFD   sp!, {r0}               @ Восстанавливаем SPSR
-    MSR     spsr_cxsf, r0           @ Записываем обратно в SPSR
-    LDMFD   sp!, {r0-r3, r12, pc}^  @ Восстанавливаем и возвращаемся
+    @ Выравниваем стек по 8 байт для безопасного вызова C++ / RTT
+    MOV     r4, sp
+    AND     r5, sp, #4
+    SUB     sp, sp, r5
+
+    BL      c_data_abort_handler    @ Вызов C-обработчика
+
+    MOV     sp, r4                  @ Восстанавливаем SP
+    ADD     sp, sp, #64             @ Снимаем со стека всю структуру (16 регистров * 4)
+    MOVS    pc, lr                  @ Возврат из исключения
+
+
+@******************************************************************************
+@ Undefined Instruction Handler
+@******************************************************************************
+UndefInstHandler:
+    @ В FreeRTOS это фатальная ошибка
+    STMFD   sp!, {r0-r1, lr}
+    
+    @ Здесь можно добавить отладочный вывод
+    MRS     r0, cpsr
+    MRS     r1, spsr
+    
+    @ Вызываем обработчик или входим в бесконечный цикл
+    bkpt #0
+    b infinite_loop
 
 infinite_loop:
     WFI
-    b infinite_loop
+    B infinite_loop

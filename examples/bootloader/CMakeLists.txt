@@ -10,11 +10,10 @@ add_am335x_firmware(${BOOTLOADER_TARGET}
         src/main.cpp
         src/init.cpp
         src/ddr_calibration.cpp
-        runtime/startup.s
-        runtime/exceptionhandlers.s
 
         LIBRARIES
         am335x::bsp
+        am335x::baremetal_runtime
 
         INCLUDE_DIRECTORIES
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
