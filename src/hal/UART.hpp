@@ -15,18 +15,36 @@ namespace HAL::UART
 {
     typedef void (*serial_user_callback)(char);
 
+    enum class IOMode : uint8_t
+    {
+        UNINITIALIZED = 0,
+        POLLING,
+        INTERRUPT,
+        DMA
+    };
+
+    struct DMAConfig
+    {
+        uint8_t tx_trigger_space {8u};
+        uint8_t rx_trigger_level {8u};
+        uint8_t tx_dma_threshold {5u};
+        REGS::UART::e_SCR_DMA_MODE mode {REGS::UART::SCR_DMA_MODE_1};
+    };
+
     class uart_base
     {
     protected:
         REGS::UART::AM335x_UART_Type& m_instance;
 
         REGS::UART::LCR_reg_t m_LCR_before;
+        REGS::UART::FCR_reg_t m_FCR_shadow;
         [[gnu::always_inline]] void m_save_LCR() noexcept           { m_LCR_before.reg = m_instance.LCR.reg; }
         [[gnu::always_inline]] void m_restore_LCR() const noexcept  { m_instance.LCR.reg = m_LCR_before.reg; }
 
         explicit uart_base(REGS::UART::AM335x_UART_Type* uart_regs)
             : m_instance(*uart_regs),
-              m_LCR_before{}
+              m_LCR_before{},
+              m_FCR_shadow{}
         {}
 
     public:
@@ -48,6 +66,15 @@ namespace HAL::UART
 
         /// <--- FIFO management methods TRM 19.3 ---> ///
         [[gnu::noinline]] void FIFO_register_write(REGS::UART::FCR_reg_t fcr) noexcept;
+        [[nodiscard]] bool FIFO_configure(uint8_t tx_trigger_level,
+                                          uint8_t rx_trigger_level,
+                                          REGS::UART::e_SCR_DMA_MODE dma_mode) noexcept;
+        void FIFO_clear(bool clear_tx = true, bool clear_rx = true) noexcept;
+
+        /// <--- DMA request management ---> ///
+        void DMA_enable(REGS::UART::e_SCR_DMA_MODE mode) noexcept;
+        void DMA_disable() noexcept;
+        [[nodiscard]] bool TX_DMA_threshold_configure(uint8_t threshold) noexcept;
 
         /// <--- Protocol formating methods TRM 19.3 ---> ///
         ///  1. Clock generation setup:
@@ -99,6 +126,7 @@ namespace HAL::UART
     RXMode m_rx_mode;
 
     static serial_user_callback m_user_callback;
+    IOMode m_io_mode{IOMode::UNINITIALIZED};
 
     // CRTP access to base class
     Derived& derived() { return static_cast<Derived&>(*this); }
@@ -150,6 +178,15 @@ namespace HAL::UART
     void cleanup_interrupts() noexcept
     {
         INTC::mask_interrupt(static_cast<REGS::INTC::e_INT_ID>(IRQNum));
+        int_disable(REGS::UART::RECEIVE_IT);
+        m_user_callback = nullptr;
+    }
+
+    void finish_common_init() noexcept
+    {
+        switch_reg_config_mode(REGS::UART::OPERATIONAL_MODE, REGS::UART::ENH_DISABLE);
+        switch_operating_mode(REGS::UART::MODE_UART_16x);
+        resume_operation();
     }
 
     public:
@@ -161,27 +198,90 @@ namespace HAL::UART
             , m_rx_mode(rx_mode)
             { }
 
-            /* @brief initialize UART peripheral and set it up for polling I/O
-             * @param callback: user defined RX callback function;
-             */
-            void init(serial_user_callback cb = nullptr) noexcept
+            void init_polling() noexcept
             {
+                deinit();
                 derived().run_clocks();
                 m_save_LCR();
                 init_pins();
-                config_baudrate();  // Из uart_core
+                config_baudrate();
+                DMA_disable();
+                int_disable(static_cast<REGS::UART::e_UART_IT_EN>(0xFFu));
+                finish_common_init();
+                m_io_mode = IOMode::POLLING;
+            }
+
+            [[nodiscard]] bool init_interrupt(serial_user_callback cb) noexcept
+            {
+                if (cb == nullptr)
+                    return false;
+
+                init_polling();
                 setup_interrupts(cb);
+                m_io_mode = IOMode::INTERRUPT;
+                return true;
+            }
+
+            [[nodiscard]] bool init_dma(const DMAConfig& config = {}) noexcept
+            {
+                deinit();
+                derived().run_clocks();
+                m_save_LCR();
+                init_pins();
+                config_baudrate();
+                int_disable(static_cast<REGS::UART::e_UART_IT_EN>(0xFFu));
+                INTC::mask_interrupt(static_cast<REGS::INTC::e_INT_ID>(IRQNum));
+
+                if (!FIFO_configure(config.tx_trigger_space,
+                                    config.rx_trigger_level,
+                                    config.mode) ||
+                    !TX_DMA_threshold_configure(config.tx_dma_threshold))
+                {
+                    DMA_disable();
+                    return false;
+                }
+
+                finish_common_init();
+                m_io_mode = IOMode::DMA;
+                return true;
+            }
+
+            // Backwards-compatible entry point used by existing bootloader code.
+            void init(serial_user_callback cb = nullptr) noexcept
+            {
+                if (cb != nullptr)
+                    (void)init_interrupt(cb);
+                else
+                    init_polling();
             }
 
             void deinit() noexcept
             {
-                cleanup_interrupts();
+                if (m_io_mode == IOMode::UNINITIALIZED)
+                    return;
+
+                if (m_io_mode == IOMode::INTERRUPT)
+                    cleanup_interrupts();
+                else
+                    INTC::mask_interrupt(static_cast<REGS::INTC::e_INT_ID>(IRQNum));
+
+                DMA_disable();
+                m_io_mode = IOMode::UNINITIALIZED;
             }
+
+            ~uart() noexcept { deinit(); }
+
+            [[nodiscard]] IOMode io_mode() const noexcept { return m_io_mode; }
+            [[nodiscard]] static constexpr uintptr_t tx_dma_address() noexcept { return UARTBase; }
+            [[nodiscard]] static constexpr uintptr_t rx_dma_address() noexcept { return UARTBase; }
 
             // Экспортируем нужные методы из uart_core
             using uart_base::put_char;
             using uart_base::get_char;
             using uart_base::put_string;
+            using uart_base::DMA_enable;
+            using uart_base::DMA_disable;
+            using uart_base::FIFO_clear;
     };
 
     template <typename Derived, typename TXPin, typename RXPin, uint32_t UARTBase, uint32_t IRQNum>

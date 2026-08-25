@@ -35,7 +35,9 @@ set(BSP_SOURCES  src/hal/INTC.cpp
                  src/startup/cp15.s
                  src/startup/cpu.s
                  src/startup/cxx_support.cpp
+                 src/hal/UART.hpp
                  src/hal/UART.cpp
+                 src/hal/UartDma.hpp
                  src/hal/EDMA/EDMA.cpp
                  src/hal/MMCSD.hpp
                  src/hal/MMCSD.cpp
@@ -52,6 +54,7 @@ set(BSP_SOURCES  src/hal/INTC.cpp
                  src/regs/CONTROL_MODULE.cpp
                  src/regs/REGS.cpp
                  src/regs/EDMA.cpp
+        src/hal/extra.cpp
 )
 
 add_library(am335x_bsp STATIC ${BSP_SOURCES})
