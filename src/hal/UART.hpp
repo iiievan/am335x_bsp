@@ -63,6 +63,11 @@ namespace HAL::UART
         void put_char(char c) const noexcept;
         [[nodiscard]] char get_char() const noexcept;
         void put_string(const char* str) const noexcept;
+        void wait_tx_complete() const noexcept;
+        [[nodiscard]] bool tx_fifo_full() const noexcept;
+        [[nodiscard]] bool tx_fifo_empty() const noexcept;
+        [[nodiscard]] bool tx_busy() const noexcept;
+        void put_data(const void* data, std::size_t size) const noexcept;
 
         /// <--- FIFO management methods TRM 19.3 ---> ///
         [[gnu::noinline]] void FIFO_register_write(REGS::UART::FCR_reg_t fcr) noexcept;
@@ -282,6 +287,8 @@ namespace HAL::UART
             using uart_base::DMA_enable;
             using uart_base::DMA_disable;
             using uart_base::FIFO_clear;
+            using uart_base::put_data;
+            using uart_base::wait_tx_complete;
     };
 
     template <typename Derived, typename TXPin, typename RXPin, uint32_t UARTBase, uint32_t IRQNum>

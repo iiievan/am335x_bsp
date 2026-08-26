@@ -1,4 +1,5 @@
 #include "hal/UART.hpp"
+#include "startup/cp15.h"
 
 #if defined(__GNUC__)
 #pragma GCC push_options
@@ -33,8 +34,14 @@ namespace HAL::UART
 
     void uart_base::put_char(char c) const noexcept
     {
-        while (!m_instance.LSR_UART.b.TXSRE) {}
-        m_instance.THR.reg = c;
+        // Дождаться завершения предыдущей передачи.
+        wait_tx_complete();
+
+        m_instance.THR.reg = static_cast<uint8_t>(c);
+        cp15_DSB_barrier();
+
+        // Дождаться физической отправки текущего символа.
+        wait_tx_complete();
     }
 
     char uart_base::get_char() const noexcept
@@ -58,6 +65,45 @@ namespace HAL::UART
             if (*str == '\n') put_char('\r');
             put_char(*str++);
         }
+    }
+
+    void uart_base::wait_tx_complete() const noexcept
+    {
+        while (!tx_fifo_empty()) {}
+    }
+
+    bool uart_base::tx_fifo_full() const noexcept
+    {
+        return m_instance.SSR.b.TXFIFOFULL != 0u;
+    }
+
+    bool uart_base::tx_fifo_empty() const noexcept
+    {
+        return m_instance.LSR_UART.b.TXSRE != 0u;
+    }
+
+    bool uart_base::tx_busy() const noexcept
+    {
+        return m_instance.LSR_UART.b.TXSRE == 0u;
+    }
+
+    void uart_base::put_data(const void* data, const std::size_t size) const noexcept
+    {
+        if (data == nullptr || size == 0u)
+            return;
+
+        const auto* bytes = static_cast<const uint8_t*>(data);
+
+        for (std::size_t i = 0u; i < size; ++i)
+        {
+            while (tx_fifo_full()) {}
+
+            m_instance.THR.reg = bytes[i];
+        }
+
+        // Гарантируем физическую отправку последнего байта.
+        cp15_DSB_barrier();
+        wait_tx_complete();
     }
 
     /**

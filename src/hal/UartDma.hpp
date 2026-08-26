@@ -137,22 +137,20 @@ namespace HAL::UART
 
                 if (!m_tx.wait_completion(timeout_loops))
                 {
-                    // Сначала прекращаем генерацию UART DMA requests.
                     m_uart.DMA_disable();
                     cp15_DSB_barrier();
                     (void)m_tx.stop();
                     return false;
                 }
 
-                // После каждой успешной передачи обязательно возвращаем UART в DMA mode 0.
                 m_uart.DMA_disable();
                 cp15_DSB_barrier();
-
                 (void)m_tx.stop();
             }
 
             const auto* tail = static_cast<const uint8_t*>(data) + dma_size;
-            for (size_t i = dma_size; i < size; ++i)
+
+            for (std::size_t i = dma_size; i < size; ++i)
                 m_uart.put_char(static_cast<char>(*tail++));
             return true;
         }

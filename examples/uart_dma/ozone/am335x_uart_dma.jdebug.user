@@ -1,25 +1,24 @@
 
 
 
-Breakpoint=/home/mbokastnev/code/am335x_bsp/examples/uart_dma/src/main.cpp:39, State=BP_STATE_ON
 Breakpoint=/home/mbokastnev/code/am335x_bsp/src/hal/UartDma.hpp:174, State=BP_STATE_DISABLED
-Breakpoint=/home/mbokastnev/code/am335x_bsp/src/hal/UartDma.hpp:185, State=BP_STATE_DISABLED
-OpenDocument="main.cpp", FilePath="/home/mbokastnev/code/am335x_bsp/examples/uart_dma/src/main.cpp", Line=0
+Breakpoint=/home/mbokastnev/code/am335x_bsp/src/hal/UartDma.hpp:186:30, State=BP_STATE_DISABLED
+OpenDocument="main.cpp", FilePath="/home/mbokastnev/code/am335x_bsp/examples/uart_dma/src/main.cpp", Line=9
 OpenDocument="UART.hpp", FilePath="/home/mbokastnev/code/am335x_bsp/src/hal/UART.hpp", Line=257
 OpenDocument="beaglebone_black.cpp", FilePath="/home/mbokastnev/code/am335x_bsp/src/hal/boards/beaglebone_black.cpp", Line=19
 OpenDocument="UartDma.hpp", FilePath="/home/mbokastnev/code/am335x_bsp/src/hal/UartDma.hpp", Line=78
 OpenDocument="DmaChannel.hpp", FilePath="/home/mbokastnev/code/am335x_bsp/src/hal/EDMA/DmaChannel.hpp", Line=136
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Registers 1", DockArea=LEFT, x=0, y=0, w=882, h=1067, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=686, h=517, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Memory 1", DockArea=BOTTOM, x=2, y=0, w=685, h=228, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x800102D0
-OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=1, w=686, h=544, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Terminal", DockArea=BOTTOM, x=0, y=0, w=1223, h=228, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Console", DockArea=BOTTOM, x=1, y=0, w=574, h=228, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Registers 1", DockArea=LEFT, x=0, y=0, w=882, h=1116, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=686, h=541, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Memory 1", DockArea=BOTTOM, x=2, y=0, w=685, h=179, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x800102D0
+OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=1, w=686, h=569, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Terminal", DockArea=BOTTOM, x=0, y=0, w=1223, h=179, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Console", DockArea=BOTTOM, x=1, y=0, w=574, h=179, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
 TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
 TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[193;184;77;413]
-TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Access"], ColWidths=[197;191;393;100]
+TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Access"], ColWidths=[197;191;298;100]
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
 TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[27;27;27;26]
 WatchedExpression="DummyParam", Window=Watched Data 1

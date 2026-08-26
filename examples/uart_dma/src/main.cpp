@@ -31,20 +31,46 @@ int main()
         while (true) __asm volatile("wfi");
     }
 
-    constexpr char echo_prefix[] = "\r\nEcho: ";
+    constexpr char welcome[] =
+        "\r\nAM335x UART0 + EDMA example\r\n";
 
-    if (!uart_dma.transmit(welcome, sizeof(welcome) - 1u) ||
-        !uart_dma.receive(rx_buffer, 8u, 500'000'000u) ||
-        !uart_dma.transmit(echo_prefix, sizeof(echo_prefix) - 1u) ||
-        !uart_dma.transmit(rx_buffer, 8u) ||
-        !uart_dma.transmit("\r\n", 2u))
+    constexpr char prompt[] =
+        "Enter exactly 8 characters: ";
+
+    constexpr char echo_prefix[] =
+        "\r\nEcho: ";
+
+    if (!uart_dma.transmit(welcome, sizeof(welcome) - 1u))
     {
-        RTT_LOG_E(TAG, "UART EDMA transfer failed");
+        RTT_LOG_E(TAG, "UART EDMA welcome transfer failed");
     }
     else
     {
-        RTT_LOG_I(TAG, "UART EDMA echo passed");
-    }
+        bool passed = true;
 
-    while (true) __asm volatile("wfi");
+        for (uint32_t attempt = 0u; attempt < 2u; ++attempt)
+        {
+            if (!uart_dma.transmit(prompt, sizeof(prompt) - 1u) ||
+                !uart_dma.receive(rx_buffer, 8u, 500'000'000u) ||
+                !uart_dma.transmit(echo_prefix,sizeof(echo_prefix) - 1u) ||
+                !uart_dma.transmit(rx_buffer, 8u) ||
+                !uart_dma.transmit("\r\n", 2u))
+            {
+                RTT_LOG_E(TAG, "UART EDMA transfer %lu failed", static_cast<unsigned long>(attempt + 1u));
+
+                passed = false;
+                break;
+            }
+
+            RTT_LOG_I(TAG, "UART EDMA transfer %lu passed", static_cast<unsigned long>(attempt + 1u));
+        }
+
+        if (passed)
+            RTT_LOG_I(TAG, "Both UART EDMA echo tests passed");
+
+        RTT_LOG_I(TAG, "Entering idle loop");
+
+        while (true)
+            __asm volatile("wfi");
+    }
 }
