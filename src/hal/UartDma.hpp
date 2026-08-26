@@ -120,17 +120,34 @@ namespace HAL::UART
                                     REGS::EDMA::PaRAMConfig{DummyParam, dummy}))
                     return false;
 
-                HAL::CACHE::dcache_clean_range(address_of(data),
-                                                static_cast<uint32_t>(dma_size));
+                HAL::CACHE::dcache_clean_range(address_of(data),static_cast<uint32_t>(dma_size));
+
                 cp15_DSB_barrier();
+
+                // Переход DMA mode 0 → DMA mode 1 создаст новый UART request.
                 m_uart.DMA_enable(REGS::UART::SCR_DMA_MODE_1);
 
-                if (!m_tx.trigger(REGS::EDMA::TRIG_MODE_EVENT) ||
-                    !m_tx.wait_completion(timeout_loops))
+                if (!m_tx.trigger(REGS::EDMA::TRIG_MODE_EVENT))
                 {
+                    m_uart.DMA_disable();
+                    cp15_DSB_barrier();
                     (void)m_tx.stop();
                     return false;
                 }
+
+                if (!m_tx.wait_completion(timeout_loops))
+                {
+                    // Сначала прекращаем генерацию UART DMA requests.
+                    m_uart.DMA_disable();
+                    cp15_DSB_barrier();
+                    (void)m_tx.stop();
+                    return false;
+                }
+
+                // После каждой успешной передачи обязательно возвращаем UART в DMA mode 0.
+                m_uart.DMA_disable();
+                cp15_DSB_barrier();
+
                 (void)m_tx.stop();
             }
 

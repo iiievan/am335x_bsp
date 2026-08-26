@@ -31,9 +31,11 @@ int main()
         while (true) __asm volatile("wfi");
     }
 
+    constexpr char echo_prefix[] = "\r\nEcho: ";
+
     if (!uart_dma.transmit(welcome, sizeof(welcome) - 1u) ||
         !uart_dma.receive(rx_buffer, 8u, 500'000'000u) ||
-        !uart_dma.transmit("\r\nEcho: ", 9u) ||
+        !uart_dma.transmit(echo_prefix, sizeof(echo_prefix) - 1u) ||
         !uart_dma.transmit(rx_buffer, 8u) ||
         !uart_dma.transmit("\r\n", 2u))
     {

@@ -306,6 +306,7 @@ namespace HAL::UART
     void uart_base::DMA_enable(const REGS::UART::e_SCR_DMA_MODE mode) noexcept
     {
         m_instance.SCR.b.DMAMODECTL = 1u;
+        m_instance.SCR.b.DMAMODE2 = 0x0;
         m_instance.SCR.b.DMAMODE2 = mode;
     }
 

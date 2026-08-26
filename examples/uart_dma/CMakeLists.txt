@@ -6,7 +6,7 @@ add_am335x_firmware(${UART_DMA_TARGET}
 
         SOURCES
         src/main.cpp
-        ../edma_test/src/init.cpp
+        src/init.cpp
 
         LIBRARIES
         am335x::bsp
@@ -14,7 +14,6 @@ add_am335x_firmware(${UART_DMA_TARGET}
 
         INCLUDE_DIRECTORIES
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
-        "${CMAKE_CURRENT_SOURCE_DIR}/../edma_test/src"
 
         COMPILE_DEFINITIONS
         AM335X_BAREMETAL=1
