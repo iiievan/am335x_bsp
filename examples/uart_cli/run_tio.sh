@@ -1,0 +1,2 @@
+#!/bin/bash
+tio -b 115200 /dev/ttyUSB0

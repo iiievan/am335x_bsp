@@ -47,9 +47,7 @@ namespace
         return *lhs == *rhs;
     }
 
-    [[nodiscard]] bool buffer_equals(const char* buffer,
-                                     const char* expected,
-                                     const std::size_t size) noexcept
+    [[nodiscard]] bool buffer_equals(const char* buffer, const char* expected, const std::size_t size) noexcept
     {
         for (std::size_t i = 0u; i < size; ++i)
         {
@@ -164,9 +162,8 @@ namespace
             if (!uart_dma.init())
                 return false;
 
-            constexpr char header[] =
-                "\r\n[DMA] TX and RX use UART0 EDMA channels.\r\n"
-                "Type exactly DMA12345 (do not press Enter): ";
+            constexpr char header[] = "\r\n[DMA] TX and RX use UART0 EDMA channels.\r\n"
+                                      "Type exactly DMA12345 (do not press Enter): ";
             constexpr char echo_prefix[] = "\r\n[DMA] Echo: ";
             constexpr char newline[] = "\r\n";
 
@@ -188,13 +185,12 @@ namespace
 
     void print_help(Uart& uart) noexcept
     {
-        uart.put_string(
-            "\nCommands:\n"
-            "  help             Show this help\n"
-            "  test polling     Polling TX + polling RX\n"
-            "  test interrupt   Polling TX + ISR RX\n"
-            "  test dma         EDMA TX + EDMA RX\n"
-            "  test all         Run all three tests\n");
+        uart.put_string("\nCommands:\n"
+                           "  help             Show this help\n"
+                           "  test polling     Polling TX + polling RX\n"
+                           "  test interrupt   Polling TX + ISR RX\n"
+                           "  test dma         EDMA TX + EDMA RX\n"
+                           "  test all         Run all three tests\n");
     }
 
     void run_all_tests(Uart& uart) noexcept
