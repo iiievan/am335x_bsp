@@ -10,7 +10,8 @@
 */
 void OnProjectLoad (void) 
 {
-  Project.SetJLinkScript("AM335x_DDR_Init.jlinkscript");
+  Edit.SysVar (VAR_RTT_ENABLED, 1);
+  Project.SetJLinkScript("../../../tools/AM335x_DDR_Init.jlinkscript");
   Project.SetRTT(0);
 
   // Вот эти две строки решают проблему неработающего Reset с открытой вкладкой Peripherals
@@ -29,7 +30,7 @@ void OnProjectLoad (void)
   Edit.SysVar (VAR_ALLOW_BMA_EMULATION, 1);
 
   Project.AddSvdFile("Cortex-A8.svd");
-  Project.AddSvdFile ("AM335x.svd");
+  Project.AddSvdFile ("../../../tools/AM335x.svd");
 
   File.Open("../../../cmake-build-debug/examples/edma_test/am335x_edma_test.elf");
 

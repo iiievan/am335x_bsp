@@ -31,7 +31,7 @@ void OnProjectLoad (void)
   Project.AddSvdFile("Cortex-A8.svd");
   Project.AddSvdFile ("../../../tools/AM335x.svd");
 
-  File.Open("../../../cmake-build-debug/examples/uart_dma/am335x_uart_dma.elf");
+  File.Open("../../../cmake-build-debug/examples/uart_cli/am335x_uart_cli.elf");
 
   // Используем числовое значение 1 для режима "Halt after reset"
   Debug.SetResetMode(1);
@@ -140,7 +140,7 @@ void TargetDownload (void)
    Edit.SysVar(VAR_RESET_MODE, RM_RESET_HALT);
 
    // Загружаем ELF (он сам разложит секции по нужным адресам, включая 0x80000000)
-   Exec.Download("../../../cmake-build-debug/examples/uart_dma/am335x_uart_dma.elf");
+   Exec.Download("../../../cmake-build-debug/examples/uart_cli/am335x_uart_cli.elf");
 }
 
 /*********************************************************************

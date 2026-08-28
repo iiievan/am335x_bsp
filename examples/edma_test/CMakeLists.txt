@@ -2,7 +2,7 @@ set(EDMA_TEST_TARGET am335x_edma_test)
 
 add_am335x_firmware(${EDMA_TEST_TARGET}
         LINKER_SCRIPT
-        "${CMAKE_CURRENT_SOURCE_DIR}/am335x_edma_test.ld"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../common/baremetal_runtime/am335x_baremetal.ld"
 
         SOURCES
         src/main.cpp
