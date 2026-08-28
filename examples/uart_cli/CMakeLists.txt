@@ -7,6 +7,7 @@ add_am335x_firmware(${UART_CLI_TARGET}
         SOURCES
         src/main.cpp
         src/init.cpp
+        src/line_editor.cpp
 
         LIBRARIES
         am335x::bsp

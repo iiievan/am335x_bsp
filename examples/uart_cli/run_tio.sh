@@ -1,2 +1,2 @@
 #!/bin/bash
-tio -b 115200 /dev/ttyUSB0
+exec tio -b 115200 -m OCRNL,ODELBS /dev/ttyUSB0

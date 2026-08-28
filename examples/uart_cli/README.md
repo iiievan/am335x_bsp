@@ -9,10 +9,18 @@ and provides these commands:
 - `test dma`
 - `test all`
 
-Each test asks for an eight-character token and echoes the received data. Do
-not press Enter after a test token. The interrupt test checks RX through the
-UART ISR and TX through polling. The DMA test uses `HAL::UART::Uart0Dma` and
-EDMA channels 26 and 27.
+Each test asks for an eight-character token and echoes the received data. The
+interrupt test checks RX through the UART ISR and TX through polling. The DMA
+test uses `HAL::UART::Uart0Dma` and EDMA channels 26 and 27.
+
+The CLI has a fixed eight-entry command history and does not use dynamic
+allocation. Up/Down browse history; Left/Right, Home, End, Backspace and Delete
+edit the current line. Ctrl+C cancels it and Ctrl+L clears and redraws the
+screen.
+
+Run `run_tio.sh` to map Enter to one LF byte and Delete to Backspace. If tio is
+connected after the firmware has already printed its initial prompt, restart
+the target or press Enter to display a fresh prompt.
 
 After every test, including an initialization failure or timeout, UART0 is
 returned to polling mode before the CLI prints the result.
