@@ -20,6 +20,17 @@ namespace
     constexpr char INTERRUPT_PATTERN[] = "IRQ12345";
     constexpr char DMA_PATTERN[] = "DMA12345";
 
+    constexpr const char* COMMAND_NAMES[] =
+    {
+        "help",
+        "test polling",
+        "test interrupt",
+        "test dma",
+        "test all"
+    };
+    constexpr std::size_t COMMAND_COUNT =
+        sizeof(COMMAND_NAMES) / sizeof(COMMAND_NAMES[0]);
+
     volatile char g_interrupt_buffer[TEST_DATA_SIZE]{};
     volatile std::size_t g_interrupt_count{0u};
     volatile bool g_interrupt_complete{false};
@@ -198,7 +209,8 @@ namespace
             "  Home/End         Start/end of line\n"
             "  Backspace/Delete Edit line\n"
             "  Ctrl+C           Cancel line\n"
-            "  Ctrl+L           Clear screen\n");
+            "  Ctrl+L           Clear screen\n"
+            "  Tab              Complete command\n");
     }
 
     void run_all_tests(Uart& uart) noexcept
@@ -221,15 +233,15 @@ namespace
 
     void execute_command(Uart& uart, const char* command) noexcept
     {
-        if (strings_equal(command, "help"))
+        if (strings_equal(command, COMMAND_NAMES[0]))
             print_help(uart);
-        else if (strings_equal(command, "test polling"))
+        else if (strings_equal(command, COMMAND_NAMES[1]))
             print_test_result(uart, "polling", test_polling(uart));
-        else if (strings_equal(command, "test interrupt"))
+        else if (strings_equal(command, COMMAND_NAMES[2]))
             print_test_result(uart, "interrupt (ISR RX + polling TX)", test_interrupt(uart));
-        else if (strings_equal(command, "test dma"))
+        else if (strings_equal(command, COMMAND_NAMES[3]))
             print_test_result(uart, "dma", test_dma(uart));
-        else if (strings_equal(command, "test all"))
+        else if (strings_equal(command, COMMAND_NAMES[4]))
             run_all_tests(uart);
         else if (*command != '\0')
             uart.put_string("Unknown command. Type 'help'.\n");
@@ -238,7 +250,7 @@ namespace
     [[noreturn]] void run_cli(Uart& uart) noexcept
     {
         char command[LineEditor::COMMAND_BUFFER_SIZE]{};
-        LineEditor editor{uart};
+        LineEditor editor{uart, COMMAND_NAMES, COMMAND_COUNT};
 
         uart.put_string("\nAM335x UART CLI\n");
         print_help(uart);

@@ -16,7 +16,8 @@ test uses `HAL::UART::Uart0Dma` and EDMA channels 26 and 27.
 The CLI has a fixed eight-entry command history and does not use dynamic
 allocation. Up/Down browse history; Left/Right, Home, End, Backspace and Delete
 edit the current line. Ctrl+C cancels it and Ctrl+L clears and redraws the
-screen.
+screen. Tab completes a unique command, extends multiple matches to their common
+prefix, or prints the matching commands when no further common extension exists.
 
 Run `run_tio.sh` to map Enter to one LF byte and Delete to Backspace. If tio is
 connected after the firmware has already printed its initial prompt, restart

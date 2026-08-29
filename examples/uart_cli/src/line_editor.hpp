@@ -20,13 +20,19 @@ public:
         CANCELLED
     };
 
-    explicit LineEditor(Uart& uart) noexcept
-    : m_uart(uart) {}
+    LineEditor(Uart& uart,
+               const char* const* completions,
+               std::size_t completion_count) noexcept
+        : m_uart(uart),
+          m_completions(completions),
+          m_completion_count(completion_count) {}
 
     [[nodiscard]] Result read_line(char* command) noexcept;
 
 private:
     Uart& m_uart;
+    const char* const* m_completions;
+    std::size_t m_completion_count;
     char m_history[HISTORY_DEPTH][COMMAND_BUFFER_SIZE]{};
     std::size_t m_history_count{0u};
     bool m_ignore_lf{false};
@@ -38,6 +44,7 @@ private:
     void history_down(char* command, std::size_t& length, std::size_t& cursor, std::size_t& history_view, const char* draft) noexcept;
     void erase_at_cursor(char* command, std::size_t& length, std::size_t cursor) noexcept;
     void handle_escape(char* command, std::size_t& length, std::size_t& cursor, std::size_t& history_view, char* draft) noexcept;
+    void complete(char* command, std::size_t& length, std::size_t& cursor) noexcept;
 };
 
 [[nodiscard]] bool strings_equal(const char* lhs, const char* rhs) noexcept;

@@ -29,6 +29,27 @@ void copy_string(char* destination, const char* source) noexcept
     destination[i] = '\0';
 }
 
+[[nodiscard]] bool starts_with(const char* string,
+                               const char* prefix,
+                               const std::size_t prefix_length) noexcept
+{
+    for (std::size_t i = 0u; i < prefix_length; ++i)
+    {
+        if (string[i] == '\0' || string[i] != prefix[i])
+            return false;
+    }
+    return true;
+}
+
+[[nodiscard]] std::size_t common_prefix_length(const char* lhs,
+                                               const char* rhs) noexcept
+{
+    std::size_t length = 0u;
+    while (lhs[length] != '\0' && lhs[length] == rhs[length])
+        ++length;
+    return length;
+}
+
 LineEditor::Result LineEditor::read_line(char* command) noexcept
 {
     std::size_t length = 0u;
@@ -72,6 +93,13 @@ LineEditor::Result LineEditor::read_line(char* command) noexcept
             continue;
         }
 
+        if (c == '\t')
+        {
+            complete(command, length, cursor);
+            history_view = m_history_count;
+            continue;
+        }
+
         if (static_cast<uint8_t>(c) == 0x1Bu) // ESC / ANSI sequence
         {
             handle_escape(command, length, cursor, history_view, draft);
@@ -109,6 +137,85 @@ LineEditor::Result LineEditor::read_line(char* command) noexcept
         history_view = m_history_count;
         redraw(command, length, cursor);
     }
+}
+
+void LineEditor::complete(char* command,
+                          std::size_t& length,
+                          std::size_t& cursor) noexcept
+{
+    if (cursor != length || m_completions == nullptr || m_completion_count == 0u)
+    {
+        m_uart.put_char('\a');
+        return;
+    }
+
+    const char* first_match = nullptr;
+    std::size_t match_count = 0u;
+    std::size_t common_length = 0u;
+
+    for (std::size_t i = 0u; i < m_completion_count; ++i)
+    {
+        const char* candidate = m_completions[i];
+        if (candidate == nullptr || !starts_with(candidate, command, length))
+            continue;
+
+        if (first_match == nullptr)
+        {
+            first_match = candidate;
+            common_length = string_length(candidate);
+        }
+        else
+        {
+            const std::size_t candidate_common =
+                common_prefix_length(first_match, candidate);
+            if (candidate_common < common_length)
+                common_length = candidate_common;
+        }
+        ++match_count;
+    }
+
+    if (match_count == 0u)
+    {
+        m_uart.put_char('\a');
+        return;
+    }
+
+    const std::size_t target_length =
+        match_count == 1u ? string_length(first_match) : common_length;
+
+    if (target_length > length)
+    {
+        std::size_t i = 0u;
+        while (i < target_length && i + 1u < COMMAND_BUFFER_SIZE)
+        {
+            command[i] = first_match[i];
+            ++i;
+        }
+        command[i] = '\0';
+        length = i;
+        cursor = i;
+        redraw(command, length, cursor);
+        return;
+    }
+
+    if (match_count == 1u)
+    {
+        m_uart.put_char('\a');
+        return;
+    }
+
+    m_uart.put_string("\n");
+    for (std::size_t i = 0u; i < m_completion_count; ++i)
+    {
+        const char* candidate = m_completions[i];
+        if (candidate != nullptr && starts_with(candidate, command, length))
+        {
+            m_uart.put_string("  ");
+            m_uart.put_string(candidate);
+            m_uart.put_string("\n");
+        }
+    }
+    redraw(command, length, cursor);
 }
 
 void LineEditor::redraw(const char* command, const std::size_t length, const std::size_t cursor) noexcept
