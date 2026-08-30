@@ -108,8 +108,7 @@ namespace HAL::UART
                 const auto param = HAL::EDMA::ParamBuilder()
                     .setSource(source, 1, m_tx_chunk)
                     .setDest(Uart::tx_dma_address(), 0, 0)
-                    .setTransferParams(1u, m_tx_chunk,
-                                       static_cast<uint16_t>(chunk_count))
+                    .setTransferParams(1u, m_tx_chunk,static_cast<uint16_t>(chunk_count))
                     .setSyncType(true)
                     .enableCompletionInterrupt(TxChannel)
                     .linkTo(DummyParam)
@@ -175,11 +174,13 @@ namespace HAL::UART
             const auto param = HAL::EDMA::ParamBuilder()
                 .setSource(Uart::rx_dma_address(), 0, 0)
                 .setDest(destination, 1, m_rx_chunk)
-                .setTransferParams(1u, m_rx_chunk,
-                                   static_cast<uint16_t>(size / m_rx_chunk))
+                .setTransferParams(1u, m_rx_chunk,static_cast<uint16_t>(size / m_rx_chunk))
                 .setSyncType(true)
                 .enableCompletionInterrupt(RxChannel)
-                .endOfChain()
+                // Peripheral DMA PaRAM must remain non-static even when LINK is null.
+                // With STATIC=1, multi-event UART RX does not reach normal completion.
+                .setStatic(false)
+                .setLink(0xFFFFu)
                 .build();
 
             if (!m_rx.configure(param))

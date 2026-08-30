@@ -4,6 +4,7 @@
 
 #include "init.h"
 #include "hal/UartDma.hpp"
+#include "hal/PERF.hpp"
 #include "hal/boards/beaglebone_black.hpp"
 #include "line_editor.hpp"
 #include "rtt/rtt_log.h"
@@ -47,6 +48,42 @@ namespace
     volatile bool g_interrupt_complete{false};
     volatile bool g_interrupt_active{false};
     alignas(64) uint8_t g_dma_frame[DMA_MAX_FRAME_SIZE]{};
+
+    void log_dma_hw_state(const char* phase, const uint8_t channel) noexcept
+    {
+        using namespace REGS::EDMA;
+        const auto region = HAL::EDMA::get_region_id();
+        const auto& cc = *AM335X_EDMA3CC;
+        const auto& uart = *REGS::UART::AM335X_UART_0;
+        const auto* words = reinterpret_cast<const volatile uint32_t*>(&cc.paRAM(channel));
+
+        RTT_LOG_I("dma_auto",
+                  "%s ch=%u UART LSR=%08x SSR=%08x SCR=%08x RXFIFO=%u TXFIFO=%u",
+                  phase, static_cast<unsigned>(channel),
+                  static_cast<unsigned>(uart.LSR_UART.reg),
+                  static_cast<unsigned>(uart.SSR.reg),
+                  static_cast<unsigned>(uart.SCR.reg),
+                  static_cast<unsigned>(uart.RXFIFO_LVL.b.RXFIFO_LVL),
+                  static_cast<unsigned>(uart.TXFIFO_LVL.b.TXFIFO_LVL));
+        RTT_LOG_I("dma_auto",
+                  "%s ER=%08x EER=%08x SER=%08x IPR=%08x EMR=%08x CCERR=%08x DRAE=%08x",
+                  phase,
+                  static_cast<unsigned>(cc.S_ER(region).reg),
+                  static_cast<unsigned>(cc.S_EER(region).reg),
+                  static_cast<unsigned>(cc.S_SER(region).reg),
+                  static_cast<unsigned>(cc.S_IPR(region).reg),
+                  static_cast<unsigned>(cc.EMR.reg),
+                  static_cast<unsigned>(cc.CCERR.reg),
+                  static_cast<unsigned>(cc.DRAE(region).reg));
+        RTT_LOG_I("dma_auto", "%s PaRAM[%u] %08x %08x %08x %08x",
+                  phase, static_cast<unsigned>(channel),
+                  static_cast<unsigned>(words[0]), static_cast<unsigned>(words[1]),
+                  static_cast<unsigned>(words[2]), static_cast<unsigned>(words[3]));
+        RTT_LOG_I("dma_auto", "%s PaRAM[%u] %08x %08x %08x %08x",
+                  phase, static_cast<unsigned>(channel),
+                  static_cast<unsigned>(words[4]), static_cast<unsigned>(words[5]),
+                  static_cast<unsigned>(words[6]), static_cast<unsigned>(words[7]));
+    }
 
     class PollingRestore final
     {
@@ -167,8 +204,15 @@ namespace
         const std::size_t frame_size = dma_frame_size(payload_size);
         char message[192]{};
 
+        RTT_LOG_I("dma_auto", "BEGIN seq=%u payload=%u frame=%u seed=%08x",
+                  static_cast<unsigned>(sequence),
+                  static_cast<unsigned>(payload_size),
+                  static_cast<unsigned>(frame_size),
+                  static_cast<unsigned>(seed));
+
         if (!uart.init_dma())
         {
+            RTT_LOG_E("dma_auto", "UART DMA initialization failed");
             uart.init_polling();
             uart.put_string("@RESULT mode=dma status=FAIL error=DMA_INIT\n");
             return;
@@ -177,6 +221,7 @@ namespace
         HAL::UART::Uart0Dma uart_dma{uart};
         if (!uart_dma.init())
         {
+            RTT_LOG_E("dma_auto", "EDMA channel initialization failed");
             uart.init_polling();
             uart.put_string("@RESULT mode=dma status=FAIL error=EDMA_INIT\n");
             return;
@@ -190,8 +235,15 @@ namespace
         uart.put_string(message);
         uart.wait_tx_complete();
 
+        RTT_LOG_I("dma_auto", "READY sent; entering blocking RX");
+        const uint32_t rx_started = HAL::PERF::get_cycle_count();
+
         if (!uart_dma.receive(g_dma_frame, frame_size, TEST_TIMEOUT_LOOPS))
         {
+            const uint32_t rx_cycles = HAL::PERF::get_cycle_count() - rx_started;
+            RTT_LOG_E("dma_auto", "RX failed after %u PMU cycles",
+                      static_cast<unsigned>(rx_cycles));
+            log_dma_hw_state("RX_FAIL", REGS::EDMA::CH_UART0_RX);
             uart_dma.stop();
             uart.init_polling();
             std::snprintf(message, sizeof(message),
@@ -200,6 +252,11 @@ namespace
             uart.put_string(message);
             return;
         }
+
+        const uint32_t rx_cycles = HAL::PERF::get_cycle_count() - rx_started;
+        RTT_LOG_I("dma_auto", "RX completed after %u PMU cycles",
+                  static_cast<unsigned>(rx_cycles));
+        log_dma_hw_state("RX_DONE", REGS::EDMA::CH_UART0_RX);
 
         const auto* header = reinterpret_cast<const DmaFrameHeader*>(g_dma_frame);
         const uint16_t received_crc =
@@ -217,9 +274,23 @@ namespace
         const bool crc_ok = received_crc == calculated_crc;
         const bool data_ok = header_ok && validate_dma_payload(*header);
 
+        RTT_LOG_I("dma_auto",
+                  "VALIDATE header=%s crc=%s data=%s received_crc=%04x calculated_crc=%04x",
+                  header_ok ? "PASS" : "FAIL",
+                  crc_ok ? "PASS" : "FAIL",
+                  data_ok ? "PASS" : "FAIL",
+                  static_cast<unsigned>(received_crc),
+                  static_cast<unsigned>(calculated_crc));
+
         // Echo the exact bytes received even on a validation failure.  This lets
         // the host locate and report the first corrupted byte.
+        const uint32_t tx_started = HAL::PERF::get_cycle_count();
         const bool tx_ok = uart_dma.transmit(g_dma_frame, frame_size, TEST_TIMEOUT_LOOPS);
+        const uint32_t tx_cycles = HAL::PERF::get_cycle_count() - tx_started;
+        RTT_LOG_I("dma_auto", "TX %s after %u PMU cycles",
+                  tx_ok ? "completed" : "failed",
+                  static_cast<unsigned>(tx_cycles));
+        log_dma_hw_state(tx_ok ? "TX_DONE" : "TX_FAIL", REGS::EDMA::CH_UART0_TX);
         uart_dma.stop();
         uart.init_polling();
 
@@ -232,6 +303,9 @@ namespace
                       data_ok ? "PASS" : "FAIL",
                       (tx_ok && crc_ok && data_ok) ? "PASS" : "FAIL");
         uart.put_string(message);
+        RTT_LOG_I("dma_auto", "END seq=%u status=%s",
+                  static_cast<unsigned>(sequence),
+                  (tx_ok && crc_ok && data_ok) ? "PASS" : "FAIL");
     }
 
     [[nodiscard]] bool buffer_equals(const char* buffer,

@@ -99,12 +99,21 @@ def read_line_until(ser: serial.Serial, marker: bytes, deadline: float) -> bytes
 
 def read_exactly(ser: serial.Serial, size: int, deadline: float) -> bytes:
     result = bytearray()
+    started = time.monotonic()
     while len(result) < size and time.monotonic() < deadline:
         chunk = ser.read(size - len(result))
         if chunk:
             result.extend(chunk)
+            logging.debug(
+                "echo chunk=%d total=%d/%d after=%.6fs",
+                len(chunk), len(result), size, time.monotonic() - started,
+            )
     if len(result) != size:
-        raise TestFailure(f"echo timeout: received {len(result)} of {size} bytes")
+        preview = bytes(result[:128])
+        raise TestFailure(
+            f"echo timeout after {time.monotonic() - started:.3f}s: "
+            f"received {len(result)} of {size} bytes; first bytes={preview.hex(' ')}"
+        )
     return bytes(result)
 
 
@@ -124,7 +133,8 @@ def synchronize(ser: serial.Serial) -> None:
     read_line_until(ser, b"uart> ", time.monotonic() + 2.0)
 
 
-def run_cycle(ser: serial.Serial, payload_size: int, sequence: int, seed: int) -> float:
+def run_cycle(ser: serial.Serial, payload_size: int, sequence: int, seed: int,
+              ready_delay: float, echo_timeout: float) -> float:
     frame = make_frame(payload_size, sequence, seed)
     command = f"auto dma {payload_size} {sequence} {seed}\n".encode("ascii")
     ser.write(command)
@@ -135,13 +145,18 @@ def run_cycle(ser: serial.Serial, payload_size: int, sequence: int, seed: int) -
     if expected_ready not in ready or f"frame={len(frame)}".encode("ascii") not in ready:
         raise TestFailure(f"invalid READY response: {ready!r}")
 
-    time.sleep(0.05)  # временная диагностика гонки READY/RX DMA
+    logging.debug("READY accepted; delaying %.3fs before frame TX", ready_delay)
+    time.sleep(ready_delay)
 
     started = time.monotonic()
-    ser.write(frame)
+    written = ser.write(frame)
     ser.flush()
-    wire_seconds = (len(frame) * 10.0) / BAUDRATE
-    echo = read_exactly(ser, len(frame), time.monotonic() + max(2.0, wire_seconds * 4.0))
+    logging.debug(
+        "frame TX submitted bytes=%d/%d write_and_flush=%.6fs crc=0x%04X",
+        written, len(frame), time.monotonic() - started,
+        struct.unpack_from("<H", frame, len(frame) - 2)[0],
+    )
+    echo = read_exactly(ser, len(frame), time.monotonic() + echo_timeout)
     elapsed = time.monotonic() - started
 
     if echo != frame:
@@ -166,6 +181,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--size", type=int, help="override profile payload size")
     parser.add_argument("--cycles", type=int, help="override profile cycle count")
     parser.add_argument("--seed", type=lambda value: int(value, 0), default=0x12345678)
+    parser.add_argument("--ready-delay", type=float, default=0.05,
+                        help="seconds between READY and frame TX (default: 0.05)")
+    parser.add_argument("--echo-timeout", type=float, default=30.0,
+                        help="seconds to wait for the complete DMA echo (default: 30)")
     parser.add_argument("--log", type=Path, help="write a detailed UTF-8 log file")
     parser.add_argument("--self-test", action="store_true", help="verify framing and CRC without UART hardware")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -203,6 +222,8 @@ def main() -> int:
         raise TestFailure(f"payload size must be in range 1..{MAX_PAYLOAD_SIZE}")
     if not 1 <= cycles <= 0x10000:
         raise TestFailure("cycles must be in range 1..65536")
+    if args.ready_delay < 0.0 or args.echo_timeout <= 0.0:
+        raise TestFailure("--ready-delay must be >= 0 and --echo-timeout must be > 0")
 
     if serial is None:
         raise TestFailure("pyserial is not installed; run: python3 -m pip install -r tools/requirements.txt")
@@ -223,7 +244,10 @@ def main() -> int:
             sequence = cycle & 0xFFFF
             seed = (args.seed + cycle * 0x9E3779B9) & 0xFFFFFFFF
             try:
-                elapsed = run_cycle(ser, payload_size, sequence, seed)
+                elapsed = run_cycle(
+                    ser, payload_size, sequence, seed,
+                    args.ready_delay, args.echo_timeout,
+                )
             except (TestFailure, OSError) as error:
                 logging.error("cycle=%d/%d FAIL: %s", cycle + 1, cycles, error)
                 return 1
