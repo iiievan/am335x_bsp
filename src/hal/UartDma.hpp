@@ -152,6 +152,11 @@ namespace HAL::UART
 
             for (std::size_t i = dma_size; i < size; ++i)
                 m_uart.put_char(static_cast<char>(*tail++));
+
+            // EDMA completion only means that the final bytes reached the UART
+            // FIFO.  Wait until the transmitter has put them on the wire before
+            // the caller is allowed to reconfigure or reset the UART.
+            m_uart.wait_tx_complete();
             return true;
         }
 

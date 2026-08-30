@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 
 #include "init.h"
 #include "hal/UartDma.hpp"
@@ -16,6 +17,15 @@ namespace
     constexpr std::size_t TEST_DATA_SIZE = 8u;
     constexpr uint32_t TEST_TIMEOUT_LOOPS = 500'000'000u;
 
+    constexpr uint32_t DMA_FRAME_MAGIC = 0x55415254u; // "TRAU" in LE memory
+    constexpr uint16_t DMA_FRAME_VERSION = 1u;
+    constexpr std::size_t DMA_FRAME_HEADER_SIZE = 16u;
+    constexpr std::size_t DMA_FRAME_CRC_SIZE = 2u;
+    constexpr std::size_t DMA_ALIGNMENT = 8u;
+    constexpr std::size_t DMA_MAX_PAYLOAD_SIZE = 6144u;
+    constexpr std::size_t DMA_MAX_FRAME_SIZE =
+        DMA_FRAME_HEADER_SIZE + DMA_MAX_PAYLOAD_SIZE + 6u + DMA_FRAME_CRC_SIZE;
+
     constexpr char POLLING_PATTERN[] = "POLL1234";
     constexpr char INTERRUPT_PATTERN[] = "IRQ12345";
     constexpr char DMA_PATTERN[] = "DMA12345";
@@ -26,7 +36,8 @@ namespace
         "test polling",
         "test interrupt",
         "test dma",
-        "test all"
+        "test all",
+        "auto dma"
     };
     constexpr std::size_t COMMAND_COUNT =
         sizeof(COMMAND_NAMES) / sizeof(COMMAND_NAMES[0]);
@@ -35,6 +46,7 @@ namespace
     volatile std::size_t g_interrupt_count{0u};
     volatile bool g_interrupt_complete{false};
     volatile bool g_interrupt_active{false};
+    alignas(64) uint8_t g_dma_frame[DMA_MAX_FRAME_SIZE]{};
 
     class PollingRestore final
     {
@@ -48,6 +60,179 @@ namespace
     private:
         Uart& m_uart;
     };
+
+    struct DmaFrameHeader
+    {
+        uint32_t magic;
+        uint16_t version;
+        uint16_t sequence;
+        uint32_t payload_size;
+        uint32_t seed;
+    };
+    static_assert(sizeof(DmaFrameHeader) == DMA_FRAME_HEADER_SIZE);
+
+    [[nodiscard]] constexpr std::size_t dma_frame_size(const std::size_t payload_size) noexcept
+    {
+        const std::size_t without_padding =
+            DMA_FRAME_HEADER_SIZE + payload_size + DMA_FRAME_CRC_SIZE;
+        return (without_padding + DMA_ALIGNMENT - 1u) & ~(DMA_ALIGNMENT - 1u);
+    }
+
+    [[nodiscard]] uint16_t crc16_ccitt_false(const uint8_t* data,
+                                             const std::size_t size) noexcept
+    {
+        uint16_t crc = 0xFFFFu;
+        for (std::size_t i = 0u; i < size; ++i)
+        {
+            crc ^= static_cast<uint16_t>(data[i]) << 8u;
+            for (uint8_t bit = 0u; bit < 8u; ++bit)
+                crc = (crc & 0x8000u) != 0u
+                          ? static_cast<uint16_t>((crc << 1u) ^ 0x1021u)
+                          : static_cast<uint16_t>(crc << 1u);
+        }
+        return crc;
+    }
+
+    [[nodiscard]] uint32_t xorshift32(uint32_t& state) noexcept
+    {
+        state ^= state << 13u;
+        state ^= state >> 17u;
+        state ^= state << 5u;
+        return state;
+    }
+
+    [[nodiscard]] bool parse_u32(const char*& input, uint32_t& value) noexcept
+    {
+        while (*input == ' ')
+            ++input;
+        if (*input < '0' || *input > '9')
+            return false;
+
+        uint32_t result = 0u;
+        do
+        {
+            const uint32_t digit = static_cast<uint32_t>(*input - '0');
+            if (result > (0xFFFFFFFFu - digit) / 10u)
+                return false;
+            result = result * 10u + digit;
+            ++input;
+        } while (*input >= '0' && *input <= '9');
+
+        value = result;
+        return true;
+    }
+
+    [[nodiscard]] bool parse_auto_dma(const char* command,
+                                      uint32_t& payload_size,
+                                      uint32_t& sequence,
+                                      uint32_t& seed) noexcept
+    {
+        constexpr char prefix[] = "auto dma";
+        for (std::size_t i = 0u; i < sizeof(prefix) - 1u; ++i)
+        {
+            if (command[i] != prefix[i])
+                return false;
+        }
+
+        const char* cursor = command + sizeof(prefix) - 1u;
+        if (!parse_u32(cursor, payload_size) ||
+            !parse_u32(cursor, sequence) ||
+            !parse_u32(cursor, seed))
+        {
+            return false;
+        }
+        while (*cursor == ' ')
+            ++cursor;
+        return *cursor == '\0';
+    }
+
+    [[nodiscard]] bool validate_dma_payload(const DmaFrameHeader& header) noexcept
+    {
+        uint32_t state = header.seed != 0u ? header.seed : 0x6D2B79F5u;
+        const auto* payload = g_dma_frame + DMA_FRAME_HEADER_SIZE;
+        for (std::size_t i = 0u; i < header.payload_size; ++i)
+        {
+            if (payload[i] != static_cast<uint8_t>(xorshift32(state) & 0xFFu))
+                return false;
+        }
+        return true;
+    }
+
+    void run_dma_auto_test(Uart& uart,
+                           const uint32_t payload_size,
+                           const uint16_t sequence,
+                           const uint32_t seed) noexcept
+    {
+        PollingRestore restore{uart};
+        const std::size_t frame_size = dma_frame_size(payload_size);
+        char message[192]{};
+
+        if (!uart.init_dma())
+        {
+            uart.init_polling();
+            uart.put_string("@RESULT mode=dma status=FAIL error=DMA_INIT\n");
+            return;
+        }
+
+        HAL::UART::Uart0Dma uart_dma{uart};
+        if (!uart_dma.init())
+        {
+            uart.init_polling();
+            uart.put_string("@RESULT mode=dma status=FAIL error=EDMA_INIT\n");
+            return;
+        }
+
+        std::snprintf(message, sizeof(message),
+                      "@READY mode=dma sequence=%u frame=%u payload=%u\n",
+                      static_cast<unsigned>(sequence),
+                      static_cast<unsigned>(frame_size),
+                      static_cast<unsigned>(payload_size));
+        uart.put_string(message);
+        uart.wait_tx_complete();
+
+        if (!uart_dma.receive(g_dma_frame, frame_size, TEST_TIMEOUT_LOOPS))
+        {
+            uart_dma.stop();
+            uart.init_polling();
+            std::snprintf(message, sizeof(message),
+                          "@RESULT mode=dma sequence=%u status=FAIL error=RX_TIMEOUT\n",
+                          static_cast<unsigned>(sequence));
+            uart.put_string(message);
+            return;
+        }
+
+        const auto* header = reinterpret_cast<const DmaFrameHeader*>(g_dma_frame);
+        const uint16_t received_crc =
+            static_cast<uint16_t>(g_dma_frame[frame_size - 2u]) |
+            static_cast<uint16_t>(static_cast<uint16_t>(g_dma_frame[frame_size - 1u]) << 8u);
+        const uint16_t calculated_crc =
+            crc16_ccitt_false(g_dma_frame, frame_size - DMA_FRAME_CRC_SIZE);
+
+        const bool header_ok =
+            header->magic == DMA_FRAME_MAGIC &&
+            header->version == DMA_FRAME_VERSION &&
+            header->sequence == sequence &&
+            header->payload_size == payload_size &&
+            header->seed == seed;
+        const bool crc_ok = received_crc == calculated_crc;
+        const bool data_ok = header_ok && validate_dma_payload(*header);
+
+        // Echo the exact bytes received even on a validation failure.  This lets
+        // the host locate and report the first corrupted byte.
+        const bool tx_ok = uart_dma.transmit(g_dma_frame, frame_size, TEST_TIMEOUT_LOOPS);
+        uart_dma.stop();
+        uart.init_polling();
+
+        std::snprintf(message, sizeof(message),
+                      "@RESULT mode=dma sequence=%u rx=%u tx=%u crc=%s data=%s status=%s\n",
+                      static_cast<unsigned>(sequence),
+                      static_cast<unsigned>(frame_size),
+                      tx_ok ? static_cast<unsigned>(frame_size) : 0u,
+                      crc_ok ? "PASS" : "FAIL",
+                      data_ok ? "PASS" : "FAIL",
+                      (tx_ok && crc_ok && data_ok) ? "PASS" : "FAIL");
+        uart.put_string(message);
+    }
 
     [[nodiscard]] bool buffer_equals(const char* buffer,
                                      const char* expected,
@@ -203,6 +388,7 @@ namespace
             "  test interrupt   Polling TX + ISR RX\n"
             "  test dma         EDMA TX + EDMA RX\n"
             "  test all         Run all three tests\n"
+            "  auto dma N S K   Binary DMA loopback: payload size, sequence, seed\n"
             "\nEditing:\n"
             "  Up/Down          Command history\n"
             "  Left/Right       Move cursor\n"
@@ -233,6 +419,10 @@ namespace
 
     void execute_command(Uart& uart, const char* command) noexcept
     {
+        uint32_t payload_size = 0u;
+        uint32_t sequence = 0u;
+        uint32_t seed = 0u;
+
         if (strings_equal(command, COMMAND_NAMES[0]))
             print_help(uart);
         else if (strings_equal(command, COMMAND_NAMES[1]))
@@ -243,6 +433,22 @@ namespace
             print_test_result(uart, "dma", test_dma(uart));
         else if (strings_equal(command, COMMAND_NAMES[4]))
             run_all_tests(uart);
+        else if (parse_auto_dma(command, payload_size, sequence, seed))
+        {
+            if (payload_size == 0u || payload_size > DMA_MAX_PAYLOAD_SIZE ||
+                sequence > 0xFFFFu)
+            {
+                uart.put_string("@RESULT mode=dma status=FAIL error=BAD_ARGUMENT\n");
+            }
+            else
+            {
+                run_dma_auto_test(uart, payload_size,
+                                  static_cast<uint16_t>(sequence), seed);
+            }
+        }
+        else if (command[0] == 'a' && command[1] == 'u' &&
+                 command[2] == 't' && command[3] == 'o')
+            uart.put_string("@RESULT mode=dma status=FAIL error=BAD_COMMAND\n");
         else if (*command != '\0')
             uart.put_string("Unknown command. Type 'help'.\n");
     }
