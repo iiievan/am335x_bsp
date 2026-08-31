@@ -483,7 +483,7 @@ namespace HAL::UART
         FIFO_register_write(tFCR);
 
         divisor_latch divisor;
-        divisor.set_baud(KBPS_115_2);
+        m_baud_mode = divisor.set_baud(m_baudrate);
         divisor_latch_set(divisor);
         divisor_latch_disable();
 

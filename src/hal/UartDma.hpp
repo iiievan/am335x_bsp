@@ -90,7 +90,8 @@ namespace HAL::UART
 
         /** Send complete chunks with EDMA and a possible tail by polling. */
         [[nodiscard]] bool transmit(const void* data, const size_t size,
-                                    const uint32_t timeout_loops = 5'000'000u) noexcept
+                                    const uint32_t timeout_loops = 5'000'000u,
+                                    const uint32_t timeout_epochs = 1u) noexcept
         {
             if (!m_initialized || (data == nullptr && size != 0u))
                 return false;
@@ -134,7 +135,7 @@ namespace HAL::UART
                     return false;
                 }
 
-                if (!m_tx.wait_completion(timeout_loops))
+                if (!m_tx.wait_completion(timeout_loops, timeout_epochs))
                 {
                     m_uart.DMA_disable();
                     cp15_DSB_barrier();
@@ -162,7 +163,8 @@ namespace HAL::UART
         /** Receive complete FIFO-trigger-sized chunks with EDMA and a tail by polling. */
         [[nodiscard]] bool receive(void* data, const size_t size,
                                    const uint32_t timeout_loops = 5'000'000u,
-                                   const uint32_t tail_timeout_loops = 5'000'000u) noexcept
+                                   const uint32_t tail_timeout_loops = 5'000'000u,
+                                   const uint32_t timeout_epochs = 1u) noexcept
         {
             if (!m_initialized || (data == nullptr && size != 0u))
                 return false;
@@ -197,7 +199,7 @@ namespace HAL::UART
                 m_uart.DMA_enable(REGS::UART::SCR_DMA_MODE_1);
 
                 if (!m_rx.trigger(REGS::EDMA::TRIG_MODE_EVENT) ||
-                    !m_rx.wait_completion(timeout_loops))
+                    !m_rx.wait_completion(timeout_loops, timeout_epochs))
                 {
                     m_uart.DMA_disable();
                     cp15_DSB_barrier();

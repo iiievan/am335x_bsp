@@ -93,3 +93,37 @@ python3 tools/uart_dma_autotest.py --mode suite \
 Each group prints its own `SECTION` result followed by the aggregate `SUITE`
 and `SUMMARY` results. The run stops at the first failure and records the
 section, case, size, and tail that failed.
+
+## Baud-rate matrix
+
+The firmware command `auto baud <index>` performs a two-phase baud switch. It
+acknowledges the request at the old rate, changes the AM335x divisor and 16x/13x
+mode, then requires a four-byte synchronization token at the new rate. A failed
+token rolls the target back to the previous rate.
+
+Run the complete 58-case suite at every configured rate:
+
+```bash
+python3 tools/uart_dma_autotest.py --mode baud-matrix \
+    --port /dev/ttyUSB0 --log uart_baud_matrix.log
+```
+
+Use `--bauds` for an incremental run. Values can be baud rates or enum indexes:
+
+```bash
+python3 tools/uart_dma_autotest.py --mode baud-matrix \
+    --bauds 115200,230400,460800,921600,1843200,3686400 \
+    --port /dev/ttyUSB0 --log uart_baud_matrix_fast.log --verbose
+```
+
+The host uses the standard nominal rates `300, 600, 1200, 2400, 4800, 9600,
+14400, 19200, 28800, 38400, 57600, 115200, 230400, 460800, 921600, 1843200,
+3686400`. Index 13 is `460800`; the existing `KBPS_480_8` enum name is retained
+for source compatibility, but with the AM335x 48 MHz functional clock and the
+13x/divide-by-8 setting its wire rate is approximately 461538 baud.
+
+The matrix returns to 115200 after every rate. Adapter or link negotiation
+failures are logged as `UNSUPPORTED`, separately from a suite `FAIL`. Timeouts
+and serial write limits scale automatically for slow rates. A complete matrix
+including 300 baud takes several hours because every rate transfers the full
+large-frame and stress workload.

@@ -38,6 +38,8 @@ namespace HAL::UART
 
         REGS::UART::LCR_reg_t m_LCR_before;
         REGS::UART::FCR_reg_t m_FCR_shadow;
+        REGS::UART::e_BAUDRATE m_baudrate{REGS::UART::KBPS_115_2};
+        REGS::UART::e_MODESELECT m_baud_mode{REGS::UART::MODE_UART_16x};
         [[gnu::always_inline]] void m_save_LCR() noexcept           { m_LCR_before.reg = m_instance.LCR.reg; }
         [[gnu::always_inline]] void m_restore_LCR() const noexcept  { m_instance.LCR.reg = m_LCR_before.reg; }
 
@@ -171,7 +173,7 @@ namespace HAL::UART
         int_enable(RECEIVE_IT);  // Из uart_core
         switch_reg_config_mode(OPERATIONAL_MODE, ENH_DISABLE);  // Из uart_core
 
-        switch_operating_mode(MODE_UART_16x);  // Из uart_core
+        switch_operating_mode(m_baud_mode);  // Из uart_core
         resume_operation();  // Из uart_core
 
         m_user_callback = cb;
@@ -191,7 +193,7 @@ namespace HAL::UART
     void finish_common_init() noexcept
     {
         switch_reg_config_mode(REGS::UART::OPERATIONAL_MODE, REGS::UART::ENH_DISABLE);
-        switch_operating_mode(REGS::UART::MODE_UART_16x);
+        switch_operating_mode(m_baud_mode);
         resume_operation();
     }
 
@@ -215,6 +217,23 @@ namespace HAL::UART
                 int_disable(static_cast<REGS::UART::e_UART_IT_EN>(0xFFu));
                 finish_common_init();
                 m_io_mode = IOMode::POLLING;
+            }
+
+            [[nodiscard]] bool set_baudrate(const REGS::UART::e_BAUDRATE baudrate) noexcept
+            {
+                if (static_cast<uint32_t>(baudrate) >
+                    static_cast<uint32_t>(REGS::UART::MBPS_3_6884))
+                {
+                    return false;
+                }
+                m_baudrate = baudrate;
+                init_polling();
+                return true;
+            }
+
+            [[nodiscard]] REGS::UART::e_BAUDRATE baudrate() const noexcept
+            {
+                return m_baudrate;
             }
 
             [[nodiscard]] bool init_interrupt(serial_user_callback cb) noexcept

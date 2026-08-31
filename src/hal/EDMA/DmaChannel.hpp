@@ -201,12 +201,21 @@ namespace HAL::EDMA
         }
 
         // Blocking wait
-        [[nodiscard]] bool wait_completion(uint32_t timeout_loops = 5'000'000) const noexcept
+        [[nodiscard]] bool wait_completion(uint32_t timeout_loops = 5'000'000,
+                                           uint32_t timeout_epochs = 1u) const noexcept
         {
-            while (!m_transfer_done && timeout_loops != 0u)
+            if (timeout_epochs == 0u)
+                return false;
+
+            while (!m_transfer_done && !m_transfer_error && timeout_epochs != 0u)
             {
-                --timeout_loops;
-                asm volatile("nop");
+                uint32_t remaining = timeout_loops;
+                while (!m_transfer_done && !m_transfer_error && remaining != 0u)
+                {
+                    --remaining;
+                    asm volatile("nop");
+                }
+                --timeout_epochs;
             }
             return m_transfer_done && !m_transfer_error;
         }

@@ -21,6 +21,13 @@ except ModuleNotFoundError:
 TARGET_VID = 0x10C4
 TARGET_PID = 0xEA60
 BAUDRATE = 115200
+BAUDRATES = (
+    300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800,
+    38400, 57600, 115200, 230400, 460800, 921600, 1843200,
+    3686400,
+)
+BASELINE_BAUD_INDEX = 11
+BAUD_MATRIX_ORDER = (11, 12, 13, 14, 15, 16, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
 FRAME_MAGIC = 0x55415254
 FRAME_VERSION = 1
 HEADER = struct.Struct("<IHHII")
@@ -149,7 +156,7 @@ def run_cycle(ser: serial.Serial, payload_size: int, sequence: int, seed: int,
     ser.write(command)
     ser.flush()
 
-    ready = read_line_until(ser, b"@READY", time.monotonic() + 2.0)
+    ready = read_line_until(ser, b"@READY", time.monotonic() + max(2.0, echo_timeout))
     expected_ready = f"sequence={sequence}".encode("ascii")
     if expected_ready not in ready or f"frame={len(frame)}".encode("ascii") not in ready:
         raise TestFailure(f"invalid READY response: {ready!r}")
@@ -177,7 +184,7 @@ def run_cycle(ser: serial.Serial, payload_size: int, sequence: int, seed: int,
             f"echo CRC mismatch: received=0x{echo_crc:04X} calculated=0x{calculated_crc:04X}"
         )
 
-    result = read_line_until(ser, b"@RESULT", time.monotonic() + 2.0)
+    result = read_line_until(ser, b"@RESULT", time.monotonic() + max(2.0, echo_timeout))
     if b"status=PASS" not in result:
         raise TestFailure(f"device rejected frame: {result.decode('ascii', errors='replace').strip()}")
     return elapsed
@@ -190,7 +197,7 @@ def run_tx_tail_case(ser: serial.Serial, size: int, sequence: int,
     ser.write(command)
     ser.flush()
 
-    ready = read_line_until(ser, b"@READY", time.monotonic() + 2.0)
+    ready = read_line_until(ser, b"@READY", time.monotonic() + max(2.0, echo_timeout))
     required = (
         f"mode=tx sequence={sequence} size={size} "
         f"dma={size - size % DMA_ALIGNMENT} tail={size % DMA_ALIGNMENT}"
@@ -211,7 +218,7 @@ def run_tx_tail_case(ser: serial.Serial, size: int, sequence: int,
             f"TX CRC mismatch: received=0x{received_crc:04X} calculated=0x{calculated_crc:04X}"
         )
 
-    result = read_line_until(ser, b"@RESULT", time.monotonic() + 2.0)
+    result = read_line_until(ser, b"@RESULT", time.monotonic() + max(2.0, echo_timeout))
     if b"status=PASS" not in result:
         raise TestFailure(f"device TX failure: {result.decode('ascii', errors='replace').strip()}")
     return elapsed
@@ -224,7 +231,7 @@ def run_rx_tail_case(ser: serial.Serial, size: int, sequence: int,
     ser.write(command)
     ser.flush()
 
-    ready = read_line_until(ser, b"@READY", time.monotonic() + 2.0)
+    ready = read_line_until(ser, b"@READY", time.monotonic() + max(2.0, result_timeout))
     required = (
         f"mode=rx sequence={sequence} size={size} "
         f"dma={size - size % DMA_ALIGNMENT} tail={size % DMA_ALIGNMENT}"
@@ -260,8 +267,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", help="serial device; CP210x is detected when omitted")
     parser.add_argument("--profile", choices=PROFILES, default="smoke")
-    parser.add_argument("--mode", choices=("loopback", "tx-tail", "rx-tail", "suite"), default="loopback",
-                        help="test mode (default: loopback)")
+    parser.add_argument(
+        "--mode",
+        choices=("loopback", "tx-tail", "rx-tail", "suite", "baud-matrix"),
+        default="loopback", help="test mode (default: loopback)",
+    )
     parser.add_argument("--size", type=int, help="override profile payload size")
     parser.add_argument("--cycles", type=int, help="override profile cycle count")
     parser.add_argument("--seed", type=lambda value: int(value, 0), default=0x12345678)
@@ -269,6 +279,10 @@ def parse_args() -> argparse.Namespace:
                         help="seconds between READY and frame TX (default: 0.05)")
     parser.add_argument("--echo-timeout", type=float, default=30.0,
                         help="seconds to wait for the complete DMA echo (default: 30)")
+    parser.add_argument(
+        "--bauds",
+        help="comma-separated baud values or enum indexes for baud-matrix; default: all",
+    )
     parser.add_argument("--log", type=Path, help="write a detailed UTF-8 log file")
     parser.add_argument("--self-test", action="store_true", help="verify framing and CRC without UART hardware")
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -366,6 +380,99 @@ def run_tail_group(ser: serial.Serial, mode: str, cycles: int,
     return total_cases, section_time
 
 
+def run_complete_suite(ser: serial.Serial, args: argparse.Namespace) -> tuple[int, float]:
+    suite_cases = 12 + 2 * len(TAIL_SIZES)
+    logging.info("SUITE status=BEGIN cases=%d full_profile=SKIPPED", suite_cases)
+    passed = 0
+    total_time = 0.0
+    groups = (
+        ("smoke", 256, 1),
+        ("large-6144", 6144, 1),
+        ("stress", 6144, 10),
+    )
+    for name, group_payload, group_cycles in groups:
+        group_passed, group_time = run_loopback_group(
+            ser, name, group_payload, group_cycles, passed, args,
+        )
+        passed += group_passed
+        total_time += group_time
+    for tail_mode in ("tx-tail", "rx-tail"):
+        group_passed, group_time = run_tail_group(
+            ser, tail_mode, 1, passed, args,
+        )
+        passed += group_passed
+        total_time += group_time
+    logging.info(
+        "SUITE status=PASS passed=%d failed=0 full_profile=SKIPPED",
+        passed,
+    )
+    return passed, total_time
+
+
+def switch_baudrate(ser: serial.Serial, old_index: int, new_index: int,
+                    timeout: float) -> None:
+    old_baud = BAUDRATES[old_index]
+    new_baud = BAUDRATES[new_index]
+    command = f"auto baud {new_index}\n".encode("ascii")
+    ser.write(command)
+    ser.flush()
+    ready = read_line_until(ser, b"@BAUD READY", time.monotonic() + timeout)
+    required = (
+        f"old_index={old_index} old={old_baud} "
+        f"new_index={new_index} new={new_baud}"
+    ).encode("ascii")
+    if required not in ready:
+        raise TestFailure(f"invalid BAUD READY response: {ready!r}")
+
+    try:
+        ser.baudrate = new_baud
+    except (ValueError, OSError) as error:
+        raise TestFailure(f"adapter rejected baud={new_baud}: {error}") from error
+    ser.reset_input_buffer()
+    sync = bytes((0x55, 0xAA, new_index, new_index ^ 0xFF))
+    ser.write(sync)
+    ser.flush()
+    active = read_line_until(ser, b"@BAUD ACTIVE", time.monotonic() + timeout)
+    expected = f"index={new_index} baud={new_baud}".encode("ascii")
+    if expected not in active:
+        raise TestFailure(f"invalid BAUD ACTIVE response: {active!r}")
+    logging.info(
+        "BAUD_SWITCH status=PASS old_index=%d old=%d new_index=%d new=%d",
+        old_index, old_baud, new_index, new_baud,
+    )
+
+
+def matrix_timeout(baud: int, minimum: float) -> float:
+    largest_frame = len(make_frame(MAX_PAYLOAD_SIZE, 0, 0x12345678))
+    roundtrip_wire_seconds = 2.0 * largest_frame * 10.0 / baud
+    return max(minimum, roundtrip_wire_seconds * 1.5 + 5.0)
+
+
+def parse_baud_selection(value: str | None) -> tuple[int, ...]:
+    if value is None:
+        return BAUD_MATRIX_ORDER
+    result = []
+    for item in value.split(","):
+        token = item.strip()
+        if not token:
+            raise TestFailure("--bauds contains an empty item")
+        try:
+            numeric = int(token, 0)
+        except ValueError as error:
+            raise TestFailure(f"invalid baud/index in --bauds: {token}") from error
+        if numeric in BAUDRATES:
+            index = BAUDRATES.index(numeric)
+        elif 0 <= numeric < len(BAUDRATES):
+            index = numeric
+        else:
+            raise TestFailure(f"unknown baud/index in --bauds: {token}")
+        if index not in result:
+            result.append(index)
+    if not result:
+        raise TestFailure("--bauds must select at least one baud")
+    return tuple(result)
+
+
 def main() -> int:
     args = parse_args()
     configure_logging(args)
@@ -384,6 +491,10 @@ def main() -> int:
             packet = make_tx_packet(size, 0x12345678)
             if len(packet) != size or crc16_ccitt_false(packet[:-2]) != struct.unpack_from("<H", packet, size - 2)[0]:
                 raise TestFailure(f"TX packet self-test failed for size={size}")
+        if len(BAUDRATES) != 17 or BAUDRATES[BASELINE_BAUD_INDEX] != BAUDRATE:
+            raise TestFailure("baud table self-test failed")
+        if parse_baud_selection("11,230400,13") != (11, 12, 13):
+            raise TestFailure("baud selection self-test failed")
         logging.info("SELF-TEST status=PASS crc=0x29B1 frame_size=%d", len(frame))
         return 0
     if not 1 <= payload_size <= MAX_PAYLOAD_SIZE:
@@ -416,33 +527,86 @@ def main() -> int:
                 )
             elif args.mode in ("tx-tail", "rx-tail"):
                 passed, total_time = run_tail_group(ser, args.mode, cycles, 0, args)
+            elif args.mode == "suite":
+                passed, total_time = run_complete_suite(ser, args)
             else:
-                suite_cases = 12 + 2 * len(TAIL_SIZES)
+                selected_bauds = parse_baud_selection(args.bauds)
+                rates_passed = 0
+                rates_unsupported = 0
+                rates_failed = 0
                 logging.info(
-                    "SUITE status=BEGIN cases=%d full_profile=SKIPPED",
-                    suite_cases,
+                    "BAUD_MATRIX status=BEGIN rates=%d cases_per_rate=58 order=%s",
+                    len(selected_bauds),
+                    ",".join(str(BAUDRATES[index]) for index in selected_bauds),
                 )
-                groups = (
-                    ("smoke", 256, 1),
-                    ("large-6144", 6144, 1),
-                    ("stress", 6144, 10),
-                )
-                for name, group_payload, group_cycles in groups:
-                    group_passed, group_time = run_loopback_group(
-                        ser, name, group_payload, group_cycles, passed, args,
+                for rate_number, baud_index in enumerate(selected_bauds, 1):
+                    baud = BAUDRATES[baud_index]
+                    rate_timeout = matrix_timeout(baud, args.echo_timeout)
+                    original_timeout = args.echo_timeout
+                    switched = False
+                    suite_started = False
+                    logging.info(
+                        "BAUD_RATE status=BEGIN rate=%d/%d index=%d baud=%d timeout=%.1fs",
+                        rate_number, len(selected_bauds), baud_index, baud, rate_timeout,
                     )
-                    passed += group_passed
-                    total_time += group_time
-                for tail_mode in ("tx-tail", "rx-tail"):
-                    group_passed, group_time = run_tail_group(
-                        ser, tail_mode, 1, passed, args,
-                    )
-                    passed += group_passed
-                    total_time += group_time
+                    try:
+                        switch_baudrate(
+                            ser, BASELINE_BAUD_INDEX, baud_index,
+                            max(30.0, 500.0 * 10.0 / min(BAUDRATE, baud)),
+                        )
+                        switched = True
+                        ser.write_timeout = max(2.0, rate_timeout)
+                        args.echo_timeout = rate_timeout
+                        suite_started = True
+                        rate_passed, rate_time = run_complete_suite(ser, args)
+                        passed += rate_passed
+                        total_time += rate_time
+                        rates_passed += 1
+                        logging.info(
+                            "BAUD_RATE status=PASS rate=%d/%d index=%d baud=%d "
+                            "passed=%d failed=0 elapsed=%.3fs",
+                            rate_number, len(selected_bauds), baud_index, baud,
+                            rate_passed, rate_time,
+                        )
+                    except (TestFailure, OSError) as error:
+                        if suite_started:
+                            rates_failed += 1
+                            logging.error(
+                                "BAUD_RATE status=FAIL rate=%d/%d index=%d baud=%d error=%s",
+                                rate_number, len(selected_bauds), baud_index, baud, error,
+                            )
+                        else:
+                            rates_unsupported += 1
+                            logging.warning(
+                                "BAUD_RATE status=UNSUPPORTED rate=%d/%d index=%d "
+                                "baud=%d adapter_or_link=%s",
+                                rate_number, len(selected_bauds), baud_index, baud, error,
+                            )
+                    finally:
+                        args.echo_timeout = original_timeout
+                        ser.write_timeout = max(2.0, original_timeout)
+                        try:
+                            if switched:
+                                switch_baudrate(
+                                    ser, baud_index, BASELINE_BAUD_INDEX,
+                                    max(30.0, 500.0 * 10.0 / min(BAUDRATE, baud)),
+                                )
+                            else:
+                                ser.baudrate = BAUDRATE
+                                time.sleep(1.0)
+                                synchronize(ser)
+                        except (TestFailure, OSError, ValueError) as recovery_error:
+                            raise TestFailure(
+                                f"cannot recover baseline baud after {baud}: {recovery_error}"
+                            ) from recovery_error
                 logging.info(
-                    "SUITE status=PASS passed=%d failed=0 full_profile=SKIPPED",
-                    passed,
+                    "BAUD_MATRIX status=%s rates_passed=%d rates_unsupported=%d "
+                    "rates_failed=%d hardware_cases_passed=%d",
+                    "PASS" if rates_failed == 0 else "FAIL",
+                    rates_passed, rates_unsupported, rates_failed, passed,
                 )
+                if rates_failed != 0:
+                    return 1
         except (TestFailure, OSError) as error:
             logging.error(
                 "SUMMARY status=FAIL passed=%d failed=1 wall_elapsed=%.3fs error=%s",

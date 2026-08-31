@@ -26,6 +26,14 @@ namespace
     constexpr std::size_t DMA_MAX_PAYLOAD_SIZE = 6144u;
     constexpr std::size_t DMA_MAX_FRAME_SIZE =
         DMA_FRAME_HEADER_SIZE + DMA_MAX_PAYLOAD_SIZE + 6u + DMA_FRAME_CRC_SIZE;
+    constexpr uint32_t UART_BAUD_VALUES[] =
+    {
+        300u, 600u, 1200u, 2400u, 4800u, 9600u, 14400u, 19200u, 28800u,
+        38400u, 57600u, 115200u, 230400u, 460800u, 921600u, 1843200u,
+        3686400u
+    };
+    constexpr std::size_t UART_BAUD_COUNT =
+        sizeof(UART_BAUD_VALUES) / sizeof(UART_BAUD_VALUES[0]);
 
     constexpr char POLLING_PATTERN[] = "POLL1234";
     constexpr char INTERRUPT_PATTERN[] = "IRQ12345";
@@ -40,7 +48,8 @@ namespace
         "test all",
         "auto dma",
         "auto tx",
-        "auto rx"
+        "auto rx",
+        "auto baud"
     };
     constexpr std::size_t COMMAND_COUNT =
         sizeof(COMMAND_NAMES) / sizeof(COMMAND_NAMES[0]);
@@ -233,6 +242,108 @@ namespace
         return *cursor == '\0';
     }
 
+    [[nodiscard]] bool parse_auto_baud(const char* command,
+                                       uint32_t& baud_index) noexcept
+    {
+        constexpr char prefix[] = "auto baud";
+        for (std::size_t i = 0u; i < sizeof(prefix) - 1u; ++i)
+        {
+            if (command[i] != prefix[i])
+                return false;
+        }
+
+        const char* cursor = command + sizeof(prefix) - 1u;
+        if (!parse_u32(cursor, baud_index))
+            return false;
+        while (*cursor == ' ')
+            ++cursor;
+        return *cursor == '\0';
+    }
+
+    [[nodiscard]] uint32_t baud_value(const Uart& uart) noexcept
+    {
+        const auto index = static_cast<uint32_t>(uart.baudrate());
+        return index < UART_BAUD_COUNT ? UART_BAUD_VALUES[index] : 115200u;
+    }
+
+    [[nodiscard]] uint32_t dma_timeout_epochs(const Uart& uart) noexcept
+    {
+        const uint32_t baud = baud_value(uart);
+        const uint32_t ratio = (115200u + baud - 1u) / baud;
+        return ratio > 1u ? ratio * 2u : 1u;
+    }
+
+    void run_baud_switch(Uart& uart, const uint32_t baud_index) noexcept
+    {
+        const auto old_baud = uart.baudrate();
+        const uint32_t old_index = static_cast<uint32_t>(old_baud);
+        const auto new_baud = static_cast<REGS::UART::e_BAUDRATE>(baud_index);
+        char message[160]{};
+
+        std::snprintf(message, sizeof(message),
+                      "@BAUD READY old_index=%u old=%u new_index=%u new=%u\n",
+                      static_cast<unsigned>(old_index),
+                      static_cast<unsigned>(UART_BAUD_VALUES[old_index]),
+                      static_cast<unsigned>(baud_index),
+                      static_cast<unsigned>(UART_BAUD_VALUES[baud_index]));
+        uart.put_string(message);
+        uart.wait_tx_complete();
+
+        if (!uart.set_baudrate(new_baud))
+        {
+            (void)uart.set_baudrate(old_baud);
+            uart.put_string("@BAUD ROLLBACK error=SET_BAUD\n");
+            return;
+        }
+
+        const uint8_t expected_sync[] =
+        {
+            0x55u, 0xAAu, static_cast<uint8_t>(baud_index),
+            static_cast<uint8_t>(baud_index ^ 0xFFu)
+        };
+        bool sync_ok = true;
+        for (const uint8_t expected : expected_sync)
+        {
+            uint32_t timeout = TEST_TIMEOUT_LOOPS;
+            while (!uart.rx_data_available() && timeout != 0u)
+            {
+                --timeout;
+                __asm volatile("nop");
+            }
+            if (timeout == 0u || static_cast<uint8_t>(uart.get_char()) != expected)
+            {
+                sync_ok = false;
+                break;
+            }
+        }
+
+        if (!sync_ok)
+        {
+            uart.FIFO_clear(false, true);
+            (void)uart.set_baudrate(old_baud);
+            std::snprintf(message, sizeof(message),
+                          "@BAUD ROLLBACK index=%u baud=%u error=SYNC\n",
+                          static_cast<unsigned>(old_index),
+                          static_cast<unsigned>(UART_BAUD_VALUES[old_index]));
+            uart.put_string(message);
+            return;
+        }
+
+        std::snprintf(message, sizeof(message),
+                      "@BAUD ACTIVE index=%u baud=%u mode=%ux\n",
+                      static_cast<unsigned>(baud_index),
+                      static_cast<unsigned>(UART_BAUD_VALUES[baud_index]),
+                      baud_index >= static_cast<uint32_t>(REGS::UART::KBPS_480_8)
+                          ? 13u : 16u);
+        uart.put_string(message);
+        RTT_LOG_I("dma_auto", "BAUD old=%u new=%u index=%u mode=%ux",
+                  static_cast<unsigned>(UART_BAUD_VALUES[old_index]),
+                  static_cast<unsigned>(UART_BAUD_VALUES[baud_index]),
+                  static_cast<unsigned>(baud_index),
+                  baud_index >= static_cast<uint32_t>(REGS::UART::KBPS_480_8)
+                      ? 13u : 16u);
+    }
+
     void build_tx_test_packet(const std::size_t size, const uint32_t seed) noexcept
     {
         uint32_t state = seed != 0u ? seed : 0x6D2B79F5u;
@@ -289,7 +400,8 @@ namespace
 
         const uint32_t tx_started = HAL::PERF::get_cycle_count();
         const bool tx_ok = uart_dma.transmit(g_dma_frame, transfer_size,
-                                             TEST_TIMEOUT_LOOPS);
+                                             TEST_TIMEOUT_LOOPS,
+                                             dma_timeout_epochs(uart));
         const uint32_t tx_cycles = HAL::PERF::get_cycle_count() - tx_started;
         if (!tx_ok)
             log_dma_hw_state("TXTAIL_FAIL", REGS::EDMA::CH_UART0_TX);
@@ -356,7 +468,8 @@ namespace
         const uint32_t rx_started = HAL::PERF::get_cycle_count();
         const bool rx_ok = uart_dma.receive(g_dma_frame, transfer_size,
                                             TEST_TIMEOUT_LOOPS,
-                                            TEST_TIMEOUT_LOOPS);
+                                            TEST_TIMEOUT_LOOPS,
+                                            dma_timeout_epochs(uart));
         const uint32_t rx_cycles = HAL::PERF::get_cycle_count() - rx_started;
 
         bool crc_ok = false;
@@ -468,7 +581,8 @@ namespace
         RTT_LOG_I("dma_auto", "READY sent; entering blocking RX");
         const uint32_t rx_started = HAL::PERF::get_cycle_count();
 
-        if (!uart_dma.receive(g_dma_frame, frame_size, TEST_TIMEOUT_LOOPS))
+        if (!uart_dma.receive(g_dma_frame, frame_size, TEST_TIMEOUT_LOOPS,
+                              TEST_TIMEOUT_LOOPS, dma_timeout_epochs(uart)))
         {
             const uint32_t rx_cycles = HAL::PERF::get_cycle_count() - rx_started;
             RTT_LOG_E("dma_auto", "RX failed after %u PMU cycles",
@@ -515,7 +629,9 @@ namespace
         // Echo the exact bytes received even on a validation failure.  This lets
         // the host locate and report the first corrupted byte.
         const uint32_t tx_started = HAL::PERF::get_cycle_count();
-        const bool tx_ok = uart_dma.transmit(g_dma_frame, frame_size, TEST_TIMEOUT_LOOPS);
+        const bool tx_ok = uart_dma.transmit(g_dma_frame, frame_size,
+                                             TEST_TIMEOUT_LOOPS,
+                                             dma_timeout_epochs(uart));
         const uint32_t tx_cycles = HAL::PERF::get_cycle_count() - tx_started;
         RTT_LOG_I("dma_auto", "TX %s after %u PMU cycles",
                   tx_ok ? "completed" : "failed",
@@ -668,10 +784,15 @@ namespace
                 "Send DMA12345: ";
             constexpr char newline[] = "\r\n";
 
-            if (!uart_dma.transmit(prompt, sizeof(prompt) - 1u, TEST_TIMEOUT_LOOPS) ||
-                !uart_dma.receive(rx_buffer, TEST_DATA_SIZE, TEST_TIMEOUT_LOOPS) ||
-                !uart_dma.transmit(rx_buffer, TEST_DATA_SIZE, TEST_TIMEOUT_LOOPS) ||
-                !uart_dma.transmit(newline, sizeof(newline) - 1u, TEST_TIMEOUT_LOOPS))
+            const uint32_t timeout_epochs = dma_timeout_epochs(uart);
+            if (!uart_dma.transmit(prompt, sizeof(prompt) - 1u,
+                                   TEST_TIMEOUT_LOOPS, timeout_epochs) ||
+                !uart_dma.receive(rx_buffer, TEST_DATA_SIZE, TEST_TIMEOUT_LOOPS,
+                                  TEST_TIMEOUT_LOOPS, timeout_epochs) ||
+                !uart_dma.transmit(rx_buffer, TEST_DATA_SIZE,
+                                   TEST_TIMEOUT_LOOPS, timeout_epochs) ||
+                !uart_dma.transmit(newline, sizeof(newline) - 1u,
+                                   TEST_TIMEOUT_LOOPS, timeout_epochs))
             {
                 return false;
             }
@@ -695,6 +816,7 @@ namespace
             "  auto dma N S K   Binary DMA loopback: payload size, sequence, seed\n"
             "  auto tx N S K    TX tail test: exact size, sequence, seed\n"
             "  auto rx N S K    RX tail test: exact size, sequence, seed\n"
+            "  auto baud I      Switch baud by enum index (0..16)\n"
             "\nEditing:\n"
             "  Up/Down          Command history\n"
             "  Left/Right       Move cursor\n"
@@ -728,6 +850,7 @@ namespace
         uint32_t payload_size = 0u;
         uint32_t sequence = 0u;
         uint32_t seed = 0u;
+        uint32_t baud_index = 0u;
 
         if (strings_equal(command, COMMAND_NAMES[0]))
             print_help(uart);
@@ -777,6 +900,13 @@ namespace
                 run_rx_tail_test(uart, payload_size,
                                  static_cast<uint16_t>(sequence), seed);
             }
+        }
+        else if (parse_auto_baud(command, baud_index))
+        {
+            if (baud_index >= UART_BAUD_COUNT)
+                uart.put_string("@BAUD ERROR error=BAD_ARGUMENT\n");
+            else
+                run_baud_switch(uart, baud_index);
         }
         else if (command[0] == 'a' && command[1] == 'u' &&
                  command[2] == 't' && command[3] == 'o')
