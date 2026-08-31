@@ -58,6 +58,11 @@ namespace HAL::UART
         return ret_val;
     }
 
+    bool uart_base::rx_data_available() const noexcept
+    {
+        return m_instance.LSR_UART.b.RXFIFOE != 0u;
+    }
+
     void uart_base::put_string(const char* str) const noexcept
     {
         while (*str)

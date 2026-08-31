@@ -54,7 +54,6 @@ set(BSP_SOURCES  src/hal/INTC.cpp
                  src/regs/CONTROL_MODULE.cpp
                  src/regs/REGS.cpp
                  src/regs/EDMA.cpp
-        src/hal/extra.cpp
 )
 
 add_library(am335x_bsp STATIC ${BSP_SOURCES})

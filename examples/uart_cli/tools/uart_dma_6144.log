@@ -1,21 +1,21 @@
-2026-08-31 02:11:35,423 INFO    DMA profile=smoke port=/dev/ttyUSB0 baud=115200 payload=6144 cycles=1
-2026-08-31 02:11:35,442 DEBUG   device: b'^C'
-2026-08-31 02:11:35,442 DEBUG   device: b'uart>'
-2026-08-31 02:11:35,505 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 0\r\x1b[2Kuart> auto dma 6144 0 \r\x1b[2Kuart> auto dma 6144 0 3\r\x1b[2Kuart> auto dma 6144 0 30\r\x1b[2Kuart> auto dma 6144 0 305\r\x1b[2Kuart> auto dma 6144 0 3054\r\x1b[2Kuart> auto dma 6144 0 30541\r\x1b[2Kuart> auto dma 6144 0 305419\r\x1b[2Kuart> auto dma 6144 0 3054198\r\x1b[2Kuart> auto dma 6144 0 30541989\r\x1b[2Kuart> auto dma 6144 0 305419896'
-2026-08-31 02:11:35,521 DEBUG   device: b'@READY mode=dma sequence=0 frame=6168 payload=6144'
-2026-08-31 02:11:35,521 DEBUG   READY accepted; delaying 0.050s before frame TX
-2026-08-31 02:11:36,109 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.537242s crc=0x0079
-2026-08-31 02:11:36,159 DEBUG   echo chunk=513 total=513/6168 after=0.050084s
-2026-08-31 02:11:36,209 DEBUG   echo chunk=576 total=1089/6168 after=0.100327s
-2026-08-31 02:11:36,259 DEBUG   echo chunk=576 total=1665/6168 after=0.150633s
-2026-08-31 02:11:36,310 DEBUG   echo chunk=576 total=2241/6168 after=0.200876s
-2026-08-31 02:11:36,360 DEBUG   echo chunk=576 total=2817/6168 after=0.251109s
-2026-08-31 02:11:36,410 DEBUG   echo chunk=576 total=3393/6168 after=0.301367s
-2026-08-31 02:11:36,460 DEBUG   echo chunk=576 total=3969/6168 after=0.351621s
-2026-08-31 02:11:36,510 DEBUG   echo chunk=576 total=4545/6168 after=0.401818s
-2026-08-31 02:11:36,561 DEBUG   echo chunk=576 total=5121/6168 after=0.452007s
-2026-08-31 02:11:36,611 DEBUG   echo chunk=576 total=5697/6168 after=0.502198s
-2026-08-31 02:11:36,652 DEBUG   echo chunk=471 total=6168/6168 after=0.543750s
-2026-08-31 02:11:36,668 DEBUG   device: b'@RESULT mode=dma sequence=0 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
-2026-08-31 02:11:36,668 INFO    cycle=1/1 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
-2026-08-31 02:11:36,670 INFO    SUMMARY status=PASS passed=1 failed=0 elapsed=1.081s
+2026-08-31 04:47:06,081 INFO    DMA mode=loopback profile=smoke port=/dev/ttyUSB0 baud=115200 payload=6144 cycles=1
+2026-08-31 04:47:06,100 DEBUG   device: b'^C'
+2026-08-31 04:47:06,100 DEBUG   device: b'uart>'
+2026-08-31 04:47:06,163 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 0\r\x1b[2Kuart> auto dma 6144 0 \r\x1b[2Kuart> auto dma 6144 0 3\r\x1b[2Kuart> auto dma 6144 0 30\r\x1b[2Kuart> auto dma 6144 0 305\r\x1b[2Kuart> auto dma 6144 0 3054\r\x1b[2Kuart> auto dma 6144 0 30541\r\x1b[2Kuart> auto dma 6144 0 305419\r\x1b[2Kuart> auto dma 6144 0 3054198\r\x1b[2Kuart> auto dma 6144 0 30541989\r\x1b[2Kuart> auto dma 6144 0 305419896'
+2026-08-31 04:47:06,179 DEBUG   device: b'@READY mode=dma sequence=0 frame=6168 payload=6144'
+2026-08-31 04:47:06,179 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 04:47:06,765 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.536210s crc=0x0079
+2026-08-31 04:47:06,816 DEBUG   echo chunk=513 total=513/6168 after=0.050071s
+2026-08-31 04:47:06,866 DEBUG   echo chunk=576 total=1089/6168 after=0.100242s
+2026-08-31 04:47:06,916 DEBUG   echo chunk=576 total=1665/6168 after=0.150384s
+2026-08-31 04:47:06,966 DEBUG   echo chunk=576 total=2241/6168 after=0.200517s
+2026-08-31 04:47:07,016 DEBUG   echo chunk=576 total=2817/6168 after=0.250653s
+2026-08-31 04:47:07,066 DEBUG   echo chunk=576 total=3393/6168 after=0.300790s
+2026-08-31 04:47:07,116 DEBUG   echo chunk=576 total=3969/6168 after=0.350951s
+2026-08-31 04:47:07,167 DEBUG   echo chunk=576 total=4545/6168 after=0.401094s
+2026-08-31 04:47:07,217 DEBUG   echo chunk=576 total=5121/6168 after=0.451269s
+2026-08-31 04:47:07,267 DEBUG   echo chunk=576 total=5697/6168 after=0.501423s
+2026-08-31 04:47:07,309 DEBUG   echo chunk=471 total=6168/6168 after=0.543969s
+2026-08-31 04:47:07,325 DEBUG   device: b'@RESULT mode=dma sequence=0 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
+2026-08-31 04:47:07,325 INFO    cycle=1/1 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 04:47:07,327 INFO    SUMMARY status=PASS passed=1 failed=0 elapsed=1.080s

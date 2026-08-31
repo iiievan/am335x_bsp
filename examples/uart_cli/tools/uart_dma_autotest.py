@@ -40,7 +40,7 @@ PROFILES = {
     "full": Profile(payload_size=6144, cycles=100),
 }
 
-TX_TAIL_SIZES = tuple(range(2, 17)) + tuple(range(6144, 6152))
+TAIL_SIZES = tuple(range(2, 17)) + tuple(range(6144, 6152))
 
 
 class TestFailure(RuntimeError):
@@ -217,11 +217,50 @@ def run_tx_tail_case(ser: serial.Serial, size: int, sequence: int,
     return elapsed
 
 
+def run_rx_tail_case(ser: serial.Serial, size: int, sequence: int,
+                     seed: int, ready_delay: float, result_timeout: float) -> float:
+    packet = make_tx_packet(size, seed)
+    command = f"auto rx {size} {sequence} {seed}\n".encode("ascii")
+    ser.write(command)
+    ser.flush()
+
+    ready = read_line_until(ser, b"@READY", time.monotonic() + 2.0)
+    required = (
+        f"mode=rx sequence={sequence} size={size} "
+        f"dma={size - size % DMA_ALIGNMENT} tail={size % DMA_ALIGNMENT}"
+    ).encode("ascii")
+    if required not in ready:
+        raise TestFailure(f"invalid RX READY response: {ready!r}")
+
+    logging.debug("RX READY accepted; delaying %.3fs before packet TX", ready_delay)
+    time.sleep(ready_delay)
+    started = time.monotonic()
+    written = ser.write(packet)
+    ser.flush()
+    elapsed = time.monotonic() - started
+    if written != size:
+        raise TestFailure(f"short RX test write: submitted {written} of {size} bytes")
+
+    received_crc = struct.unpack_from("<H", packet, size - 2)[0]
+    logging.debug(
+        "RX packet submitted bytes=%d write_and_flush=%.6fs crc=0x%04X",
+        written, elapsed, received_crc,
+    )
+    result = read_line_until(ser, b"@RESULT", time.monotonic() + result_timeout)
+    expected = f"mode=rx sequence={sequence} size={size}".encode("ascii")
+    if expected not in result or b"crc=PASS" not in result or \
+            b"data=PASS" not in result or b"status=PASS" not in result:
+        raise TestFailure(
+            f"device RX failure: {result.decode('ascii', errors='replace').strip()}"
+        )
+    return time.monotonic() - started
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", help="serial device; CP210x is detected when omitted")
     parser.add_argument("--profile", choices=PROFILES, default="smoke")
-    parser.add_argument("--mode", choices=("loopback", "tx-tail"), default="loopback",
+    parser.add_argument("--mode", choices=("loopback", "tx-tail", "rx-tail"), default="loopback",
                         help="test mode (default: loopback)")
     parser.add_argument("--size", type=int, help="override profile payload size")
     parser.add_argument("--cycles", type=int, help="override profile cycle count")
@@ -261,7 +300,7 @@ def main() -> int:
             raise TestFailure(f"frame layout check failed: size={len(frame)}")
         if crc16_ccitt_false(frame[:-2]) != struct.unpack_from("<H", frame, len(frame) - 2)[0]:
             raise TestFailure("frame CRC check failed")
-        for size in TX_TAIL_SIZES:
+        for size in TAIL_SIZES:
             packet = make_tx_packet(size, 0x12345678)
             if len(packet) != size or crc16_ccitt_false(packet[:-2]) != struct.unpack_from("<H", packet, size - 2)[0]:
                 raise TestFailure(f"TX packet self-test failed for size={size}")
@@ -309,17 +348,23 @@ def main() -> int:
                     cycle + 1, cycles, payload_size, elapsed, throughput / 1024.0,
                 )
         else:
-            total_cases = len(TX_TAIL_SIZES) * cycles
+            total_cases = len(TAIL_SIZES) * cycles
             case_index = 0
             for cycle in range(cycles):
-                for size in TX_TAIL_SIZES:
+                for size in TAIL_SIZES:
                     sequence = case_index & 0xFFFF
                     seed = (args.seed + case_index * 0x9E3779B9) & 0xFFFFFFFF
                     case_index += 1
                     try:
-                        elapsed = run_tx_tail_case(
-                            ser, size, sequence, seed, args.echo_timeout,
-                        )
+                        if args.mode == "tx-tail":
+                            elapsed = run_tx_tail_case(
+                                ser, size, sequence, seed, args.echo_timeout,
+                            )
+                        else:
+                            elapsed = run_rx_tail_case(
+                                ser, size, sequence, seed, args.ready_delay,
+                                args.echo_timeout,
+                            )
                     except (TestFailure, OSError) as error:
                         logging.error(
                             "case=%d/%d size=%d tail=%d FAIL: %s",

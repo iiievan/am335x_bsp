@@ -1,11 +1,11 @@
-2026-08-31 02:10:19,891 INFO    DMA profile=smoke port=/dev/ttyUSB0 baud=115200 payload=256 cycles=1
-2026-08-31 02:10:19,910 DEBUG   device: b'^C'
-2026-08-31 02:10:19,910 DEBUG   device: b'uart>'
-2026-08-31 02:10:19,963 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 2\r\x1b[2Kuart> auto dma 25\r\x1b[2Kuart> auto dma 256\r\x1b[2Kuart> auto dma 256 \r\x1b[2Kuart> auto dma 256 0\r\x1b[2Kuart> auto dma 256 0 \r\x1b[2Kuart> auto dma 256 0 3\r\x1b[2Kuart> auto dma 256 0 30\r\x1b[2Kuart> auto dma 256 0 305\r\x1b[2Kuart> auto dma 256 0 3054\r\x1b[2Kuart> auto dma 256 0 30541\r\x1b[2Kuart> auto dma 256 0 305419\r\x1b[2Kuart> auto dma 256 0 3054198\r\x1b[2Kuart> auto dma 256 0 30541989\r\x1b[2Kuart> auto dma 256 0 305419896'
-2026-08-31 02:10:19,978 DEBUG   device: b'@READY mode=dma sequence=0 frame=280 payload=256'
-2026-08-31 02:10:19,978 DEBUG   READY accepted; delaying 0.050s before frame TX
-2026-08-31 02:10:20,054 DEBUG   frame TX submitted bytes=280/280 write_and_flush=0.026180s crc=0xEA60
-2026-08-31 02:10:20,082 DEBUG   echo chunk=280 total=280/280 after=0.027176s
-2026-08-31 02:10:20,098 DEBUG   device: b'@RESULT mode=dma sequence=0 rx=280 tx=280 crc=PASS data=PASS status=PASS'
-2026-08-31 02:10:20,098 INFO    cycle=1/1 PASS frame_payload=256 elapsed=0.054s roundtrip=9.3 KiB/s
-2026-08-31 02:10:20,100 INFO    SUMMARY status=PASS passed=1 failed=0 elapsed=0.054s
+2026-08-31 04:46:39,087 INFO    DMA mode=loopback profile=smoke port=/dev/ttyUSB0 baud=115200 payload=256 cycles=1
+2026-08-31 04:46:39,107 DEBUG   device: b'^C'
+2026-08-31 04:46:39,107 DEBUG   device: b'uart>'
+2026-08-31 04:46:39,159 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 2\r\x1b[2Kuart> auto dma 25\r\x1b[2Kuart> auto dma 256\r\x1b[2Kuart> auto dma 256 \r\x1b[2Kuart> auto dma 256 0\r\x1b[2Kuart> auto dma 256 0 \r\x1b[2Kuart> auto dma 256 0 3\r\x1b[2Kuart> auto dma 256 0 30\r\x1b[2Kuart> auto dma 256 0 305\r\x1b[2Kuart> auto dma 256 0 3054\r\x1b[2Kuart> auto dma 256 0 30541\r\x1b[2Kuart> auto dma 256 0 305419\r\x1b[2Kuart> auto dma 256 0 3054198\r\x1b[2Kuart> auto dma 256 0 30541989\r\x1b[2Kuart> auto dma 256 0 305419896'
+2026-08-31 04:46:39,175 DEBUG   device: b'@READY mode=dma sequence=0 frame=280 payload=256'
+2026-08-31 04:46:39,175 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 04:46:39,251 DEBUG   frame TX submitted bytes=280/280 write_and_flush=0.026353s crc=0xEA60
+2026-08-31 04:46:39,278 DEBUG   echo chunk=280 total=280/280 after=0.026851s
+2026-08-31 04:46:39,294 DEBUG   device: b'@RESULT mode=dma sequence=0 rx=280 tx=280 crc=PASS data=PASS status=PASS'
+2026-08-31 04:46:39,294 INFO    cycle=1/1 PASS frame_payload=256 elapsed=0.053s roundtrip=9.4 KiB/s
+2026-08-31 04:46:39,296 INFO    SUMMARY status=PASS passed=1 failed=0 elapsed=0.053s

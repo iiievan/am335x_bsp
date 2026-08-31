@@ -10,6 +10,7 @@ and provides these commands:
 - `test all`
 - `auto dma <payload-size> <sequence> <seed>`
 - `auto tx <transfer-size> <sequence> <seed>`
+- `auto rx <transfer-size> <sequence> <seed>`
 
 Each test asks for an eight-character token and echoes the received data. The
 interrupt test checks RX through the UART ISR and TX through polling. The DMA
@@ -63,3 +64,16 @@ python3 tools/uart_dma_autotest.py --mode tx-tail --profile smoke \
 
 The generated image is `examples/uart_cli/am335x_uart_cli.elf` under the
 selected CMake build directory.
+
+## Automated RX-tail matrix
+
+`auto rx` receives the aligned prefix through UART RX EDMA and then reads the
+remaining `size % 8` bytes from the RX FIFO by polling with a separate timeout.
+The target independently verifies the xorshift32 data and CRC. The same sizes
+as the TX-tail matrix cover polling-only packets, exact EDMA boundaries, and
+all tails from one through seven bytes:
+
+```bash
+python3 tools/uart_dma_autotest.py --mode rx-tail --profile smoke \
+    --port /dev/ttyUSB0 --log uart_rx_tail.log --verbose
+```

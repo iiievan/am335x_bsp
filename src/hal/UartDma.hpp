@@ -159,49 +159,73 @@ namespace HAL::UART
             return true;
         }
 
-        /** Receive complete FIFO-trigger-sized chunks with EDMA. */
+        /** Receive complete FIFO-trigger-sized chunks with EDMA and a tail by polling. */
         [[nodiscard]] bool receive(void* data, const size_t size,
-                                   const uint32_t timeout_loops = 5'000'000u) noexcept
+                                   const uint32_t timeout_loops = 5'000'000u,
+                                   const uint32_t tail_timeout_loops = 5'000'000u) noexcept
         {
             if (!m_initialized || (data == nullptr && size != 0u))
                 return false;
             if (size == 0u)
                 return true;
-            if ((size % m_rx_chunk) != 0u || (size / m_rx_chunk) > 0xFFFFu)
+            const size_t dma_size = size - (size % m_rx_chunk);
+            const size_t chunk_count = dma_size / m_rx_chunk;
+            if (chunk_count > 0xFFFFu)
                 return false;
 
-            const auto destination = reinterpret_cast<uintptr_t>(data);
-            const auto param = HAL::EDMA::ParamBuilder()
-                .setSource(Uart::rx_dma_address(), 0, 0)
-                .setDest(destination, 1, m_rx_chunk)
-                .setTransferParams(1u, m_rx_chunk,static_cast<uint16_t>(size / m_rx_chunk))
-                .setSyncType(true)
-                .enableCompletionInterrupt(RxChannel)
-                // Peripheral DMA PaRAM must remain non-static even when LINK is null.
-                // With STATIC=1, multi-event UART RX does not reach normal completion.
-                .setStatic(false)
-                .setLink(0xFFFFu)
-                .build();
-
-            if (!m_rx.configure(param))
-                return false;
-
-            HAL::CACHE::dcache_clean_invalidate_range(address_of(data),
-                                                       static_cast<uint32_t>(size));
-            cp15_DSB_barrier();
-            m_uart.DMA_enable(REGS::UART::SCR_DMA_MODE_1);
-
-            if (!m_rx.trigger(REGS::EDMA::TRIG_MODE_EVENT) ||
-                !m_rx.wait_completion(timeout_loops))
+            if (dma_size != 0u)
             {
+                const auto destination = reinterpret_cast<uintptr_t>(data);
+                const auto param = HAL::EDMA::ParamBuilder()
+                    .setSource(Uart::rx_dma_address(), 0, 0)
+                    .setDest(destination, 1, m_rx_chunk)
+                    .setTransferParams(1u, m_rx_chunk, static_cast<uint16_t>(chunk_count))
+                    .setSyncType(true)
+                    .enableCompletionInterrupt(RxChannel)
+                    // Peripheral DMA PaRAM must remain non-static even when LINK is null.
+                    // With STATIC=1, multi-event UART RX does not reach normal completion.
+                    .setStatic(false)
+                    .setLink(0xFFFFu)
+                    .build();
+
+                if (!m_rx.configure(param))
+                    return false;
+
+                HAL::CACHE::dcache_clean_invalidate_range(address_of(data),
+                                                           static_cast<uint32_t>(dma_size));
+                cp15_DSB_barrier();
+                m_uart.DMA_enable(REGS::UART::SCR_DMA_MODE_1);
+
+                if (!m_rx.trigger(REGS::EDMA::TRIG_MODE_EVENT) ||
+                    !m_rx.wait_completion(timeout_loops))
+                {
+                    m_uart.DMA_disable();
+                    cp15_DSB_barrier();
+                    (void)m_rx.stop();
+                    return false;
+                }
+
+                m_uart.DMA_disable();
+                cp15_DSB_barrier();
                 (void)m_rx.stop();
-                return false;
+                HAL::CACHE::dcache_invalidate_range(address_of(data),
+                                                     static_cast<uint32_t>(dma_size));
+                cp15_DSB_barrier();
             }
 
-            (void)m_rx.stop();
-            cp15_DSB_barrier();
-            HAL::CACHE::dcache_invalidate_range(address_of(data), static_cast<uint32_t>(size));
-            cp15_DSB_barrier();
+            auto* tail = static_cast<uint8_t*>(data) + dma_size;
+            uint32_t tail_timeout = tail_timeout_loops;
+            for (size_t i = dma_size; i < size; ++i)
+            {
+                while (!m_uart.rx_data_available())
+                {
+                    if (tail_timeout == 0u)
+                        return false;
+                    --tail_timeout;
+                    __asm volatile("nop");
+                }
+                *tail++ = static_cast<uint8_t>(m_uart.get_char());
+            }
             return true;
         }
     };

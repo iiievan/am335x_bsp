@@ -62,6 +62,7 @@ namespace HAL::UART
         // Базовые операции
         void put_char(char c) const noexcept;
         [[nodiscard]] char get_char() const noexcept;
+        [[nodiscard]] bool rx_data_available() const noexcept;
         void put_string(const char* str) const noexcept;
         void wait_tx_complete() const noexcept;
         [[nodiscard]] bool tx_fifo_full() const noexcept;
@@ -283,6 +284,7 @@ namespace HAL::UART
             // Экспортируем нужные методы из uart_core
             using uart_base::put_char;
             using uart_base::get_char;
+            using uart_base::rx_data_available;
             using uart_base::put_string;
             using uart_base::DMA_enable;
             using uart_base::DMA_disable;

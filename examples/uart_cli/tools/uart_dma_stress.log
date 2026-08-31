@@ -1,12 +1,12 @@
-2026-08-31 02:15:20,083 INFO    DMA profile=stress port=/dev/ttyUSB0 baud=115200 payload=6144 cycles=10
-2026-08-31 02:15:21,328 INFO    cycle=1/10 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
-2026-08-31 02:15:22,554 INFO    cycle=2/10 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
-2026-08-31 02:15:23,780 INFO    cycle=3/10 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
-2026-08-31 02:15:25,005 INFO    cycle=4/10 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
-2026-08-31 02:15:26,231 INFO    cycle=5/10 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
-2026-08-31 02:15:27,457 INFO    cycle=6/10 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
-2026-08-31 02:15:28,683 INFO    cycle=7/10 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
-2026-08-31 02:15:29,909 INFO    cycle=8/10 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
-2026-08-31 02:15:31,129 INFO    cycle=9/10 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
-2026-08-31 02:15:32,356 INFO    cycle=10/10 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
-2026-08-31 02:15:32,358 INFO    SUMMARY status=PASS passed=10 failed=0 elapsed=10.811s
+2026-08-31 04:47:23,009 INFO    DMA mode=loopback profile=stress port=/dev/ttyUSB0 baud=115200 payload=6144 cycles=10
+2026-08-31 04:47:24,252 INFO    cycle=1/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 04:47:25,476 INFO    cycle=2/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 04:47:26,701 INFO    cycle=3/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 04:47:27,926 INFO    cycle=4/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 04:47:29,151 INFO    cycle=5/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 04:47:30,376 INFO    cycle=6/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 04:47:31,601 INFO    cycle=7/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 04:47:32,826 INFO    cycle=8/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 04:47:34,045 INFO    cycle=9/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 04:47:35,270 INFO    cycle=10/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 04:47:35,272 INFO    SUMMARY status=PASS passed=10 failed=0 elapsed=10.803s
