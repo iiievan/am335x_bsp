@@ -260,7 +260,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", help="serial device; CP210x is detected when omitted")
     parser.add_argument("--profile", choices=PROFILES, default="smoke")
-    parser.add_argument("--mode", choices=("loopback", "tx-tail", "rx-tail"), default="loopback",
+    parser.add_argument("--mode", choices=("loopback", "tx-tail", "rx-tail", "suite"), default="loopback",
                         help="test mode (default: loopback)")
     parser.add_argument("--size", type=int, help="override profile payload size")
     parser.add_argument("--cycles", type=int, help="override profile cycle count")
@@ -284,6 +284,86 @@ def configure_logging(args: argparse.Namespace) -> None:
         format="%(asctime)s %(levelname)-7s %(message)s",
         handlers=handlers,
     )
+
+
+def suite_seed(base_seed: int, case_index: int) -> int:
+    return (base_seed + case_index * 0x9E3779B9) & 0xFFFFFFFF
+
+
+def run_loopback_group(ser: serial.Serial, name: str, payload_size: int,
+                       cycles: int, first_case: int, args: argparse.Namespace
+                       ) -> tuple[int, float]:
+    logging.info(
+        "SECTION name=%s status=BEGIN cases=%d payload=%d",
+        name, cycles, payload_size,
+    )
+    section_time = 0.0
+    for cycle in range(cycles):
+        case_index = first_case + cycle
+        try:
+            elapsed = run_cycle(
+                ser, payload_size, case_index & 0xFFFF,
+                suite_seed(args.seed, case_index),
+                args.ready_delay, args.echo_timeout,
+            )
+        except (TestFailure, OSError) as error:
+            raise TestFailure(
+                f"section={name} cycle={cycle + 1}/{cycles}: {error}"
+            ) from error
+        section_time += elapsed
+        throughput = (2.0 * payload_size) / elapsed if elapsed else 0.0
+        logging.info(
+            "section=%s cycle=%d/%d PASS frame_payload=%d "
+            "elapsed=%.3fs roundtrip=%.1f KiB/s",
+            name, cycle + 1, cycles, payload_size,
+            elapsed, throughput / 1024.0,
+        )
+    logging.info(
+        "SECTION name=%s status=PASS passed=%d failed=0 elapsed=%.3fs",
+        name, cycles, section_time,
+    )
+    return cycles, section_time
+
+
+def run_tail_group(ser: serial.Serial, mode: str, cycles: int,
+                   first_case: int, args: argparse.Namespace
+                   ) -> tuple[int, float]:
+    total_cases = len(TAIL_SIZES) * cycles
+    logging.info("SECTION name=%s status=BEGIN cases=%d", mode, total_cases)
+    section_time = 0.0
+    local_case = 0
+    for _cycle in range(cycles):
+        for size in TAIL_SIZES:
+            case_index = first_case + local_case
+            local_case += 1
+            try:
+                if mode == "tx-tail":
+                    elapsed = run_tx_tail_case(
+                        ser, size, case_index & 0xFFFF,
+                        suite_seed(args.seed, case_index), args.echo_timeout,
+                    )
+                else:
+                    elapsed = run_rx_tail_case(
+                        ser, size, case_index & 0xFFFF,
+                        suite_seed(args.seed, case_index), args.ready_delay,
+                        args.echo_timeout,
+                    )
+            except (TestFailure, OSError) as error:
+                raise TestFailure(
+                    f"section={mode} case={local_case}/{total_cases} "
+                    f"size={size} tail={size % DMA_ALIGNMENT}: {error}"
+                ) from error
+            section_time += elapsed
+            logging.info(
+                "section=%s case=%d/%d PASS size=%d dma=%d tail=%d elapsed=%.3fs",
+                mode, local_case, total_cases, size,
+                size - size % DMA_ALIGNMENT, size % DMA_ALIGNMENT, elapsed,
+            )
+    logging.info(
+        "SECTION name=%s status=PASS passed=%d failed=0 elapsed=%.3fs",
+        mode, total_cases, section_time,
+    )
+    return total_cases, section_time
 
 
 def main() -> int:
@@ -326,62 +406,53 @@ def main() -> int:
     )
     passed = 0
     total_time = 0.0
+    wall_started = time.monotonic()
     with serial.Serial(port, BAUDRATE, timeout=0.05, write_timeout=2.0) as ser:
         synchronize(ser)
-        if args.mode == "loopback":
-            for cycle in range(cycles):
-                sequence = cycle & 0xFFFF
-                seed = (args.seed + cycle * 0x9E3779B9) & 0xFFFFFFFF
-                try:
-                    elapsed = run_cycle(
-                        ser, payload_size, sequence, seed,
-                        args.ready_delay, args.echo_timeout,
-                    )
-                except (TestFailure, OSError) as error:
-                    logging.error("cycle=%d/%d FAIL: %s", cycle + 1, cycles, error)
-                    return 1
-                passed += 1
-                total_time += elapsed
-                throughput = (2.0 * payload_size) / elapsed if elapsed else 0.0
-                logging.info(
-                    "cycle=%d/%d PASS frame_payload=%d elapsed=%.3fs roundtrip=%.1f KiB/s",
-                    cycle + 1, cycles, payload_size, elapsed, throughput / 1024.0,
+        try:
+            if args.mode == "loopback":
+                passed, total_time = run_loopback_group(
+                    ser, args.profile, payload_size, cycles, 0, args,
                 )
-        else:
-            total_cases = len(TAIL_SIZES) * cycles
-            case_index = 0
-            for cycle in range(cycles):
-                for size in TAIL_SIZES:
-                    sequence = case_index & 0xFFFF
-                    seed = (args.seed + case_index * 0x9E3779B9) & 0xFFFFFFFF
-                    case_index += 1
-                    try:
-                        if args.mode == "tx-tail":
-                            elapsed = run_tx_tail_case(
-                                ser, size, sequence, seed, args.echo_timeout,
-                            )
-                        else:
-                            elapsed = run_rx_tail_case(
-                                ser, size, sequence, seed, args.ready_delay,
-                                args.echo_timeout,
-                            )
-                    except (TestFailure, OSError) as error:
-                        logging.error(
-                            "case=%d/%d size=%d tail=%d FAIL: %s",
-                            case_index, total_cases, size, size % DMA_ALIGNMENT, error,
-                        )
-                        return 1
-                    passed += 1
-                    total_time += elapsed
-                    logging.info(
-                        "case=%d/%d PASS size=%d dma=%d tail=%d elapsed=%.3fs",
-                        case_index, total_cases, size,
-                        size - size % DMA_ALIGNMENT, size % DMA_ALIGNMENT, elapsed,
+            elif args.mode in ("tx-tail", "rx-tail"):
+                passed, total_time = run_tail_group(ser, args.mode, cycles, 0, args)
+            else:
+                suite_cases = 12 + 2 * len(TAIL_SIZES)
+                logging.info(
+                    "SUITE status=BEGIN cases=%d full_profile=SKIPPED",
+                    suite_cases,
+                )
+                groups = (
+                    ("smoke", 256, 1),
+                    ("large-6144", 6144, 1),
+                    ("stress", 6144, 10),
+                )
+                for name, group_payload, group_cycles in groups:
+                    group_passed, group_time = run_loopback_group(
+                        ser, name, group_payload, group_cycles, passed, args,
                     )
+                    passed += group_passed
+                    total_time += group_time
+                for tail_mode in ("tx-tail", "rx-tail"):
+                    group_passed, group_time = run_tail_group(
+                        ser, tail_mode, 1, passed, args,
+                    )
+                    passed += group_passed
+                    total_time += group_time
+                logging.info(
+                    "SUITE status=PASS passed=%d failed=0 full_profile=SKIPPED",
+                    passed,
+                )
+        except (TestFailure, OSError) as error:
+            logging.error(
+                "SUMMARY status=FAIL passed=%d failed=1 wall_elapsed=%.3fs error=%s",
+                passed, time.monotonic() - wall_started, error,
+            )
+            return 1
 
     logging.info(
-        "SUMMARY status=PASS passed=%d failed=0 elapsed=%.3fs",
-        passed, total_time,
+        "SUMMARY status=PASS passed=%d failed=0 elapsed=%.3fs wall_elapsed=%.3fs",
+        passed, total_time, time.monotonic() - wall_started,
     )
     return 0
 

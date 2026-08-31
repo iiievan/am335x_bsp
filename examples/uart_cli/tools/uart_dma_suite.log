@@ -1,0 +1,543 @@
+2026-08-31 05:20:46,794 INFO    DMA mode=suite profile=smoke port=/dev/ttyUSB0 baud=115200 payload=256 cycles=1
+2026-08-31 05:20:46,813 DEBUG   device: b'^C'
+2026-08-31 05:20:46,814 DEBUG   device: b'uart>'
+2026-08-31 05:20:46,814 INFO    SUITE status=BEGIN cases=58 full_profile=SKIPPED
+2026-08-31 05:20:46,814 INFO    SECTION name=smoke status=BEGIN cases=1 payload=256
+2026-08-31 05:20:46,867 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 2\r\x1b[2Kuart> auto dma 25\r\x1b[2Kuart> auto dma 256\r\x1b[2Kuart> auto dma 256 \r\x1b[2Kuart> auto dma 256 0\r\x1b[2Kuart> auto dma 256 0 \r\x1b[2Kuart> auto dma 256 0 3\r\x1b[2Kuart> auto dma 256 0 30\r\x1b[2Kuart> auto dma 256 0 305\r\x1b[2Kuart> auto dma 256 0 3054\r\x1b[2Kuart> auto dma 256 0 30541\r\x1b[2Kuart> auto dma 256 0 305419\r\x1b[2Kuart> auto dma 256 0 3054198\r\x1b[2Kuart> auto dma 256 0 30541989\r\x1b[2Kuart> auto dma 256 0 305419896'
+2026-08-31 05:20:46,883 DEBUG   device: b'@READY mode=dma sequence=0 frame=280 payload=256'
+2026-08-31 05:20:46,883 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 05:20:46,958 DEBUG   frame TX submitted bytes=280/280 write_and_flush=0.025203s crc=0xEA60
+2026-08-31 05:20:46,987 DEBUG   echo chunk=280 total=280/280 after=0.028238s
+2026-08-31 05:20:47,003 DEBUG   device: b'@RESULT mode=dma sequence=0 rx=280 tx=280 crc=PASS data=PASS status=PASS'
+2026-08-31 05:20:47,003 INFO    section=smoke cycle=1/1 PASS frame_payload=256 elapsed=0.054s roundtrip=9.3 KiB/s
+2026-08-31 05:20:47,003 INFO    SECTION name=smoke status=PASS passed=1 failed=0 elapsed=0.054s
+2026-08-31 05:20:47,003 INFO    SECTION name=large-6144 status=BEGIN cases=1 payload=6144
+2026-08-31 05:20:47,066 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 1\r\x1b[2Kuart> auto dma 6144 1 \r\x1b[2Kuart> auto dma 6144 1 2\r\x1b[2Kuart> auto dma 6144 1 29\r\x1b[2Kuart> auto dma 6144 1 295\r\x1b[2Kuart> auto dma 6144 1 2959\r\x1b[2Kuart> auto dma 6144 1 29598\r\x1b[2Kuart> auto dma 6144 1 295985\r\x1b[2Kuart> auto dma 6144 1 2959855\r\x1b[2Kuart> auto dma 6144 1 29598556\r\x1b[2Kuart> auto dma 6144 1 295985566\r\x1b[2Kuart> auto dma 6144 1 2959855665'
+2026-08-31 05:20:47,082 DEBUG   device: b'@READY mode=dma sequence=1 frame=6168 payload=6144'
+2026-08-31 05:20:47,082 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 05:20:47,668 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.536441s crc=0x6BA3
+2026-08-31 05:20:47,719 DEBUG   echo chunk=513 total=513/6168 after=0.050067s
+2026-08-31 05:20:47,769 DEBUG   echo chunk=576 total=1089/6168 after=0.100240s
+2026-08-31 05:20:47,819 DEBUG   echo chunk=576 total=1665/6168 after=0.150388s
+2026-08-31 05:20:47,869 DEBUG   echo chunk=576 total=2241/6168 after=0.200532s
+2026-08-31 05:20:47,919 DEBUG   echo chunk=576 total=2817/6168 after=0.250667s
+2026-08-31 05:20:47,969 DEBUG   echo chunk=576 total=3393/6168 after=0.300802s
+2026-08-31 05:20:48,019 DEBUG   echo chunk=576 total=3969/6168 after=0.350936s
+2026-08-31 05:20:48,070 DEBUG   echo chunk=576 total=4545/6168 after=0.401078s
+2026-08-31 05:20:48,120 DEBUG   echo chunk=576 total=5121/6168 after=0.451219s
+2026-08-31 05:20:48,170 DEBUG   echo chunk=576 total=5697/6168 after=0.501362s
+2026-08-31 05:20:48,212 DEBUG   echo chunk=471 total=6168/6168 after=0.543841s
+2026-08-31 05:20:48,229 DEBUG   device: b'@RESULT mode=dma sequence=1 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
+2026-08-31 05:20:48,229 INFO    section=large-6144 cycle=1/1 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 05:20:48,229 INFO    SECTION name=large-6144 status=PASS passed=1 failed=0 elapsed=1.080s
+2026-08-31 05:20:48,229 INFO    SECTION name=stress status=BEGIN cases=10 payload=6144
+2026-08-31 05:20:48,292 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 2\r\x1b[2Kuart> auto dma 6144 2 \r\x1b[2Kuart> auto dma 6144 2 1\r\x1b[2Kuart> auto dma 6144 2 13\r\x1b[2Kuart> auto dma 6144 2 131\r\x1b[2Kuart> auto dma 6144 2 1319\r\x1b[2Kuart> auto dma 6144 2 13193\r\x1b[2Kuart> auto dma 6144 2 131932\r\x1b[2Kuart> auto dma 6144 2 1319324\r\x1b[2Kuart> auto dma 6144 2 13193241\r\x1b[2Kuart> auto dma 6144 2 131932413\r\x1b[2Kuart> auto dma 6144 2 1319324138'
+2026-08-31 05:20:48,308 DEBUG   device: b'@READY mode=dma sequence=2 frame=6168 payload=6144'
+2026-08-31 05:20:48,308 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 05:20:48,894 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.536472s crc=0x331D
+2026-08-31 05:20:48,945 DEBUG   echo chunk=513 total=513/6168 after=0.050069s
+2026-08-31 05:20:48,995 DEBUG   echo chunk=576 total=1089/6168 after=0.100240s
+2026-08-31 05:20:49,045 DEBUG   echo chunk=576 total=1665/6168 after=0.150414s
+2026-08-31 05:20:49,095 DEBUG   echo chunk=576 total=2241/6168 after=0.200583s
+2026-08-31 05:20:49,145 DEBUG   echo chunk=576 total=2817/6168 after=0.250736s
+2026-08-31 05:20:49,195 DEBUG   echo chunk=576 total=3393/6168 after=0.300889s
+2026-08-31 05:20:49,246 DEBUG   echo chunk=576 total=3969/6168 after=0.351038s
+2026-08-31 05:20:49,296 DEBUG   echo chunk=576 total=4545/6168 after=0.401183s
+2026-08-31 05:20:49,346 DEBUG   echo chunk=576 total=5121/6168 after=0.451326s
+2026-08-31 05:20:49,396 DEBUG   echo chunk=576 total=5697/6168 after=0.501451s
+2026-08-31 05:20:49,438 DEBUG   echo chunk=471 total=6168/6168 after=0.543740s
+2026-08-31 05:20:49,455 DEBUG   device: b'@RESULT mode=dma sequence=2 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
+2026-08-31 05:20:49,455 INFO    section=stress cycle=1/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 05:20:49,520 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 3\r\x1b[2Kuart> auto dma 6144 3 \r\x1b[2Kuart> auto dma 6144 3 3\r\x1b[2Kuart> auto dma 6144 3 39\r\x1b[2Kuart> auto dma 6144 3 397\r\x1b[2Kuart> auto dma 6144 3 3973\r\x1b[2Kuart> auto dma 6144 3 39737\r\x1b[2Kuart> auto dma 6144 3 397375\r\x1b[2Kuart> auto dma 6144 3 3973759\r\x1b[2Kuart> auto dma 6144 3 39737599\r\x1b[2Kuart> auto dma 6144 3 397375990\r\x1b[2Kuart> auto dma 6144 3 3973759907'
+2026-08-31 05:20:49,536 DEBUG   device: b'@READY mode=dma sequence=3 frame=6168 payload=6144'
+2026-08-31 05:20:49,536 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 05:20:50,123 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.537477s crc=0x105A
+2026-08-31 05:20:50,174 DEBUG   echo chunk=513 total=513/6168 after=0.050065s
+2026-08-31 05:20:50,224 DEBUG   echo chunk=576 total=1089/6168 after=0.100239s
+2026-08-31 05:20:50,274 DEBUG   echo chunk=576 total=1665/6168 after=0.150429s
+2026-08-31 05:20:50,324 DEBUG   echo chunk=576 total=2241/6168 after=0.200597s
+2026-08-31 05:20:50,374 DEBUG   echo chunk=576 total=2817/6168 after=0.250742s
+2026-08-31 05:20:50,424 DEBUG   echo chunk=576 total=3393/6168 after=0.300898s
+2026-08-31 05:20:50,475 DEBUG   echo chunk=576 total=3969/6168 after=0.351038s
+2026-08-31 05:20:50,525 DEBUG   echo chunk=576 total=4545/6168 after=0.401176s
+2026-08-31 05:20:50,575 DEBUG   echo chunk=576 total=5121/6168 after=0.451319s
+2026-08-31 05:20:50,625 DEBUG   echo chunk=576 total=5697/6168 after=0.501458s
+2026-08-31 05:20:50,666 DEBUG   echo chunk=471 total=6168/6168 after=0.542813s
+2026-08-31 05:20:50,683 DEBUG   device: b'@RESULT mode=dma sequence=3 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
+2026-08-31 05:20:50,683 INFO    section=stress cycle=2/10 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
+2026-08-31 05:20:50,746 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 4\r\x1b[2Kuart> auto dma 6144 4 \r\x1b[2Kuart> auto dma 6144 4 2\r\x1b[2Kuart> auto dma 6144 4 23\r\x1b[2Kuart> auto dma 6144 4 233\r\x1b[2Kuart> auto dma 6144 4 2333\r\x1b[2Kuart> auto dma 6144 4 23332\r\x1b[2Kuart> auto dma 6144 4 233322\r\x1b[2Kuart> auto dma 6144 4 2333228\r\x1b[2Kuart> auto dma 6144 4 23332283\r\x1b[2Kuart> auto dma 6144 4 233322838\r\x1b[2Kuart> auto dma 6144 4 2333228380'
+2026-08-31 05:20:50,762 DEBUG   device: b'@READY mode=dma sequence=4 frame=6168 payload=6144'
+2026-08-31 05:20:50,762 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 05:20:51,348 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.536528s crc=0x306F
+2026-08-31 05:20:51,399 DEBUG   echo chunk=513 total=513/6168 after=0.050068s
+2026-08-31 05:20:51,449 DEBUG   echo chunk=576 total=1089/6168 after=0.100239s
+2026-08-31 05:20:51,499 DEBUG   echo chunk=576 total=1665/6168 after=0.150381s
+2026-08-31 05:20:51,549 DEBUG   echo chunk=576 total=2241/6168 after=0.200510s
+2026-08-31 05:20:51,599 DEBUG   echo chunk=576 total=2817/6168 after=0.250667s
+2026-08-31 05:20:51,649 DEBUG   echo chunk=576 total=3393/6168 after=0.300801s
+2026-08-31 05:20:51,699 DEBUG   echo chunk=576 total=3969/6168 after=0.350947s
+2026-08-31 05:20:51,750 DEBUG   echo chunk=576 total=4545/6168 after=0.401094s
+2026-08-31 05:20:51,800 DEBUG   echo chunk=576 total=5121/6168 after=0.451231s
+2026-08-31 05:20:51,850 DEBUG   echo chunk=576 total=5697/6168 after=0.501372s
+2026-08-31 05:20:51,892 DEBUG   echo chunk=471 total=6168/6168 after=0.543702s
+2026-08-31 05:20:51,908 DEBUG   device: b'@RESULT mode=dma sequence=4 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
+2026-08-31 05:20:51,908 INFO    section=stress cycle=3/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 05:20:51,971 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 5\r\x1b[2Kuart> auto dma 6144 5 \r\x1b[2Kuart> auto dma 6144 5 6\r\x1b[2Kuart> auto dma 6144 5 69\r\x1b[2Kuart> auto dma 6144 5 692\r\x1b[2Kuart> auto dma 6144 5 6926\r\x1b[2Kuart> auto dma 6144 5 69269\r\x1b[2Kuart> auto dma 6144 5 692696\r\x1b[2Kuart> auto dma 6144 5 6926968\r\x1b[2Kuart> auto dma 6144 5 69269685\r\x1b[2Kuart> auto dma 6144 5 692696853'
+2026-08-31 05:20:51,986 DEBUG   device: b'@READY mode=dma sequence=5 frame=6168 payload=6144'
+2026-08-31 05:20:51,987 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 05:20:52,574 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.537660s crc=0x1A18
+2026-08-31 05:20:52,625 DEBUG   echo chunk=513 total=513/6168 after=0.050067s
+2026-08-31 05:20:52,675 DEBUG   echo chunk=576 total=1089/6168 after=0.100243s
+2026-08-31 05:20:52,725 DEBUG   echo chunk=576 total=1665/6168 after=0.150384s
+2026-08-31 05:20:52,775 DEBUG   echo chunk=576 total=2241/6168 after=0.200517s
+2026-08-31 05:20:52,825 DEBUG   echo chunk=576 total=2817/6168 after=0.250664s
+2026-08-31 05:20:52,875 DEBUG   echo chunk=576 total=3393/6168 after=0.300853s
+2026-08-31 05:20:52,926 DEBUG   echo chunk=576 total=3969/6168 after=0.351079s
+2026-08-31 05:20:52,976 DEBUG   echo chunk=576 total=4545/6168 after=0.401274s
+2026-08-31 05:20:53,026 DEBUG   echo chunk=576 total=5121/6168 after=0.451411s
+2026-08-31 05:20:53,076 DEBUG   echo chunk=576 total=5697/6168 after=0.501553s
+2026-08-31 05:20:53,117 DEBUG   echo chunk=471 total=6168/6168 after=0.542582s
+2026-08-31 05:20:53,132 DEBUG   device: b'@RESULT mode=dma sequence=5 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
+2026-08-31 05:20:53,133 INFO    section=stress cycle=4/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 05:20:53,195 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 6\r\x1b[2Kuart> auto dma 6144 6 \r\x1b[2Kuart> auto dma 6144 6 3\r\x1b[2Kuart> auto dma 6144 6 33\r\x1b[2Kuart> auto dma 6144 6 334\r\x1b[2Kuart> auto dma 6144 6 3347\r\x1b[2Kuart> auto dma 6144 6 33471\r\x1b[2Kuart> auto dma 6144 6 334713\r\x1b[2Kuart> auto dma 6144 6 3347132\r\x1b[2Kuart> auto dma 6144 6 33471326\r\x1b[2Kuart> auto dma 6144 6 334713262\r\x1b[2Kuart> auto dma 6144 6 3347132622'
+2026-08-31 05:20:53,211 DEBUG   device: b'@READY mode=dma sequence=6 frame=6168 payload=6144'
+2026-08-31 05:20:53,211 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 05:20:53,797 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.536475s crc=0x468A
+2026-08-31 05:20:53,848 DEBUG   echo chunk=513 total=513/6168 after=0.050068s
+2026-08-31 05:20:53,898 DEBUG   echo chunk=576 total=1089/6168 after=0.100218s
+2026-08-31 05:20:53,948 DEBUG   echo chunk=576 total=1665/6168 after=0.150364s
+2026-08-31 05:20:53,998 DEBUG   echo chunk=576 total=2241/6168 after=0.200510s
+2026-08-31 05:20:54,048 DEBUG   echo chunk=576 total=2817/6168 after=0.250665s
+2026-08-31 05:20:54,098 DEBUG   echo chunk=576 total=3393/6168 after=0.300804s
+2026-08-31 05:20:54,148 DEBUG   echo chunk=576 total=3969/6168 after=0.350939s
+2026-08-31 05:20:54,199 DEBUG   echo chunk=576 total=4545/6168 after=0.401076s
+2026-08-31 05:20:54,249 DEBUG   echo chunk=576 total=5121/6168 after=0.451214s
+2026-08-31 05:20:54,299 DEBUG   echo chunk=576 total=5697/6168 after=0.501350s
+2026-08-31 05:20:54,341 DEBUG   echo chunk=471 total=6168/6168 after=0.543743s
+2026-08-31 05:20:54,358 DEBUG   device: b'@RESULT mode=dma sequence=6 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
+2026-08-31 05:20:54,358 INFO    section=stress cycle=5/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 05:20:54,421 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 7\r\x1b[2Kuart> auto dma 6144 7 \r\x1b[2Kuart> auto dma 6144 7 1\r\x1b[2Kuart> auto dma 6144 7 17\r\x1b[2Kuart> auto dma 6144 7 170\r\x1b[2Kuart> auto dma 6144 7 1706\r\x1b[2Kuart> auto dma 6144 7 17066\r\x1b[2Kuart> auto dma 6144 7 170660\r\x1b[2Kuart> auto dma 6144 7 1706601\r\x1b[2Kuart> auto dma 6144 7 17066010\r\x1b[2Kuart> auto dma 6144 7 170660109\r\x1b[2Kuart> auto dma 6144 7 1706601095'
+2026-08-31 05:20:54,437 DEBUG   device: b'@READY mode=dma sequence=7 frame=6168 payload=6144'
+2026-08-31 05:20:54,437 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 05:20:55,023 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.536552s crc=0x9A23
+2026-08-31 05:20:55,074 DEBUG   echo chunk=513 total=513/6168 after=0.050067s
+2026-08-31 05:20:55,124 DEBUG   echo chunk=576 total=1089/6168 after=0.100244s
+2026-08-31 05:20:55,174 DEBUG   echo chunk=576 total=1665/6168 after=0.150416s
+2026-08-31 05:20:55,224 DEBUG   echo chunk=576 total=2241/6168 after=0.200611s
+2026-08-31 05:20:55,274 DEBUG   echo chunk=576 total=2817/6168 after=0.250762s
+2026-08-31 05:20:55,324 DEBUG   echo chunk=576 total=3393/6168 after=0.300904s
+2026-08-31 05:20:55,374 DEBUG   echo chunk=576 total=3969/6168 after=0.351040s
+2026-08-31 05:20:55,425 DEBUG   echo chunk=576 total=4545/6168 after=0.401177s
+2026-08-31 05:20:55,475 DEBUG   echo chunk=576 total=5121/6168 after=0.451302s
+2026-08-31 05:20:55,525 DEBUG   echo chunk=576 total=5697/6168 after=0.501456s
+2026-08-31 05:20:55,567 DEBUG   echo chunk=471 total=6168/6168 after=0.543736s
+2026-08-31 05:20:55,583 DEBUG   device: b'@RESULT mode=dma sequence=7 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
+2026-08-31 05:20:55,584 INFO    section=stress cycle=6/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 05:20:55,641 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 8\r\x1b[2Kuart> auto dma 6144 8 \r\x1b[2Kuart> auto dma 6144 8 6\r\x1b[2Kuart> auto dma 6144 8 66\r\x1b[2Kuart> auto dma 6144 8 660\r\x1b[2Kuart> auto dma 6144 8 6606\r\x1b[2Kuart> auto dma 6144 8 66069\r\x1b[2Kuart> auto dma 6144 8 660695\r\x1b[2Kuart> auto dma 6144 8 6606956\r\x1b[2Kuart> auto dma 6144 8 66069568'
+2026-08-31 05:20:55,656 DEBUG   device: b'@READY mode=dma sequence=8 frame=6168 payload=6144'
+2026-08-31 05:20:55,657 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 05:20:56,244 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.537684s crc=0x4CE4
+2026-08-31 05:20:56,295 DEBUG   echo chunk=513 total=513/6168 after=0.050068s
+2026-08-31 05:20:56,345 DEBUG   echo chunk=576 total=1089/6168 after=0.100236s
+2026-08-31 05:20:56,395 DEBUG   echo chunk=576 total=1665/6168 after=0.150381s
+2026-08-31 05:20:56,445 DEBUG   echo chunk=576 total=2241/6168 after=0.200519s
+2026-08-31 05:20:56,495 DEBUG   echo chunk=576 total=2817/6168 after=0.250670s
+2026-08-31 05:20:56,545 DEBUG   echo chunk=576 total=3393/6168 after=0.300811s
+2026-08-31 05:20:56,595 DEBUG   echo chunk=576 total=3969/6168 after=0.350953s
+2026-08-31 05:20:56,646 DEBUG   echo chunk=576 total=4545/6168 after=0.401098s
+2026-08-31 05:20:56,696 DEBUG   echo chunk=576 total=5121/6168 after=0.451234s
+2026-08-31 05:20:56,746 DEBUG   echo chunk=576 total=5697/6168 after=0.501368s
+2026-08-31 05:20:56,787 DEBUG   echo chunk=471 total=6168/6168 after=0.542581s
+2026-08-31 05:20:56,802 DEBUG   device: b'@RESULT mode=dma sequence=8 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
+2026-08-31 05:20:56,803 INFO    section=stress cycle=7/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 05:20:56,866 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 9\r\x1b[2Kuart> auto dma 6144 9 \r\x1b[2Kuart> auto dma 6144 9 2\r\x1b[2Kuart> auto dma 6144 9 27\r\x1b[2Kuart> auto dma 6144 9 272\r\x1b[2Kuart> auto dma 6144 9 2720\r\x1b[2Kuart> auto dma 6144 9 27205\r\x1b[2Kuart> auto dma 6144 9 272050\r\x1b[2Kuart> auto dma 6144 9 2720505\r\x1b[2Kuart> auto dma 6144 9 27205053\r\x1b[2Kuart> auto dma 6144 9 272050533\r\x1b[2Kuart> auto dma 6144 9 2720505337'
+2026-08-31 05:20:56,882 DEBUG   device: b'@READY mode=dma sequence=9 frame=6168 payload=6144'
+2026-08-31 05:20:56,882 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 05:20:57,469 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.537588s crc=0x4EAB
+2026-08-31 05:20:57,520 DEBUG   echo chunk=513 total=513/6168 after=0.050069s
+2026-08-31 05:20:57,570 DEBUG   echo chunk=576 total=1089/6168 after=0.100236s
+2026-08-31 05:20:57,620 DEBUG   echo chunk=576 total=1665/6168 after=0.150389s
+2026-08-31 05:20:57,670 DEBUG   echo chunk=576 total=2241/6168 after=0.200539s
+2026-08-31 05:20:57,720 DEBUG   echo chunk=576 total=2817/6168 after=0.250646s
+2026-08-31 05:20:57,770 DEBUG   echo chunk=576 total=3393/6168 after=0.300790s
+2026-08-31 05:20:57,820 DEBUG   echo chunk=576 total=3969/6168 after=0.350927s
+2026-08-31 05:20:57,871 DEBUG   echo chunk=576 total=4545/6168 after=0.401067s
+2026-08-31 05:20:57,921 DEBUG   echo chunk=576 total=5121/6168 after=0.451212s
+2026-08-31 05:20:57,971 DEBUG   echo chunk=576 total=5697/6168 after=0.501344s
+2026-08-31 05:20:58,012 DEBUG   echo chunk=471 total=6168/6168 after=0.542687s
+2026-08-31 05:20:58,028 DEBUG   device: b'@RESULT mode=dma sequence=9 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
+2026-08-31 05:20:58,028 INFO    section=stress cycle=8/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 05:20:58,097 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 1\r\x1b[2Kuart> auto dma 6144 10\r\x1b[2Kuart> auto dma 6144 10 \r\x1b[2Kuart> auto dma 6144 10 1\r\x1b[2Kuart> auto dma 6144 10 10\r\x1b[2Kuart> auto dma 6144 10 107\r\x1b[2Kuart> auto dma 6144 10 1079\r\x1b[2Kuart> auto dma 6144 10 10799\r\x1b[2Kuart> auto dma 6144 10 107997\r\x1b[2Kuart> auto dma 6144 10 1079973\r\x1b[2Kuart> auto dma 6144 10 10799738\r\x1b[2Kuart> auto dma 6144 10 107997381\r\x1b[2Kuart> auto dma 6144 10 1079973810'
+2026-08-31 05:20:58,112 DEBUG   device: b'@READY mode=dma sequence=10 frame=6168 payload=6144'
+2026-08-31 05:20:58,112 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 05:20:58,699 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.536817s crc=0x1E8C
+2026-08-31 05:20:58,750 DEBUG   echo chunk=513 total=513/6168 after=0.050068s
+2026-08-31 05:20:58,800 DEBUG   echo chunk=576 total=1089/6168 after=0.100228s
+2026-08-31 05:20:58,850 DEBUG   echo chunk=576 total=1665/6168 after=0.150386s
+2026-08-31 05:20:58,900 DEBUG   echo chunk=576 total=2241/6168 after=0.200590s
+2026-08-31 05:20:58,950 DEBUG   echo chunk=576 total=2817/6168 after=0.250764s
+2026-08-31 05:20:59,000 DEBUG   echo chunk=576 total=3393/6168 after=0.300908s
+2026-08-31 05:20:59,051 DEBUG   echo chunk=576 total=3969/6168 after=0.351039s
+2026-08-31 05:20:59,101 DEBUG   echo chunk=576 total=4545/6168 after=0.401174s
+2026-08-31 05:20:59,151 DEBUG   echo chunk=576 total=5121/6168 after=0.451304s
+2026-08-31 05:20:59,201 DEBUG   echo chunk=576 total=5697/6168 after=0.501446s
+2026-08-31 05:20:59,243 DEBUG   echo chunk=471 total=6168/6168 after=0.543388s
+2026-08-31 05:20:59,258 DEBUG   device: b'@RESULT mode=dma sequence=10 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
+2026-08-31 05:20:59,258 INFO    section=stress cycle=9/10 PASS frame_payload=6144 elapsed=1.080s roundtrip=11.1 KiB/s
+2026-08-31 05:20:59,327 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto d\r\x1b[2Kuart> auto dm\r\x1b[2Kuart> auto dma\r\x1b[2Kuart> auto dma \r\x1b[2Kuart> auto dma 6\r\x1b[2Kuart> auto dma 61\r\x1b[2Kuart> auto dma 614\r\x1b[2Kuart> auto dma 6144\r\x1b[2Kuart> auto dma 6144 \r\x1b[2Kuart> auto dma 6144 1\r\x1b[2Kuart> auto dma 6144 11\r\x1b[2Kuart> auto dma 6144 11 \r\x1b[2Kuart> auto dma 6144 11 3\r\x1b[2Kuart> auto dma 6144 11 37\r\x1b[2Kuart> auto dma 6144 11 373\r\x1b[2Kuart> auto dma 6144 11 3734\r\x1b[2Kuart> auto dma 6144 11 37344\r\x1b[2Kuart> auto dma 6144 11 373440\r\x1b[2Kuart> auto dma 6144 11 3734409\r\x1b[2Kuart> auto dma 6144 11 37344095\r\x1b[2Kuart> auto dma 6144 11 373440957\r\x1b[2Kuart> auto dma 6144 11 3734409579'
+2026-08-31 05:20:59,342 DEBUG   device: b'@READY mode=dma sequence=11 frame=6168 payload=6144'
+2026-08-31 05:20:59,342 DEBUG   READY accepted; delaying 0.050s before frame TX
+2026-08-31 05:20:59,929 DEBUG   frame TX submitted bytes=6168/6168 write_and_flush=0.536834s crc=0x95F0
+2026-08-31 05:20:59,980 DEBUG   echo chunk=513 total=513/6168 after=0.050075s
+2026-08-31 05:21:00,030 DEBUG   echo chunk=576 total=1089/6168 after=0.100305s
+2026-08-31 05:21:00,080 DEBUG   echo chunk=576 total=1665/6168 after=0.150471s
+2026-08-31 05:21:00,130 DEBUG   echo chunk=578 total=2243/6168 after=0.200664s
+2026-08-31 05:21:00,180 DEBUG   echo chunk=576 total=2819/6168 after=0.250856s
+2026-08-31 05:21:00,231 DEBUG   echo chunk=576 total=3395/6168 after=0.301046s
+2026-08-31 05:21:00,281 DEBUG   echo chunk=576 total=3971/6168 after=0.351223s
+2026-08-31 05:21:00,331 DEBUG   echo chunk=576 total=4547/6168 after=0.401425s
+2026-08-31 05:21:00,381 DEBUG   echo chunk=576 total=5123/6168 after=0.451637s
+2026-08-31 05:21:00,431 DEBUG   echo chunk=576 total=5699/6168 after=0.501841s
+2026-08-31 05:21:00,473 DEBUG   echo chunk=469 total=6168/6168 after=0.543566s
+2026-08-31 05:21:00,489 DEBUG   device: b'@RESULT mode=dma sequence=11 rx=6168 tx=6168 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:00,490 INFO    section=stress cycle=10/10 PASS frame_payload=6144 elapsed=1.081s roundtrip=11.1 KiB/s
+2026-08-31 05:21:00,490 INFO    SECTION name=stress status=PASS passed=10 failed=0 elapsed=10.805s
+2026-08-31 05:21:00,490 INFO    SECTION name=tx-tail status=BEGIN cases=23
+2026-08-31 05:21:00,542 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 2\r\x1b[2Kuart> auto tx 2 \r\x1b[2Kuart> auto tx 2 1\r\x1b[2Kuart> auto tx 2 12\r\x1b[2Kuart> auto tx 2 12 \r\x1b[2Kuart> auto tx 2 12 2\r\x1b[2Kuart> auto tx 2 12 20\r\x1b[2Kuart> auto tx 2 12 209\r\x1b[2Kuart> auto tx 2 12 2093\r\x1b[2Kuart> auto tx 2 12 20938\r\x1b[2Kuart> auto tx 2 12 209387\r\x1b[2Kuart> auto tx 2 12 2093878\r\x1b[2Kuart> auto tx 2 12 20938780\r\x1b[2Kuart> auto tx 2 12 209387805\r\x1b[2Kuart> auto tx 2 12 2093878052'
+2026-08-31 05:21:00,548 DEBUG   device: b'@READY mode=tx sequence=12 size=2 dma=0 tail=2'
+2026-08-31 05:21:00,548 DEBUG   echo chunk=2 total=2/2 after=0.000010s
+2026-08-31 05:21:00,564 DEBUG   device: b'@RESULT mode=tx sequence=12 size=2 tail=2 tx=2 status=PASS'
+2026-08-31 05:21:00,564 INFO    section=tx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.000s
+2026-08-31 05:21:00,611 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 3\r\x1b[2Kuart> auto tx 3 \r\x1b[2Kuart> auto tx 3 1\r\x1b[2Kuart> auto tx 3 13\r\x1b[2Kuart> auto tx 3 13 \r\x1b[2Kuart> auto tx 3 13 4\r\x1b[2Kuart> auto tx 3 13 45\r\x1b[2Kuart> auto tx 3 13 453\r\x1b[2Kuart> auto tx 3 13 4533\r\x1b[2Kuart> auto tx 3 13 45334\r\x1b[2Kuart> auto tx 3 13 453346\r\x1b[2Kuart> auto tx 3 13 4533465\r\x1b[2Kuart> auto tx 3 13 45334652\r\x1b[2Kuart> auto tx 3 13 453346525'
+2026-08-31 05:21:00,617 DEBUG   device: b'@READY mode=tx sequence=13 size=3 dma=0 tail=3'
+2026-08-31 05:21:00,617 DEBUG   echo chunk=3 total=3/3 after=0.000014s
+2026-08-31 05:21:00,632 DEBUG   device: b'@RESULT mode=tx sequence=13 size=3 tail=3 tx=3 status=PASS'
+2026-08-31 05:21:00,632 INFO    section=tx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.000s
+2026-08-31 05:21:00,685 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 4\r\x1b[2Kuart> auto tx 4 \r\x1b[2Kuart> auto tx 4 1\r\x1b[2Kuart> auto tx 4 14\r\x1b[2Kuart> auto tx 4 14 \r\x1b[2Kuart> auto tx 4 14 3\r\x1b[2Kuart> auto tx 4 14 31\r\x1b[2Kuart> auto tx 4 14 310\r\x1b[2Kuart> auto tx 4 14 3107\r\x1b[2Kuart> auto tx 4 14 31077\r\x1b[2Kuart> auto tx 4 14 310778\r\x1b[2Kuart> auto tx 4 14 3107782\r\x1b[2Kuart> auto tx 4 14 31077822\r\x1b[2Kuart> auto tx 4 14 310778229\r\x1b[2Kuart> auto tx 4 14 3107782294'
+2026-08-31 05:21:00,691 DEBUG   device: b'@READY mode=tx sequence=14 size=4 dma=0 tail=4'
+2026-08-31 05:21:00,691 DEBUG   echo chunk=4 total=4/4 after=0.000011s
+2026-08-31 05:21:00,706 DEBUG   device: b'@RESULT mode=tx sequence=14 size=4 tail=4 tx=4 status=PASS'
+2026-08-31 05:21:00,706 INFO    section=tx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.000s
+2026-08-31 05:21:00,759 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 5\r\x1b[2Kuart> auto tx 5 \r\x1b[2Kuart> auto tx 5 1\r\x1b[2Kuart> auto tx 5 15\r\x1b[2Kuart> auto tx 5 15 \r\x1b[2Kuart> auto tx 5 15 1\r\x1b[2Kuart> auto tx 5 15 14\r\x1b[2Kuart> auto tx 5 15 146\r\x1b[2Kuart> auto tx 5 15 1467\r\x1b[2Kuart> auto tx 5 15 14672\r\x1b[2Kuart> auto tx 5 15 146725\r\x1b[2Kuart> auto tx 5 15 1467250\r\x1b[2Kuart> auto tx 5 15 14672507\r\x1b[2Kuart> auto tx 5 15 146725076\r\x1b[2Kuart> auto tx 5 15 1467250767'
+2026-08-31 05:21:00,765 DEBUG   device: b'@READY mode=tx sequence=15 size=5 dma=0 tail=5'
+2026-08-31 05:21:00,765 DEBUG   echo chunk=5 total=5/5 after=0.000010s
+2026-08-31 05:21:00,780 DEBUG   device: b'@RESULT mode=tx sequence=15 size=5 tail=5 tx=5 status=PASS'
+2026-08-31 05:21:00,780 INFO    section=tx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.000s
+2026-08-31 05:21:00,833 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 6\r\x1b[2Kuart> auto tx 6 \r\x1b[2Kuart> auto tx 6 1\r\x1b[2Kuart> auto tx 6 16\r\x1b[2Kuart> auto tx 6 16 \r\x1b[2Kuart> auto tx 6 16 4\r\x1b[2Kuart> auto tx 6 16 41\r\x1b[2Kuart> auto tx 6 16 412\r\x1b[2Kuart> auto tx 6 16 4121\r\x1b[2Kuart> auto tx 6 16 41216\r\x1b[2Kuart> auto tx 6 16 412168\r\x1b[2Kuart> auto tx 6 16 4121686\r\x1b[2Kuart> auto tx 6 16 41216865\r\x1b[2Kuart> auto tx 6 16 412168653\r\x1b[2Kuart> auto tx 6 16 4121686536'
+2026-08-31 05:21:00,839 DEBUG   device: b'@READY mode=tx sequence=16 size=6 dma=0 tail=6'
+2026-08-31 05:21:00,839 DEBUG   echo chunk=6 total=6/6 after=0.000010s
+2026-08-31 05:21:00,854 DEBUG   device: b'@RESULT mode=tx sequence=16 size=6 tail=6 tx=6 status=PASS'
+2026-08-31 05:21:00,854 INFO    section=tx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.000s
+2026-08-31 05:21:00,907 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 7\r\x1b[2Kuart> auto tx 7 \r\x1b[2Kuart> auto tx 7 1\r\x1b[2Kuart> auto tx 7 17\r\x1b[2Kuart> auto tx 7 17 \r\x1b[2Kuart> auto tx 7 17 2\r\x1b[2Kuart> auto tx 7 17 24\r\x1b[2Kuart> auto tx 7 17 248\r\x1b[2Kuart> auto tx 7 17 2481\r\x1b[2Kuart> auto tx 7 17 24811\r\x1b[2Kuart> auto tx 7 17 248115\r\x1b[2Kuart> auto tx 7 17 2481155\r\x1b[2Kuart> auto tx 7 17 24811550\r\x1b[2Kuart> auto tx 7 17 248115500\r\x1b[2Kuart> auto tx 7 17 2481155009'
+2026-08-31 05:21:00,913 DEBUG   device: b'@READY mode=tx sequence=17 size=7 dma=0 tail=7'
+2026-08-31 05:21:00,913 DEBUG   echo chunk=7 total=7/7 after=0.000011s
+2026-08-31 05:21:00,928 DEBUG   device: b'@RESULT mode=tx sequence=17 size=7 tail=7 tx=7 status=PASS'
+2026-08-31 05:21:00,928 INFO    section=tx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.000s
+2026-08-31 05:21:00,975 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 8\r\x1b[2Kuart> auto tx 8 \r\x1b[2Kuart> auto tx 8 1\r\x1b[2Kuart> auto tx 8 18\r\x1b[2Kuart> auto tx 8 18 \r\x1b[2Kuart> auto tx 8 18 8\r\x1b[2Kuart> auto tx 8 18 84\r\x1b[2Kuart> auto tx 8 18 840\r\x1b[2Kuart> auto tx 8 18 8406\r\x1b[2Kuart> auto tx 8 18 84062\r\x1b[2Kuart> auto tx 8 18 840623\r\x1b[2Kuart> auto tx 8 18 8406234\r\x1b[2Kuart> auto tx 8 18 84062348\r\x1b[2Kuart> auto tx 8 18 840623482'
+2026-08-31 05:21:00,981 DEBUG   device: b'@READY mode=tx sequence=18 size=8 dma=8 tail=0'
+2026-08-31 05:21:00,981 DEBUG   echo chunk=8 total=8/8 after=0.000017s
+2026-08-31 05:21:00,996 DEBUG   device: b'@RESULT mode=tx sequence=18 size=8 tail=0 tx=8 status=PASS'
+2026-08-31 05:21:00,996 INFO    section=tx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.000s
+2026-08-31 05:21:01,049 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 9\r\x1b[2Kuart> auto tx 9 \r\x1b[2Kuart> auto tx 9 1\r\x1b[2Kuart> auto tx 9 19\r\x1b[2Kuart> auto tx 9 19 \r\x1b[2Kuart> auto tx 9 19 3\r\x1b[2Kuart> auto tx 9 19 34\r\x1b[2Kuart> auto tx 9 19 349\r\x1b[2Kuart> auto tx 9 19 3495\r\x1b[2Kuart> auto tx 9 19 34950\r\x1b[2Kuart> auto tx 9 19 349505\r\x1b[2Kuart> auto tx 9 19 3495059\r\x1b[2Kuart> auto tx 9 19 34950592\r\x1b[2Kuart> auto tx 9 19 349505925\r\x1b[2Kuart> auto tx 9 19 3495059251'
+2026-08-31 05:21:01,055 DEBUG   device: b'@READY mode=tx sequence=19 size=9 dma=8 tail=1'
+2026-08-31 05:21:01,055 DEBUG   echo chunk=9 total=9/9 after=0.000012s
+2026-08-31 05:21:01,070 DEBUG   device: b'@RESULT mode=tx sequence=19 size=9 tail=1 tx=9 status=PASS'
+2026-08-31 05:21:01,070 INFO    section=tx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.000s
+2026-08-31 05:21:01,123 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 1\r\x1b[2Kuart> auto tx 10\r\x1b[2Kuart> auto tx 10 \r\x1b[2Kuart> auto tx 10 2\r\x1b[2Kuart> auto tx 10 20\r\x1b[2Kuart> auto tx 10 20 \r\x1b[2Kuart> auto tx 10 20 1\r\x1b[2Kuart> auto tx 10 20 18\r\x1b[2Kuart> auto tx 10 20 185\r\x1b[2Kuart> auto tx 10 20 1854\r\x1b[2Kuart> auto tx 10 20 18545\r\x1b[2Kuart> auto tx 10 20 185452\r\x1b[2Kuart> auto tx 10 20 1854527\r\x1b[2Kuart> auto tx 10 20 18545277\r\x1b[2Kuart> auto tx 10 20 185452772\r\x1b[2Kuart> auto tx 10 20 1854527724'
+2026-08-31 05:21:01,129 DEBUG   device: b'@READY mode=tx sequence=20 size=10 dma=8 tail=2'
+2026-08-31 05:21:01,129 DEBUG   echo chunk=10 total=10/10 after=0.000014s
+2026-08-31 05:21:01,144 DEBUG   device: b'@RESULT mode=tx sequence=20 size=10 tail=2 tx=10 status=PASS'
+2026-08-31 05:21:01,144 INFO    section=tx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.000s
+2026-08-31 05:21:01,197 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 1\r\x1b[2Kuart> auto tx 11\r\x1b[2Kuart> auto tx 11 \r\x1b[2Kuart> auto tx 11 2\r\x1b[2Kuart> auto tx 11 21\r\x1b[2Kuart> auto tx 11 21 \r\x1b[2Kuart> auto tx 11 21 2\r\x1b[2Kuart> auto tx 11 21 21\r\x1b[2Kuart> auto tx 11 21 213\r\x1b[2Kuart> auto tx 11 21 2139\r\x1b[2Kuart> auto tx 11 21 21399\r\x1b[2Kuart> auto tx 11 21 213996\r\x1b[2Kuart> auto tx 11 21 2139961\r\x1b[2Kuart> auto tx 11 21 21399619\r\x1b[2Kuart> auto tx 11 21 213996197'
+2026-08-31 05:21:01,203 DEBUG   device: b'@READY mode=tx sequence=21 size=11 dma=8 tail=3'
+2026-08-31 05:21:01,203 DEBUG   echo chunk=11 total=11/11 after=0.000014s
+2026-08-31 05:21:01,218 DEBUG   device: b'@RESULT mode=tx sequence=21 size=11 tail=3 tx=11 status=PASS'
+2026-08-31 05:21:01,218 INFO    section=tx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.000s
+2026-08-31 05:21:01,271 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 1\r\x1b[2Kuart> auto tx 12\r\x1b[2Kuart> auto tx 12 \r\x1b[2Kuart> auto tx 12 2\r\x1b[2Kuart> auto tx 12 22\r\x1b[2Kuart> auto tx 12 22 \r\x1b[2Kuart> auto tx 12 22 2\r\x1b[2Kuart> auto tx 12 22 28\r\x1b[2Kuart> auto tx 12 22 286\r\x1b[2Kuart> auto tx 12 22 2868\r\x1b[2Kuart> auto tx 12 22 28684\r\x1b[2Kuart> auto tx 12 22 286843\r\x1b[2Kuart> auto tx 12 22 2868431\r\x1b[2Kuart> auto tx 12 22 28684319\r\x1b[2Kuart> auto tx 12 22 286843196\r\x1b[2Kuart> auto tx 12 22 2868431966'
+2026-08-31 05:21:01,277 DEBUG   device: b'@READY mode=tx sequence=22 size=12 dma=8 tail=4'
+2026-08-31 05:21:01,277 DEBUG   echo chunk=12 total=12/12 after=0.000010s
+2026-08-31 05:21:01,292 DEBUG   device: b'@RESULT mode=tx sequence=22 size=12 tail=4 tx=12 status=PASS'
+2026-08-31 05:21:01,292 INFO    section=tx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.000s
+2026-08-31 05:21:01,345 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 1\r\x1b[2Kuart> auto tx 13\r\x1b[2Kuart> auto tx 13 \r\x1b[2Kuart> auto tx 13 2\r\x1b[2Kuart> auto tx 13 23\r\x1b[2Kuart> auto tx 13 23 \r\x1b[2Kuart> auto tx 13 23 1\r\x1b[2Kuart> auto tx 13 23 12\r\x1b[2Kuart> auto tx 13 23 122\r\x1b[2Kuart> auto tx 13 23 1227\r\x1b[2Kuart> auto tx 13 23 12279\r\x1b[2Kuart> auto tx 13 23 122790\r\x1b[2Kuart> auto tx 13 23 1227900\r\x1b[2Kuart> auto tx 13 23 12279004\r\x1b[2Kuart> auto tx 13 23 122790043\r\x1b[2Kuart> auto tx 13 23 1227900439'
+2026-08-31 05:21:01,351 DEBUG   device: b'@READY mode=tx sequence=23 size=13 dma=8 tail=5'
+2026-08-31 05:21:01,351 DEBUG   echo chunk=13 total=13/13 after=0.000015s
+2026-08-31 05:21:01,366 DEBUG   device: b'@RESULT mode=tx sequence=23 size=13 tail=5 tx=13 status=PASS'
+2026-08-31 05:21:01,366 INFO    section=tx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.000s
+2026-08-31 05:21:01,419 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 1\r\x1b[2Kuart> auto tx 14\r\x1b[2Kuart> auto tx 14 \r\x1b[2Kuart> auto tx 14 2\r\x1b[2Kuart> auto tx 14 24\r\x1b[2Kuart> auto tx 14 24 \r\x1b[2Kuart> auto tx 14 24 3\r\x1b[2Kuart> auto tx 14 24 38\r\x1b[2Kuart> auto tx 14 24 388\r\x1b[2Kuart> auto tx 14 24 3882\r\x1b[2Kuart> auto tx 14 24 38823\r\x1b[2Kuart> auto tx 14 24 388233\r\x1b[2Kuart> auto tx 14 24 3882336\r\x1b[2Kuart> auto tx 14 24 38823362\r\x1b[2Kuart> auto tx 14 24 388233620\r\x1b[2Kuart> auto tx 14 24 3882336208'
+2026-08-31 05:21:01,425 DEBUG   device: b'@READY mode=tx sequence=24 size=14 dma=8 tail=6'
+2026-08-31 05:21:01,425 DEBUG   echo chunk=14 total=14/14 after=0.000011s
+2026-08-31 05:21:01,440 DEBUG   device: b'@RESULT mode=tx sequence=24 size=14 tail=6 tx=14 status=PASS'
+2026-08-31 05:21:01,440 INFO    section=tx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.000s
+2026-08-31 05:21:01,493 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 1\r\x1b[2Kuart> auto tx 15\r\x1b[2Kuart> auto tx 15 \r\x1b[2Kuart> auto tx 15 2\r\x1b[2Kuart> auto tx 15 25\r\x1b[2Kuart> auto tx 15 25 \r\x1b[2Kuart> auto tx 15 25 2\r\x1b[2Kuart> auto tx 15 25 22\r\x1b[2Kuart> auto tx 15 25 224\r\x1b[2Kuart> auto tx 15 25 2241\r\x1b[2Kuart> auto tx 15 25 22418\r\x1b[2Kuart> auto tx 15 25 224180\r\x1b[2Kuart> auto tx 15 25 2241804\r\x1b[2Kuart> auto tx 15 25 22418046\r\x1b[2Kuart> auto tx 15 25 224180468\r\x1b[2Kuart> auto tx 15 25 2241804681'
+2026-08-31 05:21:01,499 DEBUG   device: b'@READY mode=tx sequence=25 size=15 dma=8 tail=7'
+2026-08-31 05:21:01,499 DEBUG   echo chunk=15 total=15/15 after=0.000008s
+2026-08-31 05:21:01,514 DEBUG   device: b'@RESULT mode=tx sequence=25 size=15 tail=7 tx=15 status=PASS'
+2026-08-31 05:21:01,514 INFO    section=tx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.000s
+2026-08-31 05:21:01,567 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 1\r\x1b[2Kuart> auto tx 16\r\x1b[2Kuart> auto tx 16 \r\x1b[2Kuart> auto tx 16 2\r\x1b[2Kuart> auto tx 16 26\r\x1b[2Kuart> auto tx 16 26 \r\x1b[2Kuart> auto tx 16 26 6\r\x1b[2Kuart> auto tx 16 26 60\r\x1b[2Kuart> auto tx 16 26 601\r\x1b[2Kuart> auto tx 16 26 6012\r\x1b[2Kuart> auto tx 16 26 60127\r\x1b[2Kuart> auto tx 16 26 601273\r\x1b[2Kuart> auto tx 16 26 6012731\r\x1b[2Kuart> auto tx 16 26 60127315\r\x1b[2Kuart> auto tx 16 26 601273154'
+2026-08-31 05:21:01,573 DEBUG   device: b'@READY mode=tx sequence=26 size=16 dma=16 tail=0'
+2026-08-31 05:21:01,573 DEBUG   echo chunk=16 total=16/16 after=0.000010s
+2026-08-31 05:21:01,588 DEBUG   device: b'@RESULT mode=tx sequence=26 size=16 tail=0 tx=16 status=PASS'
+2026-08-31 05:21:01,588 INFO    section=tx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.000s
+2026-08-31 05:21:01,654 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 6\r\x1b[2Kuart> auto tx 61\r\x1b[2Kuart> auto tx 614\r\x1b[2Kuart> auto tx 6144\r\x1b[2Kuart> auto tx 6144 \r\x1b[2Kuart> auto tx 6144 2\r\x1b[2Kuart> auto tx 6144 27\r\x1b[2Kuart> auto tx 6144 27 \r\x1b[2Kuart> auto tx 6144 27 3\r\x1b[2Kuart> auto tx 6144 27 32\r\x1b[2Kuart> auto tx 6144 27 325\r\x1b[2Kuart> auto tx 6144 27 3255\r\x1b[2Kuart> auto tx 6144 27 32557\r\x1b[2Kuart> auto tx 6144 27 325570\r\x1b[2Kuart> auto tx 6144 27 3255708\r\x1b[2Kuart> auto tx 6144 27 32557089\r\x1b[2Kuart> auto tx 6144 27 325570892\r\x1b[2Kuart> auto tx 6144 27 3255708923'
+2026-08-31 05:21:01,660 DEBUG   device: b'@READY mode=tx sequence=27 size=6144 dma=6144 tail=0'
+2026-08-31 05:21:01,710 DEBUG   echo chunk=587 total=587/6144 after=0.050063s
+2026-08-31 05:21:01,760 DEBUG   echo chunk=576 total=1163/6144 after=0.100200s
+2026-08-31 05:21:01,810 DEBUG   echo chunk=576 total=1739/6144 after=0.150348s
+2026-08-31 05:21:01,860 DEBUG   echo chunk=512 total=2251/6144 after=0.200481s
+2026-08-31 05:21:01,910 DEBUG   echo chunk=576 total=2827/6144 after=0.250613s
+2026-08-31 05:21:01,960 DEBUG   echo chunk=576 total=3403/6144 after=0.300759s
+2026-08-31 05:21:02,011 DEBUG   echo chunk=576 total=3979/6144 after=0.350908s
+2026-08-31 05:21:02,061 DEBUG   echo chunk=576 total=4555/6144 after=0.401047s
+2026-08-31 05:21:02,111 DEBUG   echo chunk=576 total=5131/6144 after=0.451185s
+2026-08-31 05:21:02,161 DEBUG   echo chunk=576 total=5707/6144 after=0.501335s
+2026-08-31 05:21:02,195 DEBUG   echo chunk=437 total=6144/6144 after=0.535568s
+2026-08-31 05:21:02,211 DEBUG   device: b'@RESULT mode=tx sequence=27 size=6144 tail=0 tx=6144 status=PASS'
+2026-08-31 05:21:02,212 INFO    section=tx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.536s
+2026-08-31 05:21:02,277 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 6\r\x1b[2Kuart> auto tx 61\r\x1b[2Kuart> auto tx 614\r\x1b[2Kuart> auto tx 6145\r\x1b[2Kuart> auto tx 6145 \r\x1b[2Kuart> auto tx 6145 2\r\x1b[2Kuart> auto tx 6145 28\r\x1b[2Kuart> auto tx 6145 28 \r\x1b[2Kuart> auto tx 6145 28 1\r\x1b[2Kuart> auto tx 6145 28 16\r\x1b[2Kuart> auto tx 6145 28 161\r\x1b[2Kuart> auto tx 6145 28 1615\r\x1b[2Kuart> auto tx 6145 28 16151\r\x1b[2Kuart> auto tx 6145 28 161517\r\x1b[2Kuart> auto tx 6145 28 1615177\r\x1b[2Kuart> auto tx 6145 28 16151773\r\x1b[2Kuart> auto tx 6145 28 161517739\r\x1b[2Kuart> auto tx 6145 28 1615177396'
+2026-08-31 05:21:02,283 DEBUG   device: b'@READY mode=tx sequence=28 size=6145 dma=6144 tail=1'
+2026-08-31 05:21:02,333 DEBUG   echo chunk=587 total=587/6145 after=0.050063s
+2026-08-31 05:21:02,383 DEBUG   echo chunk=576 total=1163/6145 after=0.100224s
+2026-08-31 05:21:02,433 DEBUG   echo chunk=576 total=1739/6145 after=0.150395s
+2026-08-31 05:21:02,483 DEBUG   echo chunk=576 total=2315/6145 after=0.200486s
+2026-08-31 05:21:02,534 DEBUG   echo chunk=512 total=2827/6145 after=0.250628s
+2026-08-31 05:21:02,584 DEBUG   echo chunk=576 total=3403/6145 after=0.300782s
+2026-08-31 05:21:02,634 DEBUG   echo chunk=576 total=3979/6145 after=0.350924s
+2026-08-31 05:21:02,684 DEBUG   echo chunk=576 total=4555/6145 after=0.401080s
+2026-08-31 05:21:02,734 DEBUG   echo chunk=576 total=5131/6145 after=0.451210s
+2026-08-31 05:21:02,784 DEBUG   echo chunk=576 total=5707/6145 after=0.501353s
+2026-08-31 05:21:02,818 DEBUG   echo chunk=438 total=6145/6145 after=0.535498s
+2026-08-31 05:21:02,834 DEBUG   device: b'@RESULT mode=tx sequence=28 size=6145 tail=1 tx=6145 status=PASS'
+2026-08-31 05:21:02,834 INFO    section=tx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.536s
+2026-08-31 05:21:02,900 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 6\r\x1b[2Kuart> auto tx 61\r\x1b[2Kuart> auto tx 614\r\x1b[2Kuart> auto tx 6146\r\x1b[2Kuart> auto tx 6146 \r\x1b[2Kuart> auto tx 6146 2\r\x1b[2Kuart> auto tx 6146 29\r\x1b[2Kuart> auto tx 6146 29 \r\x1b[2Kuart> auto tx 6146 29 4\r\x1b[2Kuart> auto tx 6146 29 42\r\x1b[2Kuart> auto tx 6146 29 426\r\x1b[2Kuart> auto tx 6146 29 4269\r\x1b[2Kuart> auto tx 6146 29 42696\r\x1b[2Kuart> auto tx 6146 29 426961\r\x1b[2Kuart> auto tx 6146 29 4269613\r\x1b[2Kuart> auto tx 6146 29 42696131\r\x1b[2Kuart> auto tx 6146 29 426961316\r\x1b[2Kuart> auto tx 6146 29 4269613165'
+2026-08-31 05:21:02,905 DEBUG   device: b'@READY mode=tx sequence=29 size=6146 dma=6144 tail=2'
+2026-08-31 05:21:02,956 DEBUG   echo chunk=587 total=587/6146 after=0.050063s
+2026-08-31 05:21:03,006 DEBUG   echo chunk=576 total=1163/6146 after=0.100230s
+2026-08-31 05:21:03,056 DEBUG   echo chunk=576 total=1739/6146 after=0.150341s
+2026-08-31 05:21:03,106 DEBUG   echo chunk=512 total=2251/6146 after=0.200483s
+2026-08-31 05:21:03,156 DEBUG   echo chunk=576 total=2827/6146 after=0.250627s
+2026-08-31 05:21:03,206 DEBUG   echo chunk=576 total=3403/6146 after=0.300772s
+2026-08-31 05:21:03,256 DEBUG   echo chunk=576 total=3979/6146 after=0.350913s
+2026-08-31 05:21:03,307 DEBUG   echo chunk=576 total=4555/6146 after=0.401049s
+2026-08-31 05:21:03,357 DEBUG   echo chunk=576 total=5131/6146 after=0.451186s
+2026-08-31 05:21:03,407 DEBUG   echo chunk=576 total=5707/6146 after=0.501321s
+2026-08-31 05:21:03,441 DEBUG   echo chunk=439 total=6146/6146 after=0.535621s
+2026-08-31 05:21:03,457 DEBUG   device: b'@RESULT mode=tx sequence=29 size=6146 tail=2 tx=6146 status=PASS'
+2026-08-31 05:21:03,458 INFO    section=tx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.536s
+2026-08-31 05:21:03,522 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 6\r\x1b[2Kuart> auto tx 61\r\x1b[2Kuart> auto tx 614\r\x1b[2Kuart> auto tx 6147\r\x1b[2Kuart> auto tx 6147 \r\x1b[2Kuart> auto tx 6147 3\r\x1b[2Kuart> auto tx 6147 30\r\x1b[2Kuart> auto tx 6147 30 \r\x1b[2Kuart> auto tx 6147 30 2\r\x1b[2Kuart> auto tx 6147 30 26\r\x1b[2Kuart> auto tx 6147 30 262\r\x1b[2Kuart> auto tx 6147 30 2629\r\x1b[2Kuart> auto tx 6147 30 26290\r\x1b[2Kuart> auto tx 6147 30 262908\r\x1b[2Kuart> auto tx 6147 30 2629081\r\x1b[2Kuart> auto tx 6147 30 26290816\r\x1b[2Kuart> auto tx 6147 30 262908163\r\x1b[2Kuart> auto tx 6147 30 2629081638'
+2026-08-31 05:21:03,528 DEBUG   device: b'@READY mode=tx sequence=30 size=6147 dma=6144 tail=3'
+2026-08-31 05:21:03,578 DEBUG   echo chunk=587 total=587/6147 after=0.050062s
+2026-08-31 05:21:03,628 DEBUG   echo chunk=576 total=1163/6147 after=0.100204s
+2026-08-31 05:21:03,679 DEBUG   echo chunk=576 total=1739/6147 after=0.150326s
+2026-08-31 05:21:03,729 DEBUG   echo chunk=512 total=2251/6147 after=0.200451s
+2026-08-31 05:21:03,779 DEBUG   echo chunk=576 total=2827/6147 after=0.250578s
+2026-08-31 05:21:03,829 DEBUG   echo chunk=576 total=3403/6147 after=0.300710s
+2026-08-31 05:21:03,879 DEBUG   echo chunk=576 total=3979/6147 after=0.350837s
+2026-08-31 05:21:03,929 DEBUG   echo chunk=576 total=4555/6147 after=0.400977s
+2026-08-31 05:21:03,979 DEBUG   echo chunk=576 total=5131/6147 after=0.451129s
+2026-08-31 05:21:04,030 DEBUG   echo chunk=576 total=5707/6147 after=0.501299s
+2026-08-31 05:21:04,064 DEBUG   echo chunk=440 total=6147/6147 after=0.535593s
+2026-08-31 05:21:04,070 DEBUG   device: b'@RESULT mode=tx sequence=30 size=6147 tail=3 tx=6147 status=PASS'
+2026-08-31 05:21:04,070 INFO    section=tx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.536s
+2026-08-31 05:21:04,135 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 6\r\x1b[2Kuart> auto tx 61\r\x1b[2Kuart> auto tx 614\r\x1b[2Kuart> auto tx 6148\r\x1b[2Kuart> auto tx 6148 \r\x1b[2Kuart> auto tx 6148 3\r\x1b[2Kuart> auto tx 6148 31\r\x1b[2Kuart> auto tx 6148 31 \r\x1b[2Kuart> auto tx 6148 31 9\r\x1b[2Kuart> auto tx 6148 31 98\r\x1b[2Kuart> auto tx 6148 31 988\r\x1b[2Kuart> auto tx 6148 31 9885\r\x1b[2Kuart> auto tx 6148 31 98855\r\x1b[2Kuart> auto tx 6148 31 988550\r\x1b[2Kuart> auto tx 6148 31 9885501\r\x1b[2Kuart> auto tx 6148 31 98855011\r\x1b[2Kuart> auto tx 6148 31 988550111'
+2026-08-31 05:21:04,141 DEBUG   device: b'@READY mode=tx sequence=31 size=6148 dma=6144 tail=4'
+2026-08-31 05:21:04,191 DEBUG   echo chunk=624 total=624/6148 after=0.050024s
+2026-08-31 05:21:04,241 DEBUG   echo chunk=512 total=1136/6148 after=0.100183s
+2026-08-31 05:21:04,291 DEBUG   echo chunk=576 total=1712/6148 after=0.150342s
+2026-08-31 05:21:04,341 DEBUG   echo chunk=576 total=2288/6148 after=0.200502s
+2026-08-31 05:21:04,391 DEBUG   echo chunk=576 total=2864/6148 after=0.250636s
+2026-08-31 05:21:04,441 DEBUG   echo chunk=576 total=3440/6148 after=0.300775s
+2026-08-31 05:21:04,492 DEBUG   echo chunk=576 total=4016/6148 after=0.350917s
+2026-08-31 05:21:04,542 DEBUG   echo chunk=576 total=4592/6148 after=0.401055s
+2026-08-31 05:21:04,592 DEBUG   echo chunk=576 total=5168/6148 after=0.451191s
+2026-08-31 05:21:04,642 DEBUG   echo chunk=576 total=5744/6148 after=0.501323s
+2026-08-31 05:21:04,677 DEBUG   echo chunk=404 total=6148/6148 after=0.535926s
+2026-08-31 05:21:04,692 DEBUG   device: b'@RESULT mode=tx sequence=31 size=6148 tail=4 tx=6148 status=PASS'
+2026-08-31 05:21:04,692 INFO    section=tx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.536s
+2026-08-31 05:21:04,757 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 6\r\x1b[2Kuart> auto tx 61\r\x1b[2Kuart> auto tx 614\r\x1b[2Kuart> auto tx 6149\r\x1b[2Kuart> auto tx 6149 \r\x1b[2Kuart> auto tx 6149 3\r\x1b[2Kuart> auto tx 6149 32\r\x1b[2Kuart> auto tx 6149 32 \r\x1b[2Kuart> auto tx 6149 32 3\r\x1b[2Kuart> auto tx 6149 32 36\r\x1b[2Kuart> auto tx 6149 32 364\r\x1b[2Kuart> auto tx 6149 32 3642\r\x1b[2Kuart> auto tx 6149 32 36429\r\x1b[2Kuart> auto tx 6149 32 364298\r\x1b[2Kuart> auto tx 6149 32 3642985\r\x1b[2Kuart> auto tx 6149 32 36429858\r\x1b[2Kuart> auto tx 6149 32 364298588\r\x1b[2Kuart> auto tx 6149 32 3642985880'
+2026-08-31 05:21:04,763 DEBUG   device: b'@READY mode=tx sequence=32 size=6149 dma=6144 tail=5'
+2026-08-31 05:21:04,813 DEBUG   echo chunk=587 total=587/6149 after=0.050062s
+2026-08-31 05:21:04,863 DEBUG   echo chunk=576 total=1163/6149 after=0.100215s
+2026-08-31 05:21:04,914 DEBUG   echo chunk=576 total=1739/6149 after=0.150401s
+2026-08-31 05:21:04,964 DEBUG   echo chunk=576 total=2315/6149 after=0.200562s
+2026-08-31 05:21:05,014 DEBUG   echo chunk=512 total=2827/6149 after=0.250719s
+2026-08-31 05:21:05,064 DEBUG   echo chunk=576 total=3403/6149 after=0.300886s
+2026-08-31 05:21:05,114 DEBUG   echo chunk=576 total=3979/6149 after=0.351032s
+2026-08-31 05:21:05,164 DEBUG   echo chunk=576 total=4555/6149 after=0.401196s
+2026-08-31 05:21:05,215 DEBUG   echo chunk=576 total=5131/6149 after=0.451375s
+2026-08-31 05:21:05,265 DEBUG   echo chunk=576 total=5707/6149 after=0.501531s
+2026-08-31 05:21:05,299 DEBUG   echo chunk=442 total=6149/6149 after=0.535545s
+2026-08-31 05:21:05,305 DEBUG   device: b'@RESULT mode=tx sequence=32 size=6149 tail=5 tx=6149 status=PASS'
+2026-08-31 05:21:05,305 INFO    section=tx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.536s
+2026-08-31 05:21:05,375 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 6\r\x1b[2Kuart> auto tx 61\r\x1b[2Kuart> auto tx 615\r\x1b[2Kuart> auto tx 6150\r\x1b[2Kuart> auto tx 6150 \r\x1b[2Kuart> auto tx 6150 3\r\x1b[2Kuart> auto tx 6150 33\r\x1b[2Kuart> auto tx 6150 33 \r\x1b[2Kuart> auto tx 6150 33 2\r\x1b[2Kuart> auto tx 6150 33 20\r\x1b[2Kuart> auto tx 6150 33 200\r\x1b[2Kuart> auto tx 6150 33 2002\r\x1b[2Kuart> auto tx 6150 33 20024\r\x1b[2Kuart> auto tx 6150 33 200245\r\x1b[2Kuart> auto tx 6150 33 2002454\r\x1b[2Kuart> auto tx 6150 33 20024543\r\x1b[2Kuart> auto tx 6150 33 200245435\r\x1b[2Kuart> auto tx 6150 33 2002454353'
+2026-08-31 05:21:05,376 DEBUG   device: b'@READY mode=tx sequence=33 size=6150 dma=6144 tail=6'
+2026-08-31 05:21:05,426 DEBUG   echo chunk=585 total=585/6150 after=0.050062s
+2026-08-31 05:21:05,476 DEBUG   echo chunk=576 total=1161/6150 after=0.100214s
+2026-08-31 05:21:05,526 DEBUG   echo chunk=576 total=1737/6150 after=0.150363s
+2026-08-31 05:21:05,576 DEBUG   echo chunk=576 total=2313/6150 after=0.200449s
+2026-08-31 05:21:05,626 DEBUG   echo chunk=512 total=2825/6150 after=0.250597s
+2026-08-31 05:21:05,676 DEBUG   echo chunk=576 total=3401/6150 after=0.300733s
+2026-08-31 05:21:05,727 DEBUG   echo chunk=576 total=3977/6150 after=0.350868s
+2026-08-31 05:21:05,777 DEBUG   echo chunk=576 total=4553/6150 after=0.401002s
+2026-08-31 05:21:05,827 DEBUG   echo chunk=576 total=5129/6150 after=0.451135s
+2026-08-31 05:21:05,877 DEBUG   echo chunk=576 total=5705/6150 after=0.501241s
+2026-08-31 05:21:05,911 DEBUG   echo chunk=445 total=6150/6150 after=0.535489s
+2026-08-31 05:21:05,918 DEBUG   device: b'@RESULT mode=tx sequence=33 size=6150 tail=6 tx=6150 status=PASS'
+2026-08-31 05:21:05,918 INFO    section=tx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.536s
+2026-08-31 05:21:05,982 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto t\r\x1b[2Kuart> auto tx\r\x1b[2Kuart> auto tx \r\x1b[2Kuart> auto tx 6\r\x1b[2Kuart> auto tx 61\r\x1b[2Kuart> auto tx 615\r\x1b[2Kuart> auto tx 6151\r\x1b[2Kuart> auto tx 6151 \r\x1b[2Kuart> auto tx 6151 3\r\x1b[2Kuart> auto tx 6151 34\r\x1b[2Kuart> auto tx 6151 34 \r\x1b[2Kuart> auto tx 6151 34 3\r\x1b[2Kuart> auto tx 6151 34 36\r\x1b[2Kuart> auto tx 6151 34 361\r\x1b[2Kuart> auto tx 6151 34 3619\r\x1b[2Kuart> auto tx 6151 34 36192\r\x1b[2Kuart> auto tx 6151 34 361922\r\x1b[2Kuart> auto tx 6151 34 3619228\r\x1b[2Kuart> auto tx 6151 34 36192282\r\x1b[2Kuart> auto tx 6151 34 361922826'
+2026-08-31 05:21:05,988 DEBUG   device: b'@READY mode=tx sequence=34 size=6151 dma=6144 tail=7'
+2026-08-31 05:21:06,038 DEBUG   echo chunk=555 total=555/6151 after=0.050067s
+2026-08-31 05:21:06,088 DEBUG   echo chunk=576 total=1131/6151 after=0.100218s
+2026-08-31 05:21:06,138 DEBUG   echo chunk=576 total=1707/6151 after=0.150362s
+2026-08-31 05:21:06,188 DEBUG   echo chunk=576 total=2283/6151 after=0.200493s
+2026-08-31 05:21:06,238 DEBUG   echo chunk=576 total=2859/6151 after=0.250638s
+2026-08-31 05:21:06,288 DEBUG   echo chunk=576 total=3435/6151 after=0.300781s
+2026-08-31 05:21:06,339 DEBUG   echo chunk=576 total=4011/6151 after=0.350921s
+2026-08-31 05:21:06,389 DEBUG   echo chunk=576 total=4587/6151 after=0.401058s
+2026-08-31 05:21:06,439 DEBUG   echo chunk=576 total=5163/6151 after=0.451198s
+2026-08-31 05:21:06,489 DEBUG   echo chunk=576 total=5739/6151 after=0.501340s
+2026-08-31 05:21:06,524 DEBUG   echo chunk=412 total=6151/6151 after=0.535897s
+2026-08-31 05:21:06,539 DEBUG   device: b'@RESULT mode=tx sequence=34 size=6151 tail=7 tx=6151 status=PASS'
+2026-08-31 05:21:06,539 INFO    section=tx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.536s
+2026-08-31 05:21:06,539 INFO    SECTION name=tx-tail status=PASS passed=23 failed=0 elapsed=4.287s
+2026-08-31 05:21:06,539 INFO    SECTION name=rx-tail status=BEGIN cases=23
+2026-08-31 05:21:06,592 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 2\r\x1b[2Kuart> auto rx 2 \r\x1b[2Kuart> auto rx 2 3\r\x1b[2Kuart> auto rx 2 35\r\x1b[2Kuart> auto rx 2 35 \r\x1b[2Kuart> auto rx 2 35 3\r\x1b[2Kuart> auto rx 2 35 30\r\x1b[2Kuart> auto rx 2 35 301\r\x1b[2Kuart> auto rx 2 35 3016\r\x1b[2Kuart> auto rx 2 35 30163\r\x1b[2Kuart> auto rx 2 35 301635\r\x1b[2Kuart> auto rx 2 35 3016358\r\x1b[2Kuart> auto rx 2 35 30163585\r\x1b[2Kuart> auto rx 2 35 301635859\r\x1b[2Kuart> auto rx 2 35 3016358595'
+2026-08-31 05:21:06,607 DEBUG   device: b'@READY mode=rx sequence=35 size=2 dma=0 tail=2'
+2026-08-31 05:21:06,607 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:06,658 DEBUG   RX packet submitted bytes=2 write_and_flush=0.000576s crc=0xFFFF
+2026-08-31 05:21:06,680 DEBUG   device: b'@RESULT mode=rx sequence=35 size=2 dma=0 tail=2 rx=2 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:06,680 INFO    section=rx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.023s
+2026-08-31 05:21:06,733 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 3\r\x1b[2Kuart> auto rx 3 \r\x1b[2Kuart> auto rx 3 3\r\x1b[2Kuart> auto rx 3 36\r\x1b[2Kuart> auto rx 3 36 \r\x1b[2Kuart> auto rx 3 36 1\r\x1b[2Kuart> auto rx 3 36 13\r\x1b[2Kuart> auto rx 3 36 137\r\x1b[2Kuart> auto rx 3 36 1375\r\x1b[2Kuart> auto rx 3 36 13758\r\x1b[2Kuart> auto rx 3 36 137582\r\x1b[2Kuart> auto rx 3 36 1375827\r\x1b[2Kuart> auto rx 3 36 13758270\r\x1b[2Kuart> auto rx 3 36 137582706\r\x1b[2Kuart> auto rx 3 36 1375827068'
+2026-08-31 05:21:06,748 DEBUG   device: b'@READY mode=rx sequence=36 size=3 dma=0 tail=3'
+2026-08-31 05:21:06,748 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:06,799 DEBUG   RX packet submitted bytes=3 write_and_flush=0.000406s crc=0x0A6E
+2026-08-31 05:21:06,821 DEBUG   device: b'@RESULT mode=rx sequence=36 size=3 dma=0 tail=3 rx=3 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:06,821 INFO    section=rx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.023s
+2026-08-31 05:21:06,874 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 4\r\x1b[2Kuart> auto rx 4 \r\x1b[2Kuart> auto rx 4 3\r\x1b[2Kuart> auto rx 4 37\r\x1b[2Kuart> auto rx 4 37 \r\x1b[2Kuart> auto rx 4 37 4\r\x1b[2Kuart> auto rx 4 37 40\r\x1b[2Kuart> auto rx 4 37 403\r\x1b[2Kuart> auto rx 4 37 4030\r\x1b[2Kuart> auto rx 4 37 40302\r\x1b[2Kuart> auto rx 4 37 403026\r\x1b[2Kuart> auto rx 4 37 4030262\r\x1b[2Kuart> auto rx 4 37 40302628\r\x1b[2Kuart> auto rx 4 37 403026283\r\x1b[2Kuart> auto rx 4 37 4030262837'
+2026-08-31 05:21:06,889 DEBUG   device: b'@READY mode=rx sequence=37 size=4 dma=0 tail=4'
+2026-08-31 05:21:06,889 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:06,940 DEBUG   RX packet submitted bytes=4 write_and_flush=0.000414s crc=0x4056
+2026-08-31 05:21:06,962 DEBUG   device: b'@RESULT mode=rx sequence=37 size=4 dma=0 tail=4 rx=4 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:06,962 INFO    section=rx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.023s
+2026-08-31 05:21:07,015 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 5\r\x1b[2Kuart> auto rx 5 \r\x1b[2Kuart> auto rx 5 3\r\x1b[2Kuart> auto rx 5 38\r\x1b[2Kuart> auto rx 5 38 \r\x1b[2Kuart> auto rx 5 38 2\r\x1b[2Kuart> auto rx 5 38 23\r\x1b[2Kuart> auto rx 5 38 238\r\x1b[2Kuart> auto rx 5 38 2389\r\x1b[2Kuart> auto rx 5 38 23897\r\x1b[2Kuart> auto rx 5 38 238973\r\x1b[2Kuart> auto rx 5 38 2389731\r\x1b[2Kuart> auto rx 5 38 23897313\r\x1b[2Kuart> auto rx 5 38 238973131\r\x1b[2Kuart> auto rx 5 38 2389731310'
+2026-08-31 05:21:07,030 DEBUG   device: b'@READY mode=rx sequence=38 size=5 dma=0 tail=5'
+2026-08-31 05:21:07,030 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:07,082 DEBUG   RX packet submitted bytes=5 write_and_flush=0.002098s crc=0x9FCC
+2026-08-31 05:21:07,103 DEBUG   device: b'@RESULT mode=rx sequence=38 size=5 dma=0 tail=5 rx=5 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:07,103 INFO    section=rx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.023s
+2026-08-31 05:21:07,150 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 6\r\x1b[2Kuart> auto rx 6 \r\x1b[2Kuart> auto rx 6 3\r\x1b[2Kuart> auto rx 6 39\r\x1b[2Kuart> auto rx 6 39 \r\x1b[2Kuart> auto rx 6 39 7\r\x1b[2Kuart> auto rx 6 39 74\r\x1b[2Kuart> auto rx 6 39 749\r\x1b[2Kuart> auto rx 6 39 7491\r\x1b[2Kuart> auto rx 6 39 74919\r\x1b[2Kuart> auto rx 6 39 749199\r\x1b[2Kuart> auto rx 6 39 7491997\r\x1b[2Kuart> auto rx 6 39 74919978\r\x1b[2Kuart> auto rx 6 39 749199783'
+2026-08-31 05:21:07,165 DEBUG   device: b'@READY mode=rx sequence=39 size=6 dma=0 tail=6'
+2026-08-31 05:21:07,165 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:07,217 DEBUG   RX packet submitted bytes=6 write_and_flush=0.001920s crc=0xA1C9
+2026-08-31 05:21:07,238 DEBUG   device: b'@RESULT mode=rx sequence=39 size=6 dma=0 tail=6 rx=6 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:07,238 INFO    section=rx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.023s
+2026-08-31 05:21:07,291 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 7\r\x1b[2Kuart> auto rx 7 \r\x1b[2Kuart> auto rx 7 4\r\x1b[2Kuart> auto rx 7 40\r\x1b[2Kuart> auto rx 7 40 \r\x1b[2Kuart> auto rx 7 40 3\r\x1b[2Kuart> auto rx 7 40 34\r\x1b[2Kuart> auto rx 7 40 340\r\x1b[2Kuart> auto rx 7 40 3403\r\x1b[2Kuart> auto rx 7 40 34036\r\x1b[2Kuart> auto rx 7 40 340363\r\x1b[2Kuart> auto rx 7 40 3403635\r\x1b[2Kuart> auto rx 7 40 34036355\r\x1b[2Kuart> auto rx 7 40 340363555\r\x1b[2Kuart> auto rx 7 40 3403635552'
+2026-08-31 05:21:07,306 DEBUG   device: b'@READY mode=rx sequence=40 size=7 dma=0 tail=7'
+2026-08-31 05:21:07,306 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:07,358 DEBUG   RX packet submitted bytes=7 write_and_flush=0.002097s crc=0x52BC
+2026-08-31 05:21:07,379 DEBUG   device: b'@RESULT mode=rx sequence=40 size=7 dma=0 tail=7 rx=7 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:07,379 INFO    section=rx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.023s
+2026-08-31 05:21:07,432 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 8\r\x1b[2Kuart> auto rx 8 \r\x1b[2Kuart> auto rx 8 4\r\x1b[2Kuart> auto rx 8 41\r\x1b[2Kuart> auto rx 8 41 \r\x1b[2Kuart> auto rx 8 41 1\r\x1b[2Kuart> auto rx 8 41 17\r\x1b[2Kuart> auto rx 8 41 176\r\x1b[2Kuart> auto rx 8 41 1763\r\x1b[2Kuart> auto rx 8 41 17631\r\x1b[2Kuart> auto rx 8 41 176310\r\x1b[2Kuart> auto rx 8 41 1763104\r\x1b[2Kuart> auto rx 8 41 17631040\r\x1b[2Kuart> auto rx 8 41 176310402\r\x1b[2Kuart> auto rx 8 41 1763104025'
+2026-08-31 05:21:07,447 DEBUG   device: b'@READY mode=rx sequence=41 size=8 dma=8 tail=0'
+2026-08-31 05:21:07,447 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:07,499 DEBUG   RX packet submitted bytes=8 write_and_flush=0.002093s crc=0xD9D1
+2026-08-31 05:21:07,520 DEBUG   device: b'@RESULT mode=rx sequence=41 size=8 dma=8 tail=0 rx=8 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:07,520 INFO    section=rx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.023s
+2026-08-31 05:21:07,567 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 9\r\x1b[2Kuart> auto rx 9 \r\x1b[2Kuart> auto rx 9 4\r\x1b[2Kuart> auto rx 9 42\r\x1b[2Kuart> auto rx 9 42 \r\x1b[2Kuart> auto rx 9 42 1\r\x1b[2Kuart> auto rx 9 42 12\r\x1b[2Kuart> auto rx 9 42 122\r\x1b[2Kuart> auto rx 9 42 1225\r\x1b[2Kuart> auto rx 9 42 12257\r\x1b[2Kuart> auto rx 9 42 122572\r\x1b[2Kuart> auto rx 9 42 1225724\r\x1b[2Kuart> auto rx 9 42 12257249\r\x1b[2Kuart> auto rx 9 42 122572498'
+2026-08-31 05:21:07,582 DEBUG   device: b'@READY mode=rx sequence=42 size=9 dma=8 tail=1'
+2026-08-31 05:21:07,582 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:07,634 DEBUG   RX packet submitted bytes=9 write_and_flush=0.001918s crc=0x2064
+2026-08-31 05:21:07,655 DEBUG   device: b'@RESULT mode=rx sequence=42 size=9 dma=8 tail=1 rx=9 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:07,655 INFO    section=rx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.023s
+2026-08-31 05:21:07,708 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 1\r\x1b[2Kuart> auto rx 10\r\x1b[2Kuart> auto rx 10 \r\x1b[2Kuart> auto rx 10 4\r\x1b[2Kuart> auto rx 10 43\r\x1b[2Kuart> auto rx 10 43 \r\x1b[2Kuart> auto rx 10 43 2\r\x1b[2Kuart> auto rx 10 43 27\r\x1b[2Kuart> auto rx 10 43 277\r\x1b[2Kuart> auto rx 10 43 2777\r\x1b[2Kuart> auto rx 10 43 27770\r\x1b[2Kuart> auto rx 10 43 277700\r\x1b[2Kuart> auto rx 10 43 2777008\r\x1b[2Kuart> auto rx 10 43 27770082\r\x1b[2Kuart> auto rx 10 43 277700826\r\x1b[2Kuart> auto rx 10 43 2777008267'
+2026-08-31 05:21:07,723 DEBUG   device: b'@READY mode=rx sequence=43 size=10 dma=8 tail=2'
+2026-08-31 05:21:07,723 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:07,776 DEBUG   RX packet submitted bytes=10 write_and_flush=0.002869s crc=0x2E18
+2026-08-31 05:21:07,796 DEBUG   device: b'@RESULT mode=rx sequence=43 size=10 dma=8 tail=2 rx=10 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:07,796 INFO    section=rx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.023s
+2026-08-31 05:21:07,849 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 1\r\x1b[2Kuart> auto rx 11\r\x1b[2Kuart> auto rx 11 \r\x1b[2Kuart> auto rx 11 4\r\x1b[2Kuart> auto rx 11 44\r\x1b[2Kuart> auto rx 11 44 \r\x1b[2Kuart> auto rx 11 44 1\r\x1b[2Kuart> auto rx 11 44 11\r\x1b[2Kuart> auto rx 11 44 113\r\x1b[2Kuart> auto rx 11 44 1136\r\x1b[2Kuart> auto rx 11 44 11364\r\x1b[2Kuart> auto rx 11 44 113647\r\x1b[2Kuart> auto rx 11 44 1136476\r\x1b[2Kuart> auto rx 11 44 11364767\r\x1b[2Kuart> auto rx 11 44 113647674\r\x1b[2Kuart> auto rx 11 44 1136476740'
+2026-08-31 05:21:07,864 DEBUG   device: b'@READY mode=rx sequence=44 size=11 dma=8 tail=3'
+2026-08-31 05:21:07,864 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:07,916 DEBUG   RX packet submitted bytes=11 write_and_flush=0.001903s crc=0x0C4D
+2026-08-31 05:21:07,938 DEBUG   device: b'@RESULT mode=rx sequence=44 size=11 dma=8 tail=3 rx=11 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:07,938 INFO    section=rx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.024s
+2026-08-31 05:21:07,991 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 1\r\x1b[2Kuart> auto rx 12\r\x1b[2Kuart> auto rx 12 \r\x1b[2Kuart> auto rx 12 4\r\x1b[2Kuart> auto rx 12 45\r\x1b[2Kuart> auto rx 12 45 \r\x1b[2Kuart> auto rx 12 45 3\r\x1b[2Kuart> auto rx 12 45 37\r\x1b[2Kuart> auto rx 12 45 379\r\x1b[2Kuart> auto rx 12 45 3790\r\x1b[2Kuart> auto rx 12 45 37909\r\x1b[2Kuart> auto rx 12 45 379091\r\x1b[2Kuart> auto rx 12 45 3790912\r\x1b[2Kuart> auto rx 12 45 37909125\r\x1b[2Kuart> auto rx 12 45 379091250\r\x1b[2Kuart> auto rx 12 45 3790912509'
+2026-08-31 05:21:08,006 DEBUG   device: b'@READY mode=rx sequence=45 size=12 dma=8 tail=4'
+2026-08-31 05:21:08,006 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:08,058 DEBUG   RX packet submitted bytes=12 write_and_flush=0.001906s crc=0x774C
+2026-08-31 05:21:08,080 DEBUG   device: b'@RESULT mode=rx sequence=45 size=12 dma=8 tail=4 rx=12 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:08,080 INFO    section=rx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.024s
+2026-08-31 05:21:08,133 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 1\r\x1b[2Kuart> auto rx 13\r\x1b[2Kuart> auto rx 13 \r\x1b[2Kuart> auto rx 13 4\r\x1b[2Kuart> auto rx 13 46\r\x1b[2Kuart> auto rx 13 46 \r\x1b[2Kuart> auto rx 13 46 2\r\x1b[2Kuart> auto rx 13 46 21\r\x1b[2Kuart> auto rx 13 46 215\r\x1b[2Kuart> auto rx 13 46 2150\r\x1b[2Kuart> auto rx 13 46 21503\r\x1b[2Kuart> auto rx 13 46 215038\r\x1b[2Kuart> auto rx 13 46 2150380\r\x1b[2Kuart> auto rx 13 46 21503809\r\x1b[2Kuart> auto rx 13 46 215038098\r\x1b[2Kuart> auto rx 13 46 2150380982'
+2026-08-31 05:21:08,148 DEBUG   device: b'@READY mode=rx sequence=46 size=13 dma=8 tail=5'
+2026-08-31 05:21:08,148 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:08,200 DEBUG   RX packet submitted bytes=13 write_and_flush=0.001971s crc=0xB7F0
+2026-08-31 05:21:08,222 DEBUG   device: b'@RESULT mode=rx sequence=46 size=13 dma=8 tail=5 rx=13 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:08,222 INFO    section=rx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.024s
+2026-08-31 05:21:08,275 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 1\r\x1b[2Kuart> auto rx 14\r\x1b[2Kuart> auto rx 14 \r\x1b[2Kuart> auto rx 14 4\r\x1b[2Kuart> auto rx 14 47\r\x1b[2Kuart> auto rx 14 47 \r\x1b[2Kuart> auto rx 14 47 5\r\x1b[2Kuart> auto rx 14 47 50\r\x1b[2Kuart> auto rx 14 47 509\r\x1b[2Kuart> auto rx 14 47 5098\r\x1b[2Kuart> auto rx 14 47 50984\r\x1b[2Kuart> auto rx 14 47 509849\r\x1b[2Kuart> auto rx 14 47 5098494\r\x1b[2Kuart> auto rx 14 47 50984945\r\x1b[2Kuart> auto rx 14 47 509849455'
+2026-08-31 05:21:08,290 DEBUG   device: b'@READY mode=rx sequence=47 size=14 dma=8 tail=6'
+2026-08-31 05:21:08,290 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:08,342 DEBUG   RX packet submitted bytes=14 write_and_flush=0.002125s crc=0xBE2C
+2026-08-31 05:21:08,364 DEBUG   device: b'@RESULT mode=rx sequence=47 size=14 dma=8 tail=6 rx=14 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:08,364 INFO    section=rx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.024s
+2026-08-31 05:21:08,417 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 1\r\x1b[2Kuart> auto rx 15\r\x1b[2Kuart> auto rx 15 \r\x1b[2Kuart> auto rx 15 4\r\x1b[2Kuart> auto rx 15 48\r\x1b[2Kuart> auto rx 15 48 \r\x1b[2Kuart> auto rx 15 48 3\r\x1b[2Kuart> auto rx 15 48 31\r\x1b[2Kuart> auto rx 15 48 316\r\x1b[2Kuart> auto rx 15 48 3164\r\x1b[2Kuart> auto rx 15 48 31642\r\x1b[2Kuart> auto rx 15 48 316428\r\x1b[2Kuart> auto rx 15 48 3164285\r\x1b[2Kuart> auto rx 15 48 31642852\r\x1b[2Kuart> auto rx 15 48 316428522\r\x1b[2Kuart> auto rx 15 48 3164285224'
+2026-08-31 05:21:08,432 DEBUG   device: b'@READY mode=rx sequence=48 size=15 dma=8 tail=7'
+2026-08-31 05:21:08,432 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:08,484 DEBUG   RX packet submitted bytes=15 write_and_flush=0.001994s crc=0xAAD1
+2026-08-31 05:21:08,506 DEBUG   device: b'@RESULT mode=rx sequence=48 size=15 dma=8 tail=7 rx=15 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:08,506 INFO    section=rx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.024s
+2026-08-31 05:21:08,559 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 1\r\x1b[2Kuart> auto rx 16\r\x1b[2Kuart> auto rx 16 \r\x1b[2Kuart> auto rx 16 4\r\x1b[2Kuart> auto rx 16 49\r\x1b[2Kuart> auto rx 16 49 \r\x1b[2Kuart> auto rx 16 49 1\r\x1b[2Kuart> auto rx 16 49 15\r\x1b[2Kuart> auto rx 16 49 152\r\x1b[2Kuart> auto rx 16 49 1523\r\x1b[2Kuart> auto rx 16 49 15237\r\x1b[2Kuart> auto rx 16 49 152375\r\x1b[2Kuart> auto rx 16 49 1523753\r\x1b[2Kuart> auto rx 16 49 15237536\r\x1b[2Kuart> auto rx 16 49 152375369\r\x1b[2Kuart> auto rx 16 49 1523753697'
+2026-08-31 05:21:08,574 DEBUG   device: b'@READY mode=rx sequence=49 size=16 dma=16 tail=0'
+2026-08-31 05:21:08,574 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:08,626 DEBUG   RX packet submitted bytes=16 write_and_flush=0.001944s crc=0x2F87
+2026-08-31 05:21:08,648 DEBUG   device: b'@RESULT mode=rx sequence=49 size=16 dma=16 tail=0 rx=16 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:08,648 INFO    section=rx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.024s
+2026-08-31 05:21:08,712 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 6\r\x1b[2Kuart> auto rx 61\r\x1b[2Kuart> auto rx 614\r\x1b[2Kuart> auto rx 6144\r\x1b[2Kuart> auto rx 6144 \r\x1b[2Kuart> auto rx 6144 5\r\x1b[2Kuart> auto rx 6144 50\r\x1b[2Kuart> auto rx 6144 50 \r\x1b[2Kuart> auto rx 6144 50 4\r\x1b[2Kuart> auto rx 6144 50 41\r\x1b[2Kuart> auto rx 6144 50 417\r\x1b[2Kuart> auto rx 6144 50 4178\r\x1b[2Kuart> auto rx 6144 50 41781\r\x1b[2Kuart> auto rx 6144 50 417818\r\x1b[2Kuart> auto rx 6144 50 4178189\r\x1b[2Kuart> auto rx 6144 50 41781894\r\x1b[2Kuart> auto rx 6144 50 417818946\r\x1b[2Kuart> auto rx 6144 50 4178189466'
+2026-08-31 05:21:08,728 DEBUG   device: b'@READY mode=rx sequence=50 size=6144 dma=6144 tail=0'
+2026-08-31 05:21:08,728 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:09,314 DEBUG   RX packet submitted bytes=6144 write_and_flush=0.535873s crc=0xEA49
+2026-08-31 05:21:09,337 DEBUG   device: b'@RESULT mode=rx sequence=50 size=6144 dma=6144 tail=0 rx=6144 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:09,337 INFO    section=rx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.559s
+2026-08-31 05:21:09,400 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 6\r\x1b[2Kuart> auto rx 61\r\x1b[2Kuart> auto rx 614\r\x1b[2Kuart> auto rx 6145\r\x1b[2Kuart> auto rx 6145 \r\x1b[2Kuart> auto rx 6145 5\r\x1b[2Kuart> auto rx 6145 51\r\x1b[2Kuart> auto rx 6145 51 \r\x1b[2Kuart> auto rx 6145 51 2\r\x1b[2Kuart> auto rx 6145 51 25\r\x1b[2Kuart> auto rx 6145 51 253\r\x1b[2Kuart> auto rx 6145 51 2537\r\x1b[2Kuart> auto rx 6145 51 25376\r\x1b[2Kuart> auto rx 6145 51 253765\r\x1b[2Kuart> auto rx 6145 51 2537657\r\x1b[2Kuart> auto rx 6145 51 25376579\r\x1b[2Kuart> auto rx 6145 51 253765793\r\x1b[2Kuart> auto rx 6145 51 2537657939'
+2026-08-31 05:21:09,416 DEBUG   device: b'@READY mode=rx sequence=51 size=6145 dma=6144 tail=1'
+2026-08-31 05:21:09,416 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:10,001 DEBUG   RX packet submitted bytes=6145 write_and_flush=0.534876s crc=0xB573
+2026-08-31 05:21:10,025 DEBUG   device: b'@RESULT mode=rx sequence=51 size=6145 dma=6144 tail=1 rx=6145 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:10,025 INFO    section=rx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.559s
+2026-08-31 05:21:10,088 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 6\r\x1b[2Kuart> auto rx 61\r\x1b[2Kuart> auto rx 614\r\x1b[2Kuart> auto rx 6146\r\x1b[2Kuart> auto rx 6146 \r\x1b[2Kuart> auto rx 6146 5\r\x1b[2Kuart> auto rx 6146 52\r\x1b[2Kuart> auto rx 6146 52 \r\x1b[2Kuart> auto rx 6146 52 8\r\x1b[2Kuart> auto rx 6146 52 89\r\x1b[2Kuart> auto rx 6146 52 897\r\x1b[2Kuart> auto rx 6146 52 8971\r\x1b[2Kuart> auto rx 6146 52 89712\r\x1b[2Kuart> auto rx 6146 52 897126\r\x1b[2Kuart> auto rx 6146 52 8971264\r\x1b[2Kuart> auto rx 6146 52 89712641\r\x1b[2Kuart> auto rx 6146 52 897126412'
+2026-08-31 05:21:10,104 DEBUG   device: b'@READY mode=rx sequence=52 size=6146 dma=6144 tail=2'
+2026-08-31 05:21:10,104 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:10,689 DEBUG   RX packet submitted bytes=6146 write_and_flush=0.535089s crc=0x7A07
+2026-08-31 05:21:10,712 DEBUG   device: b'@RESULT mode=rx sequence=52 size=6146 dma=6144 tail=2 rx=6146 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:10,712 INFO    section=rx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.558s
+2026-08-31 05:21:10,775 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 6\r\x1b[2Kuart> auto rx 61\r\x1b[2Kuart> auto rx 614\r\x1b[2Kuart> auto rx 6147\r\x1b[2Kuart> auto rx 6147 \r\x1b[2Kuart> auto rx 6147 5\r\x1b[2Kuart> auto rx 6147 53\r\x1b[2Kuart> auto rx 6147 53 \r\x1b[2Kuart> auto rx 6147 53 3\r\x1b[2Kuart> auto rx 6147 53 35\r\x1b[2Kuart> auto rx 6147 53 355\r\x1b[2Kuart> auto rx 6147 53 3551\r\x1b[2Kuart> auto rx 6147 53 35515\r\x1b[2Kuart> auto rx 6147 53 355156\r\x1b[2Kuart> auto rx 6147 53 3551562\r\x1b[2Kuart> auto rx 6147 53 35515621\r\x1b[2Kuart> auto rx 6147 53 355156218\r\x1b[2Kuart> auto rx 6147 53 3551562181'
+2026-08-31 05:21:10,790 DEBUG   device: b'@READY mode=rx sequence=53 size=6147 dma=6144 tail=3'
+2026-08-31 05:21:10,790 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:11,376 DEBUG   RX packet submitted bytes=6147 write_and_flush=0.535870s crc=0xDB1E
+2026-08-31 05:21:11,399 DEBUG   device: b'@RESULT mode=rx sequence=53 size=6147 dma=6144 tail=3 rx=6147 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:11,399 INFO    section=rx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.559s
+2026-08-31 05:21:11,463 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 6\r\x1b[2Kuart> auto rx 61\r\x1b[2Kuart> auto rx 614\r\x1b[2Kuart> auto rx 6148\r\x1b[2Kuart> auto rx 6148 \r\x1b[2Kuart> auto rx 6148 5\r\x1b[2Kuart> auto rx 6148 54\r\x1b[2Kuart> auto rx 6148 54 \r\x1b[2Kuart> auto rx 6148 54 1\r\x1b[2Kuart> auto rx 6148 54 19\r\x1b[2Kuart> auto rx 6148 54 191\r\x1b[2Kuart> auto rx 6148 54 1911\r\x1b[2Kuart> auto rx 6148 54 19110\r\x1b[2Kuart> auto rx 6148 54 191103\r\x1b[2Kuart> auto rx 6148 54 1911030\r\x1b[2Kuart> auto rx 6148 54 19110306\r\x1b[2Kuart> auto rx 6148 54 191103065\r\x1b[2Kuart> auto rx 6148 54 1911030654'
+2026-08-31 05:21:11,478 DEBUG   device: b'@READY mode=rx sequence=54 size=6148 dma=6144 tail=4'
+2026-08-31 05:21:11,478 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:12,063 DEBUG   RX packet submitted bytes=6148 write_and_flush=0.534975s crc=0xFD11
+2026-08-31 05:21:12,087 DEBUG   device: b'@RESULT mode=rx sequence=54 size=6148 dma=6144 tail=4 rx=6148 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:12,087 INFO    section=rx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.559s
+2026-08-31 05:21:12,150 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 6\r\x1b[2Kuart> auto rx 61\r\x1b[2Kuart> auto rx 614\r\x1b[2Kuart> auto rx 6149\r\x1b[2Kuart> auto rx 6149 \r\x1b[2Kuart> auto rx 6149 5\r\x1b[2Kuart> auto rx 6149 55\r\x1b[2Kuart> auto rx 6149 55 \r\x1b[2Kuart> auto rx 6149 55 2\r\x1b[2Kuart> auto rx 6149 55 27\r\x1b[2Kuart> auto rx 6149 55 270\r\x1b[2Kuart> auto rx 6149 55 2704\r\x1b[2Kuart> auto rx 6149 55 27049\r\x1b[2Kuart> auto rx 6149 55 270499\r\x1b[2Kuart> auto rx 6149 55 2704991\r\x1b[2Kuart> auto rx 6149 55 27049912\r\x1b[2Kuart> auto rx 6149 55 270499127'
+2026-08-31 05:21:12,166 DEBUG   device: b'@READY mode=rx sequence=55 size=6149 dma=6144 tail=5'
+2026-08-31 05:21:12,166 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:12,752 DEBUG   RX packet submitted bytes=6149 write_and_flush=0.536193s crc=0xA2E7
+2026-08-31 05:21:12,775 DEBUG   device: b'@RESULT mode=rx sequence=55 size=6149 dma=6144 tail=5 rx=6149 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:12,775 INFO    section=rx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.559s
+2026-08-31 05:21:12,838 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 6\r\x1b[2Kuart> auto rx 61\r\x1b[2Kuart> auto rx 615\r\x1b[2Kuart> auto rx 6150\r\x1b[2Kuart> auto rx 6150 \r\x1b[2Kuart> auto rx 6150 5\r\x1b[2Kuart> auto rx 6150 56\r\x1b[2Kuart> auto rx 6150 56 \r\x1b[2Kuart> auto rx 6150 56 2\r\x1b[2Kuart> auto rx 6150 56 29\r\x1b[2Kuart> auto rx 6150 56 292\r\x1b[2Kuart> auto rx 6150 56 2924\r\x1b[2Kuart> auto rx 6150 56 29249\r\x1b[2Kuart> auto rx 6150 56 292493\r\x1b[2Kuart> auto rx 6150 56 2924934\r\x1b[2Kuart> auto rx 6150 56 29249348\r\x1b[2Kuart> auto rx 6150 56 292493489\r\x1b[2Kuart> auto rx 6150 56 2924934896'
+2026-08-31 05:21:12,853 DEBUG   device: b'@READY mode=rx sequence=56 size=6150 dma=6144 tail=6'
+2026-08-31 05:21:12,853 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:13,438 DEBUG   RX packet submitted bytes=6150 write_and_flush=0.534852s crc=0x5E93
+2026-08-31 05:21:13,462 DEBUG   device: b'@RESULT mode=rx sequence=56 size=6150 dma=6144 tail=6 rx=6150 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:13,462 INFO    section=rx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.559s
+2026-08-31 05:21:13,525 DEBUG   device: b'uart> \r\x1b[2Kuart> a\r\x1b[2Kuart> au\r\x1b[2Kuart> aut\r\x1b[2Kuart> auto\r\x1b[2Kuart> auto \r\x1b[2Kuart> auto r\r\x1b[2Kuart> auto rx\r\x1b[2Kuart> auto rx \r\x1b[2Kuart> auto rx 6\r\x1b[2Kuart> auto rx 61\r\x1b[2Kuart> auto rx 615\r\x1b[2Kuart> auto rx 6151\r\x1b[2Kuart> auto rx 6151 \r\x1b[2Kuart> auto rx 6151 5\r\x1b[2Kuart> auto rx 6151 57\r\x1b[2Kuart> auto rx 6151 57 \r\x1b[2Kuart> auto rx 6151 57 1\r\x1b[2Kuart> auto rx 6151 57 12\r\x1b[2Kuart> auto rx 6151 57 128\r\x1b[2Kuart> auto rx 6151 57 1284\r\x1b[2Kuart> auto rx 6151 57 12844\r\x1b[2Kuart> auto rx 6151 57 128440\r\x1b[2Kuart> auto rx 6151 57 1284403\r\x1b[2Kuart> auto rx 6151 57 12844033\r\x1b[2Kuart> auto rx 6151 57 128440336\r\x1b[2Kuart> auto rx 6151 57 1284403369'
+2026-08-31 05:21:13,540 DEBUG   device: b'@READY mode=rx sequence=57 size=6151 dma=6144 tail=7'
+2026-08-31 05:21:13,540 DEBUG   RX READY accepted; delaying 0.050s before packet TX
+2026-08-31 05:21:14,127 DEBUG   RX packet submitted bytes=6151 write_and_flush=0.536920s crc=0x293C
+2026-08-31 05:21:14,149 DEBUG   device: b'@RESULT mode=rx sequence=57 size=6151 dma=6144 tail=7 rx=6151 crc=PASS data=PASS status=PASS'
+2026-08-31 05:21:14,149 INFO    section=rx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.559s
+2026-08-31 05:21:14,149 INFO    SECTION name=rx-tail status=PASS passed=23 failed=0 elapsed=4.819s
+2026-08-31 05:21:14,149 INFO    SUITE status=PASS passed=58 failed=0 full_profile=SKIPPED
+2026-08-31 05:21:14,151 INFO    SUMMARY status=PASS passed=58 failed=0 elapsed=21.045s wall_elapsed=27.357s

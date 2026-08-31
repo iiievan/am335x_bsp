@@ -77,3 +77,19 @@ all tails from one through seven bytes:
 python3 tools/uart_dma_autotest.py --mode rx-tail --profile smoke \
     --port /dev/ttyUSB0 --log uart_rx_tail.log --verbose
 ```
+
+## Complete regression suite
+
+The `suite` mode runs every currently verified hardware test in one serial
+session, excluding the long `full` profile: smoke loopback, one 6144-byte
+loopback, ten 6144-byte stress cycles, the complete TX-tail matrix, and the
+complete RX-tail matrix. The run contains 58 hardware cases:
+
+```bash
+python3 tools/uart_dma_autotest.py --mode suite \
+    --port /dev/ttyUSB0 --log uart_dma_suite.log --verbose
+```
+
+Each group prints its own `SECTION` result followed by the aggregate `SUITE`
+and `SUMMARY` results. The run stops at the first failure and records the
+section, case, size, and tail that failed.
