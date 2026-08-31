@@ -200,8 +200,7 @@ namespace HAL::UART
 
             (void)m_rx.stop();
             cp15_DSB_barrier();
-            HAL::CACHE::dcache_invalidate_range(address_of(data),
-                                                 static_cast<uint32_t>(size));
+            HAL::CACHE::dcache_invalidate_range(address_of(data), static_cast<uint32_t>(size));
             cp15_DSB_barrier();
             return true;
         }

@@ -40,6 +40,8 @@ PROFILES = {
     "full": Profile(payload_size=6144, cycles=100),
 }
 
+TX_TAIL_SIZES = tuple(range(2, 17)) + tuple(range(6144, 6152))
+
 
 class TestFailure(RuntimeError):
     pass
@@ -74,6 +76,13 @@ def make_frame(payload_size: int, sequence: int, seed: int) -> bytes:
     final_size = (len(body) + 2 + DMA_ALIGNMENT - 1) & ~(DMA_ALIGNMENT - 1)
     body += bytes(final_size - len(body) - 2)
     return body + struct.pack("<H", crc16_ccitt_false(body))
+
+
+def make_tx_packet(size: int, seed: int) -> bytes:
+    if size < 2:
+        raise TestFailure("TX packet must have room for CRC16")
+    data = make_payload(size - 2, seed)
+    return data + struct.pack("<H", crc16_ccitt_false(data))
 
 
 def find_serial_port() -> str | None:
@@ -174,10 +183,46 @@ def run_cycle(ser: serial.Serial, payload_size: int, sequence: int, seed: int,
     return elapsed
 
 
+def run_tx_tail_case(ser: serial.Serial, size: int, sequence: int,
+                     seed: int, echo_timeout: float) -> float:
+    expected = make_tx_packet(size, seed)
+    command = f"auto tx {size} {sequence} {seed}\n".encode("ascii")
+    ser.write(command)
+    ser.flush()
+
+    ready = read_line_until(ser, b"@READY", time.monotonic() + 2.0)
+    required = (
+        f"mode=tx sequence={sequence} size={size} "
+        f"dma={size - size % DMA_ALIGNMENT} tail={size % DMA_ALIGNMENT}"
+    ).encode("ascii")
+    if required not in ready:
+        raise TestFailure(f"invalid TX READY response: {ready!r}")
+
+    started = time.monotonic()
+    received = read_exactly(ser, size, time.monotonic() + echo_timeout)
+    elapsed = time.monotonic() - started
+    if received != expected:
+        raise TestFailure(f"TX data mismatch: {first_mismatch(expected, received)}")
+
+    received_crc = struct.unpack_from("<H", received, size - 2)[0]
+    calculated_crc = crc16_ccitt_false(received[:-2])
+    if received_crc != calculated_crc:
+        raise TestFailure(
+            f"TX CRC mismatch: received=0x{received_crc:04X} calculated=0x{calculated_crc:04X}"
+        )
+
+    result = read_line_until(ser, b"@RESULT", time.monotonic() + 2.0)
+    if b"status=PASS" not in result:
+        raise TestFailure(f"device TX failure: {result.decode('ascii', errors='replace').strip()}")
+    return elapsed
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", help="serial device; CP210x is detected when omitted")
     parser.add_argument("--profile", choices=PROFILES, default="smoke")
+    parser.add_argument("--mode", choices=("loopback", "tx-tail"), default="loopback",
+                        help="test mode (default: loopback)")
     parser.add_argument("--size", type=int, help="override profile payload size")
     parser.add_argument("--cycles", type=int, help="override profile cycle count")
     parser.add_argument("--seed", type=lambda value: int(value, 0), default=0x12345678)
@@ -216,6 +261,10 @@ def main() -> int:
             raise TestFailure(f"frame layout check failed: size={len(frame)}")
         if crc16_ccitt_false(frame[:-2]) != struct.unpack_from("<H", frame, len(frame) - 2)[0]:
             raise TestFailure("frame CRC check failed")
+        for size in TX_TAIL_SIZES:
+            packet = make_tx_packet(size, 0x12345678)
+            if len(packet) != size or crc16_ccitt_false(packet[:-2]) != struct.unpack_from("<H", packet, size - 2)[0]:
+                raise TestFailure(f"TX packet self-test failed for size={size}")
         logging.info("SELF-TEST status=PASS crc=0x29B1 frame_size=%d", len(frame))
         return 0
     if not 1 <= payload_size <= MAX_PAYLOAD_SIZE:
@@ -233,31 +282,57 @@ def main() -> int:
         raise TestFailure("CP210x port not found; specify it with --port")
 
     logging.info(
-        "DMA profile=%s port=%s baud=%d payload=%d cycles=%d",
-        args.profile, port, BAUDRATE, payload_size, cycles,
+        "DMA mode=%s profile=%s port=%s baud=%d payload=%d cycles=%d",
+        args.mode, args.profile, port, BAUDRATE, payload_size, cycles,
     )
     passed = 0
     total_time = 0.0
     with serial.Serial(port, BAUDRATE, timeout=0.05, write_timeout=2.0) as ser:
         synchronize(ser)
-        for cycle in range(cycles):
-            sequence = cycle & 0xFFFF
-            seed = (args.seed + cycle * 0x9E3779B9) & 0xFFFFFFFF
-            try:
-                elapsed = run_cycle(
-                    ser, payload_size, sequence, seed,
-                    args.ready_delay, args.echo_timeout,
+        if args.mode == "loopback":
+            for cycle in range(cycles):
+                sequence = cycle & 0xFFFF
+                seed = (args.seed + cycle * 0x9E3779B9) & 0xFFFFFFFF
+                try:
+                    elapsed = run_cycle(
+                        ser, payload_size, sequence, seed,
+                        args.ready_delay, args.echo_timeout,
+                    )
+                except (TestFailure, OSError) as error:
+                    logging.error("cycle=%d/%d FAIL: %s", cycle + 1, cycles, error)
+                    return 1
+                passed += 1
+                total_time += elapsed
+                throughput = (2.0 * payload_size) / elapsed if elapsed else 0.0
+                logging.info(
+                    "cycle=%d/%d PASS frame_payload=%d elapsed=%.3fs roundtrip=%.1f KiB/s",
+                    cycle + 1, cycles, payload_size, elapsed, throughput / 1024.0,
                 )
-            except (TestFailure, OSError) as error:
-                logging.error("cycle=%d/%d FAIL: %s", cycle + 1, cycles, error)
-                return 1
-            passed += 1
-            total_time += elapsed
-            throughput = (2.0 * payload_size) / elapsed if elapsed else 0.0
-            logging.info(
-                "cycle=%d/%d PASS frame_payload=%d elapsed=%.3fs roundtrip=%.1f KiB/s",
-                cycle + 1, cycles, payload_size, elapsed, throughput / 1024.0,
-            )
+        else:
+            total_cases = len(TX_TAIL_SIZES) * cycles
+            case_index = 0
+            for cycle in range(cycles):
+                for size in TX_TAIL_SIZES:
+                    sequence = case_index & 0xFFFF
+                    seed = (args.seed + case_index * 0x9E3779B9) & 0xFFFFFFFF
+                    case_index += 1
+                    try:
+                        elapsed = run_tx_tail_case(
+                            ser, size, sequence, seed, args.echo_timeout,
+                        )
+                    except (TestFailure, OSError) as error:
+                        logging.error(
+                            "case=%d/%d size=%d tail=%d FAIL: %s",
+                            case_index, total_cases, size, size % DMA_ALIGNMENT, error,
+                        )
+                        return 1
+                    passed += 1
+                    total_time += elapsed
+                    logging.info(
+                        "case=%d/%d PASS size=%d dma=%d tail=%d elapsed=%.3fs",
+                        case_index, total_cases, size,
+                        size - size % DMA_ALIGNMENT, size % DMA_ALIGNMENT, elapsed,
+                    )
 
     logging.info(
         "SUMMARY status=PASS passed=%d failed=0 elapsed=%.3fs",

@@ -38,7 +38,8 @@ namespace
         "test interrupt",
         "test dma",
         "test all",
-        "auto dma"
+        "auto dma",
+        "auto tx"
     };
     constexpr std::size_t COMMAND_COUNT =
         sizeof(COMMAND_NAMES) / sizeof(COMMAND_NAMES[0]);
@@ -181,6 +182,106 @@ namespace
         while (*cursor == ' ')
             ++cursor;
         return *cursor == '\0';
+    }
+
+    [[nodiscard]] bool parse_auto_tx(const char* command,
+                                     uint32_t& transfer_size,
+                                     uint32_t& sequence,
+                                     uint32_t& seed) noexcept
+    {
+        constexpr char prefix[] = "auto tx";
+        for (std::size_t i = 0u; i < sizeof(prefix) - 1u; ++i)
+        {
+            if (command[i] != prefix[i])
+                return false;
+        }
+
+        const char* cursor = command + sizeof(prefix) - 1u;
+        if (!parse_u32(cursor, transfer_size) ||
+            !parse_u32(cursor, sequence) ||
+            !parse_u32(cursor, seed))
+        {
+            return false;
+        }
+        while (*cursor == ' ')
+            ++cursor;
+        return *cursor == '\0';
+    }
+
+    void build_tx_test_packet(const std::size_t size, const uint32_t seed) noexcept
+    {
+        uint32_t state = seed != 0u ? seed : 0x6D2B79F5u;
+        const std::size_t data_size = size - DMA_FRAME_CRC_SIZE;
+        for (std::size_t i = 0u; i < data_size; ++i)
+            g_dma_frame[i] = static_cast<uint8_t>(xorshift32(state) & 0xFFu);
+
+        const uint16_t crc = crc16_ccitt_false(g_dma_frame, data_size);
+        g_dma_frame[data_size] = static_cast<uint8_t>(crc & 0xFFu);
+        g_dma_frame[data_size + 1u] = static_cast<uint8_t>(crc >> 8u);
+    }
+
+    void run_tx_tail_test(Uart& uart,
+                          const uint32_t transfer_size,
+                          const uint16_t sequence,
+                          const uint32_t seed) noexcept
+    {
+        PollingRestore restore{uart};
+        char message[192]{};
+        build_tx_test_packet(transfer_size, seed);
+
+        RTT_LOG_I("dma_auto", "TXTAIL BEGIN seq=%u size=%u dma=%u tail=%u seed=%08x",
+                  static_cast<unsigned>(sequence),
+                  static_cast<unsigned>(transfer_size),
+                  static_cast<unsigned>(transfer_size - transfer_size % DMA_ALIGNMENT),
+                  static_cast<unsigned>(transfer_size % DMA_ALIGNMENT),
+                  static_cast<unsigned>(seed));
+
+        if (!uart.init_dma())
+        {
+            RTT_LOG_E("dma_auto", "TXTAIL UART DMA initialization failed");
+            uart.init_polling();
+            uart.put_string("@RESULT mode=tx status=FAIL error=DMA_INIT\n");
+            return;
+        }
+
+        HAL::UART::Uart0Dma uart_dma{uart};
+        if (!uart_dma.init())
+        {
+            RTT_LOG_E("dma_auto", "TXTAIL EDMA channel initialization failed");
+            uart.init_polling();
+            uart.put_string("@RESULT mode=tx status=FAIL error=EDMA_INIT\n");
+            return;
+        }
+
+        std::snprintf(message, sizeof(message),
+                      "@READY mode=tx sequence=%u size=%u dma=%u tail=%u\n",
+                      static_cast<unsigned>(sequence),
+                      static_cast<unsigned>(transfer_size),
+                      static_cast<unsigned>(transfer_size - transfer_size % DMA_ALIGNMENT),
+                      static_cast<unsigned>(transfer_size % DMA_ALIGNMENT));
+        uart.put_string(message);
+        uart.wait_tx_complete();
+
+        const uint32_t tx_started = HAL::PERF::get_cycle_count();
+        const bool tx_ok = uart_dma.transmit(g_dma_frame, transfer_size,
+                                             TEST_TIMEOUT_LOOPS);
+        const uint32_t tx_cycles = HAL::PERF::get_cycle_count() - tx_started;
+        if (!tx_ok)
+            log_dma_hw_state("TXTAIL_FAIL", REGS::EDMA::CH_UART0_TX);
+
+        uart_dma.stop();
+        uart.init_polling();
+        std::snprintf(message, sizeof(message),
+                      "@RESULT mode=tx sequence=%u size=%u tail=%u tx=%u status=%s\n",
+                      static_cast<unsigned>(sequence),
+                      static_cast<unsigned>(transfer_size),
+                      static_cast<unsigned>(transfer_size % DMA_ALIGNMENT),
+                      tx_ok ? static_cast<unsigned>(transfer_size) : 0u,
+                      tx_ok ? "PASS" : "FAIL");
+        uart.put_string(message);
+        RTT_LOG_I("dma_auto", "TXTAIL END seq=%u status=%s cycles=%u",
+                  static_cast<unsigned>(sequence), tx_ok ? "PASS" : "FAIL",
+                  static_cast<unsigned>(tx_cycles));
     }
 
     [[nodiscard]] bool validate_dma_payload(const DmaFrameHeader& header) noexcept
@@ -463,6 +564,7 @@ namespace
             "  test dma         EDMA TX + EDMA RX\n"
             "  test all         Run all three tests\n"
             "  auto dma N S K   Binary DMA loopback: payload size, sequence, seed\n"
+            "  auto tx N S K    TX tail test: exact size, sequence, seed\n"
             "\nEditing:\n"
             "  Up/Down          Command history\n"
             "  Left/Right       Move cursor\n"
@@ -518,6 +620,19 @@ namespace
             {
                 run_dma_auto_test(uart, payload_size,
                                   static_cast<uint16_t>(sequence), seed);
+            }
+        }
+        else if (parse_auto_tx(command, payload_size, sequence, seed))
+        {
+            if (payload_size < DMA_FRAME_CRC_SIZE ||
+                payload_size > DMA_MAX_FRAME_SIZE || sequence > 0xFFFFu)
+            {
+                uart.put_string("@RESULT mode=tx status=FAIL error=BAD_ARGUMENT\n");
+            }
+            else
+            {
+                run_tx_tail_test(uart, payload_size,
+                                 static_cast<uint16_t>(sequence), seed);
             }
         }
         else if (command[0] == 'a' && command[1] == 'u' &&

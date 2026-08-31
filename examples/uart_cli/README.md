@@ -9,6 +9,7 @@ and provides these commands:
 - `test dma`
 - `test all`
 - `auto dma <payload-size> <sequence> <seed>`
+- `auto tx <transfer-size> <sequence> <seed>`
 
 Each test asks for an eight-character token and echoes the received data. The
 interrupt test checks RX through the UART ISR and TX through polling. The DMA
@@ -47,6 +48,18 @@ The script finds a CP210x adapter by VID:PID `10c4:ea60`; use
 `smoke` (256 bytes once), `stress` (6144 bytes ten times), and `full`
 (6144 bytes one hundred times). Baud-rate matrix testing will be added after
 the fixed-rate DMA path has been verified on hardware.
+
+## Automated TX-tail matrix
+
+`auto tx` generates an exact-size xorshift32 packet on the target, appends
+CRC-16/CCITT-FALSE, and sends it with `UartDma::transmit()`. The host matrix
+checks sizes `2..16` and `6144..6151`, covering pure polling, pure EDMA, and
+all possible `size % 8` polling tails after a large EDMA prefix:
+
+```bash
+python3 tools/uart_dma_autotest.py --mode tx-tail --profile smoke \
+    --port /dev/ttyUSB0 --log uart_tx_tail.log
+```
 
 The generated image is `examples/uart_cli/am335x_uart_cli.elf` under the
 selected CMake build directory.
