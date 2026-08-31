@@ -1,129 +1,155 @@
-# UART0 CLI tests
+# UART0 CLI and automated tests
 
-This bare-metal example keeps its command-line interface in UART0 polling mode
-and provides these commands:
+This bare-metal example verifies UART0 in three transport modes:
+
+- polling TX and polling RX;
+- polling TX and interrupt-driven RX;
+- EDMA TX and EDMA RX on channels 26 and 27.
+
+## Source layout
+
+The entry point only initializes the board, registers commands and starts the
+shell. The reusable shell is independent of UART0 and accepts any console type
+that provides `get_char`, `put_char`, `put_string` and `put_data`:
+
+```text
+src/
+├── main.cpp
+├── shell/
+│   ├── console.hpp
+│   ├── line_editor.hpp / line_editor.cpp
+│   └── shell.hpp / shell.cpp
+└── tests/
+    ├── uart_tests.hpp
+    ├── polling_tests.cpp
+    ├── interrupt_tests.cpp
+    ├── dma_tests.cpp
+    └── test_protocol.cpp
+```
+
+Commands are registered as visible or hidden. Hidden automation commands are
+accepted by the dispatcher but omitted from help and Tab completion.
+
+## Interactive CLI
+
+The interactive interface intentionally contains only five commands:
 
 - `help`
 - `test polling`
 - `test interrupt`
 - `test dma`
 - `test all`
-- `auto dma <payload-size> <sequence> <seed>`
-- `auto tx <transfer-size> <sequence> <seed>`
-- `auto rx <transfer-size> <sequence> <seed>`
 
-Each test asks for an eight-character token and echoes the received data. The
-interrupt test checks RX through the UART ISR and TX through polling. The DMA
-test uses `HAL::UART::Uart0Dma` and EDMA channels 26 and 27.
+Each test asks for an eight-character token, echoes it and prints `PASS` or
+`FAIL`. UART0 always returns to polling mode before control returns to the CLI.
 
-The CLI has a fixed eight-entry command history and does not use dynamic
-allocation. Up/Down browse history; Left/Right, Home, End, Backspace and Delete
-edit the current line. Ctrl+C cancels it and Ctrl+L clears and redraws the
-screen. Tab completes a unique command, extends multiple matches to their common
-prefix, or prints the matching commands when no further common extension exists.
+The line editor has an eight-entry history and uses no dynamic allocation.
+Up/Down browse history; Left/Right, Home, End, Backspace and Delete edit the
+line. Ctrl+C cancels it, Ctrl+L clears the terminal, and Tab completes a
+command.
 
 Run `run_tio.sh` to map Enter to one LF byte and Delete to Backspace. If tio is
-connected after the firmware has already printed its initial prompt, restart
-the target or press Enter to display a fresh prompt.
+connected after the initial prompt was printed, restart the target or press
+Enter to obtain a fresh prompt.
 
-After every test, including an initialization failure or timeout, UART0 is
-returned to polling mode before the CLI prints the result.
+## Fast UART acceptance test
 
-## Automated DMA loopback
-
-`auto dma` receives one binary frame through UART0 RX EDMA, validates its
-CRC-16/CCITT-FALSE and deterministic xorshift32 payload, and echoes the exact
-received frame through UART0 TX EDMA. The maximum payload is 6144 bytes. The
-wire frame contains a 16-byte little-endian header, payload, zero padding to an
-eight-byte EDMA boundary, and a little-endian CRC16 in the final two bytes.
-
-Install the host dependency and run the first smoke test at 115200 baud:
+Install the only host dependency, flash the current example, disconnect tio,
+and run:
 
 ```bash
 python3 -m pip install -r tools/requirements.txt
-python3 tools/uart_dma_autotest.py --profile smoke --log uart_dma_smoke.log
+python3 tools/uart_autotest.py --port /dev/ttyUSB0 --log uart_quick.log
 ```
 
-The script finds a CP210x adapter by VID:PID `10c4:ea60`; use
-`--port /dev/ttyUSB0` to select a port explicitly. Current profiles are
-`smoke` (256 bytes once), `stress` (6144 bytes ten times), and `full`
-(6144 bytes one hundred times). Baud-rate matrix testing will be added after
-the fixed-rate DMA path has been verified on hardware.
+The port option can be omitted when exactly one CP210x adapter with VID:PID
+`10c4:ea60` is connected.
 
-## Automated TX-tail matrix
+The fast test is deliberately fixed and suitable for a future board-wide
+acceptance suite. It runs the same 58 cases in polling, ISR and DMA modes at
+14400, 115200 and 921600 baud: 522 hardware cases in total. The 58 cases per
+mode and rate are:
 
-`auto tx` generates an exact-size xorshift32 packet on the target, appends
-CRC-16/CCITT-FALSE, and sends it with `UartDma::transmit()`. The host matrix
-checks sizes `2..16` and `6144..6151`, covering pure polling, pure EDMA, and
-all possible `size % 8` polling tails after a large EDMA prefix:
+- one 256-byte loopback;
+- one 6144-byte loopback;
+- ten 6144-byte stress loopbacks;
+- 23 exact-length TX cases covering every `size % 8` value;
+- 23 exact-length RX cases covering every `size % 8` value.
+
+The intended runtime is about 12 minutes on the tested setup and remains below
+15 minutes with normal host scheduling.
+Actual time depends on the USB-UART adapter, host scheduling and configured
+timeouts. The runner stops on the first real hardware failure, records the
+failing transport/rate/section, and restores 115200 baud after every rate.
+
+Verify framing, CRC and argument tables without hardware:
 
 ```bash
-python3 tools/uart_dma_autotest.py --mode tx-tail --profile smoke \
-    --port /dev/ttyUSB0 --log uart_tx_tail.log
+python3 tools/uart_autotest.py --self-test
 ```
+
+## Extended testing
+
+Use `uart_extended_autotest.py` when investigating a driver change, a corner
+case or a particular adapter. Its internal automation protocol is intentionally
+not shown in CLI help and is not intended for manual terminal use.
+
+Run the 58-case suite for all transports at the current 115200 baud:
+
+```bash
+python3 tools/uart_extended_autotest.py --mode suite \
+    --transports polling,isr,dma --port /dev/ttyUSB0 \
+    --log uart_all_modes_115200.log
+```
+
+Run one transport and one focused operation:
+
+```bash
+python3 tools/uart_extended_autotest.py --mode loopback \
+    --transports dma --profile stress --port /dev/ttyUSB0
+
+python3 tools/uart_extended_autotest.py --mode tx-tail \
+    --transports polling --port /dev/ttyUSB0
+
+python3 tools/uart_extended_autotest.py --mode rx-tail \
+    --transports isr --port /dev/ttyUSB0
+```
+
+Run selected rates for all transports:
+
+```bash
+python3 tools/uart_extended_autotest.py --mode baud-matrix \
+    --transports polling,isr,dma --bauds 14400,115200,921600 \
+    --port /dev/ttyUSB0 --log uart_selected_bauds.log
+```
+
+Run the slow legacy range only when it is specifically relevant:
+
+```bash
+python3 tools/uart_extended_autotest.py --mode baud-matrix \
+    --transports dma --bauds 300,600,1200,2400,4800,9600 \
+    --port /dev/ttyUSB0 --log uart_low_bauds.log
+```
+
+With no `--bauds` selection, baud-matrix covers every library enum value:
+300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600,
+115200, 230400, 460800, 921600, 1843200 and 3686400. The two highest rates
+may be reported as `UNSUPPORTED` by CP210x adapters; that is kept separate from
+a test `FAIL`. Index 13 is nominally 460800; the historical enum name
+`KBPS_480_8` remains for source compatibility.
+
+The old `uart_dma_autotest.py` filename remains as a compatibility entry point
+for saved commands, but new test commands should use one of the two runners
+above.
+
+## Binary protocol
+
+All three modes use identical deterministic data and CRC-16/CCITT-FALSE
+validation. A loopback frame contains a 16-byte little-endian header, an
+xorshift32 payload, zero padding to an eight-byte boundary, and a little-endian
+CRC16 in the final two bytes. The maximum payload is 6144 bytes. Identical
+framing makes failures comparable across polling, ISR and DMA rather than
+testing three different data formats.
 
 The generated image is `examples/uart_cli/am335x_uart_cli.elf` under the
 selected CMake build directory.
-
-## Automated RX-tail matrix
-
-`auto rx` receives the aligned prefix through UART RX EDMA and then reads the
-remaining `size % 8` bytes from the RX FIFO by polling with a separate timeout.
-The target independently verifies the xorshift32 data and CRC. The same sizes
-as the TX-tail matrix cover polling-only packets, exact EDMA boundaries, and
-all tails from one through seven bytes:
-
-```bash
-python3 tools/uart_dma_autotest.py --mode rx-tail --profile smoke \
-    --port /dev/ttyUSB0 --log uart_rx_tail.log --verbose
-```
-
-## Complete regression suite
-
-The `suite` mode runs every currently verified hardware test in one serial
-session, excluding the long `full` profile: smoke loopback, one 6144-byte
-loopback, ten 6144-byte stress cycles, the complete TX-tail matrix, and the
-complete RX-tail matrix. The run contains 58 hardware cases:
-
-```bash
-python3 tools/uart_dma_autotest.py --mode suite \
-    --port /dev/ttyUSB0 --log uart_dma_suite.log --verbose
-```
-
-Each group prints its own `SECTION` result followed by the aggregate `SUITE`
-and `SUMMARY` results. The run stops at the first failure and records the
-section, case, size, and tail that failed.
-
-## Baud-rate matrix
-
-The firmware command `auto baud <index>` performs a two-phase baud switch. It
-acknowledges the request at the old rate, changes the AM335x divisor and 16x/13x
-mode, then requires a four-byte synchronization token at the new rate. A failed
-token rolls the target back to the previous rate.
-
-Run the complete 58-case suite at every configured rate:
-
-```bash
-python3 tools/uart_dma_autotest.py --mode baud-matrix \
-    --port /dev/ttyUSB0 --log uart_baud_matrix.log
-```
-
-Use `--bauds` for an incremental run. Values can be baud rates or enum indexes:
-
-```bash
-python3 tools/uart_dma_autotest.py --mode baud-matrix \
-    --bauds 115200,230400,460800,921600,1843200,3686400 \
-    --port /dev/ttyUSB0 --log uart_baud_matrix_fast.log --verbose
-```
-
-The host uses the standard nominal rates `300, 600, 1200, 2400, 4800, 9600,
-14400, 19200, 28800, 38400, 57600, 115200, 230400, 460800, 921600, 1843200,
-3686400`. Index 13 is `460800`; the existing `KBPS_480_8` enum name is retained
-for source compatibility, but with the AM335x 48 MHz functional clock and the
-13x/divide-by-8 setting its wire rate is approximately 461538 baud.
-
-The matrix returns to 115200 after every rate. Adapter or link negotiation
-failures are logged as `UNSUPPORTED`, separately from a suite `FAIL`. Timeouts
-and serial write limits scale automatically for slow rates. A complete matrix
-including 300 baud takes several hours because every rate transfers the full
-large-frame and stress workload.

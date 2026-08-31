@@ -3,14 +3,11 @@
 
 #include <cstddef>
 #include <cstdint>
-#include "hal/UART.hpp"
+#include "console.hpp"
 
 class LineEditor final
 {
-    static constexpr char CLI_PROMPT[] = "uart> ";
 public:
-    using Uart = HAL::UART::uart0_t;
-
     static constexpr std::size_t HISTORY_DEPTH = 8u;
     static constexpr  std::size_t COMMAND_BUFFER_SIZE = 48u;
 
@@ -20,19 +17,22 @@ public:
         CANCELLED
     };
 
-    LineEditor(Uart& uart,
+    LineEditor(SHELL::Console& uart,
                const char* const* completions,
-               std::size_t completion_count) noexcept
+               std::size_t completion_count,
+               const char* prompt) noexcept
         : m_uart(uart),
           m_completions(completions),
-          m_completion_count(completion_count) {}
+          m_completion_count(completion_count),
+          m_prompt(prompt) {}
 
     [[nodiscard]] Result read_line(char* command) noexcept;
 
 private:
-    Uart& m_uart;
+    SHELL::Console& m_uart;
     const char* const* m_completions;
     std::size_t m_completion_count;
+    const char* m_prompt;
     char m_history[HISTORY_DEPTH][COMMAND_BUFFER_SIZE]{};
     std::size_t m_history_count{0u};
     bool m_ignore_lf{false};

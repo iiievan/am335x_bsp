@@ -58,7 +58,7 @@ LineEditor::Result LineEditor::read_line(char* command) noexcept
     char draft[COMMAND_BUFFER_SIZE]{};
 
     command[0] = '\0';
-    m_uart.put_string(CLI_PROMPT);
+    m_uart.put_string(m_prompt);
 
     while (true)
     {
@@ -222,7 +222,7 @@ void LineEditor::redraw(const char* command, const std::size_t length, const std
 {
     m_uart.put_char('\r');
     m_uart.put_string("\x1b[2K");
-    m_uart.put_string(CLI_PROMPT);
+    m_uart.put_string(m_prompt);
     m_uart.put_data(command, length);
 
     for (std::size_t i = cursor; i < length; ++i)

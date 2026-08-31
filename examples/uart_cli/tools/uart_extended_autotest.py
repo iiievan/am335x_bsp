@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compatibility entry point; use uart_extended_autotest.py for new runs."""
+"""Extended configurable UART test runner."""
 
 from __future__ import annotations
 
@@ -9,8 +9,6 @@ import uart_test_core
 
 
 if __name__ == "__main__":
-    print("NOTE: uart_dma_autotest.py is retained for compatibility; "
-          "use uart_extended_autotest.py.", file=sys.stderr)
     try:
         sys.exit(uart_test_core.main())
     except (uart_test_core.TestFailure, OSError) as error:

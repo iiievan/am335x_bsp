@@ -1,0 +1,432 @@
+2026-09-01 02:33:04,302 INFO    UART mode=baud-matrix transports=polling,isr,dma profile=smoke port=/dev/ttyUSB0 baud=115200 payload=256 cycles=1
+2026-09-01 02:33:04,322 INFO    BAUD_MATRIX status=BEGIN rates=2 transports=3 cases_per_rate=174 order=460800,921600
+2026-09-01 02:33:04,327 INFO    BAUD_RATE status=BEGIN rate=1/2 index=13 baud=460800 timeout=30.0s
+2026-09-01 02:33:04,383 INFO    BAUD_SWITCH status=PASS old_index=11 old=115200 new_index=13 new=460800
+2026-09-01 02:33:04,383 INFO    SUITE transport=polling status=BEGIN cases=58 full_profile=SKIPPED
+2026-09-01 02:33:04,383 INFO    SECTION transport=polling name=smoke status=BEGIN cases=1 payload=256
+2026-09-01 02:33:04,503 INFO    transport=polling section=smoke cycle=1/1 PASS frame_payload=256 elapsed=0.014s roundtrip=36.3 KiB/s
+2026-09-01 02:33:04,503 INFO    SECTION name=smoke status=PASS passed=1 failed=0 elapsed=0.014s
+2026-09-01 02:33:04,503 INFO    SECTION transport=polling name=large-6144 status=BEGIN cases=1 payload=6144
+2026-09-01 02:33:04,887 INFO    transport=polling section=large-6144 cycle=1/1 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:04,887 INFO    SECTION name=large-6144 status=PASS passed=1 failed=0 elapsed=0.273s
+2026-09-01 02:33:04,887 INFO    SECTION transport=polling name=stress status=BEGIN cases=10 payload=6144
+2026-09-01 02:33:05,270 INFO    transport=polling section=stress cycle=1/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:05,653 INFO    transport=polling section=stress cycle=2/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:06,037 INFO    transport=polling section=stress cycle=3/10 PASS frame_payload=6144 elapsed=0.272s roundtrip=44.0 KiB/s
+2026-09-01 02:33:06,419 INFO    transport=polling section=stress cycle=4/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:06,802 INFO    transport=polling section=stress cycle=5/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:07,186 INFO    transport=polling section=stress cycle=6/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:07,570 INFO    transport=polling section=stress cycle=7/10 PASS frame_payload=6144 elapsed=0.272s roundtrip=44.0 KiB/s
+2026-09-01 02:33:07,955 INFO    transport=polling section=stress cycle=8/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:08,340 INFO    transport=polling section=stress cycle=9/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:08,725 INFO    transport=polling section=stress cycle=10/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:08,725 INFO    SECTION name=stress status=PASS passed=10 failed=0 elapsed=2.725s
+2026-09-01 02:33:08,725 INFO    SECTION transport=polling name=tx-tail status=BEGIN cases=23
+2026-09-01 02:33:08,748 INFO    section=tx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.000s
+2026-09-01 02:33:08,786 INFO    section=tx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.000s
+2026-09-01 02:33:08,809 INFO    section=tx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.000s
+2026-09-01 02:33:08,848 INFO    section=tx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.000s
+2026-09-01 02:33:08,887 INFO    section=tx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.000s
+2026-09-01 02:33:08,927 INFO    section=tx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.000s
+2026-09-01 02:33:08,965 INFO    section=tx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.000s
+2026-09-01 02:33:09,004 INFO    section=tx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.000s
+2026-09-01 02:33:09,043 INFO    section=tx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.000s
+2026-09-01 02:33:09,083 INFO    section=tx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.000s
+2026-09-01 02:33:09,122 INFO    section=tx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.000s
+2026-09-01 02:33:09,148 INFO    section=tx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.000s
+2026-09-01 02:33:09,187 INFO    section=tx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.000s
+2026-09-01 02:33:09,227 INFO    section=tx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.000s
+2026-09-01 02:33:09,267 INFO    section=tx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.002s
+2026-09-01 02:33:09,449 INFO    section=tx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.134s
+2026-09-01 02:33:09,623 INFO    section=tx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.134s
+2026-09-01 02:33:09,794 INFO    section=tx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.134s
+2026-09-01 02:33:09,964 INFO    section=tx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.134s
+2026-09-01 02:33:10,146 INFO    section=tx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.135s
+2026-09-01 02:33:10,315 INFO    section=tx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.134s
+2026-09-01 02:33:10,485 INFO    section=tx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.134s
+2026-09-01 02:33:10,667 INFO    section=tx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.135s
+2026-09-01 02:33:10,667 INFO    SECTION name=tx-tail status=PASS passed=23 failed=0 elapsed=1.077s
+2026-09-01 02:33:10,667 INFO    SECTION transport=polling name=rx-tail status=BEGIN cases=23
+2026-09-01 02:33:10,771 INFO    section=rx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.018s
+2026-09-01 02:33:10,875 INFO    section=rx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.018s
+2026-09-01 02:33:10,979 INFO    section=rx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.018s
+2026-09-01 02:33:11,083 INFO    section=rx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.018s
+2026-09-01 02:33:11,187 INFO    section=rx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.018s
+2026-09-01 02:33:11,291 INFO    section=rx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.018s
+2026-09-01 02:33:11,395 INFO    section=rx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.018s
+2026-09-01 02:33:11,499 INFO    section=rx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.018s
+2026-09-01 02:33:11,605 INFO    section=rx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.018s
+2026-09-01 02:33:11,711 INFO    section=rx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.018s
+2026-09-01 02:33:11,817 INFO    section=rx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.018s
+2026-09-01 02:33:11,923 INFO    section=rx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.018s
+2026-09-01 02:33:12,027 INFO    section=rx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.018s
+2026-09-01 02:33:12,133 INFO    section=rx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.018s
+2026-09-01 02:33:12,240 INFO    section=rx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.019s
+2026-09-01 02:33:12,487 INFO    section=rx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.154s
+2026-09-01 02:33:12,734 INFO    section=rx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.154s
+2026-09-01 02:33:12,981 INFO    section=rx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.153s
+2026-09-01 02:33:13,228 INFO    section=rx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.154s
+2026-09-01 02:33:13,476 INFO    section=rx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.154s
+2026-09-01 02:33:13,723 INFO    section=rx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.153s
+2026-09-01 02:33:13,972 INFO    section=rx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.154s
+2026-09-01 02:33:14,221 INFO    section=rx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.154s
+2026-09-01 02:33:14,221 INFO    SECTION name=rx-tail status=PASS passed=23 failed=0 elapsed=1.497s
+2026-09-01 02:33:14,221 INFO    SUITE transport=polling status=PASS passed=58 failed=0 full_profile=SKIPPED
+2026-09-01 02:33:14,221 INFO    SUITE transport=isr status=BEGIN cases=58 full_profile=SKIPPED
+2026-09-01 02:33:14,221 INFO    SECTION transport=isr name=smoke status=BEGIN cases=1 payload=256
+2026-09-01 02:33:14,336 INFO    transport=isr section=smoke cycle=1/1 PASS frame_payload=256 elapsed=0.014s roundtrip=34.6 KiB/s
+2026-09-01 02:33:14,336 INFO    SECTION name=smoke status=PASS passed=1 failed=0 elapsed=0.014s
+2026-09-01 02:33:14,336 INFO    SECTION transport=isr name=large-6144 status=BEGIN cases=1 payload=6144
+2026-09-01 02:33:14,715 INFO    transport=isr section=large-6144 cycle=1/1 PASS frame_payload=6144 elapsed=0.273s roundtrip=43.9 KiB/s
+2026-09-01 02:33:14,716 INFO    SECTION name=large-6144 status=PASS passed=1 failed=0 elapsed=0.273s
+2026-09-01 02:33:14,716 INFO    SECTION transport=isr name=stress status=BEGIN cases=10 payload=6144
+2026-09-01 02:33:15,097 INFO    transport=isr section=stress cycle=1/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=43.9 KiB/s
+2026-09-01 02:33:15,478 INFO    transport=isr section=stress cycle=2/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=43.9 KiB/s
+2026-09-01 02:33:15,858 INFO    transport=isr section=stress cycle=3/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=43.9 KiB/s
+2026-09-01 02:33:16,238 INFO    transport=isr section=stress cycle=4/10 PASS frame_payload=6144 elapsed=0.272s roundtrip=44.2 KiB/s
+2026-09-01 02:33:16,617 INFO    transport=isr section=stress cycle=5/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=43.9 KiB/s
+2026-09-01 02:33:16,997 INFO    transport=isr section=stress cycle=6/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=43.9 KiB/s
+2026-09-01 02:33:17,376 INFO    transport=isr section=stress cycle=7/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=43.9 KiB/s
+2026-09-01 02:33:17,756 INFO    transport=isr section=stress cycle=8/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=43.9 KiB/s
+2026-09-01 02:33:18,138 INFO    transport=isr section=stress cycle=9/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=43.9 KiB/s
+2026-09-01 02:33:18,520 INFO    transport=isr section=stress cycle=10/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=43.9 KiB/s
+2026-09-01 02:33:18,520 INFO    SECTION name=stress status=PASS passed=10 failed=0 elapsed=2.730s
+2026-09-01 02:33:18,520 INFO    SECTION transport=isr name=tx-tail status=BEGIN cases=23
+2026-09-01 02:33:18,555 INFO    section=tx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.000s
+2026-09-01 02:33:18,588 INFO    section=tx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.000s
+2026-09-01 02:33:18,623 INFO    section=tx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.000s
+2026-09-01 02:33:18,658 INFO    section=tx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.000s
+2026-09-01 02:33:18,693 INFO    section=tx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.000s
+2026-09-01 02:33:18,728 INFO    section=tx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.000s
+2026-09-01 02:33:18,762 INFO    section=tx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.000s
+2026-09-01 02:33:18,796 INFO    section=tx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.000s
+2026-09-01 02:33:18,832 INFO    section=tx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.001s
+2026-09-01 02:33:18,867 INFO    section=tx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.000s
+2026-09-01 02:33:18,903 INFO    section=tx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.001s
+2026-09-01 02:33:18,939 INFO    section=tx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.001s
+2026-09-01 02:33:18,975 INFO    section=tx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.001s
+2026-09-01 02:33:19,011 INFO    section=tx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.001s
+2026-09-01 02:33:19,046 INFO    section=tx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.000s
+2026-09-01 02:33:19,226 INFO    section=tx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.133s
+2026-09-01 02:33:19,406 INFO    section=tx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.133s
+2026-09-01 02:33:19,585 INFO    section=tx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.133s
+2026-09-01 02:33:19,764 INFO    section=tx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.135s
+2026-09-01 02:33:19,941 INFO    section=tx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.134s
+2026-09-01 02:33:20,120 INFO    section=tx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.135s
+2026-09-01 02:33:20,299 INFO    section=tx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.133s
+2026-09-01 02:33:20,476 INFO    section=tx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.135s
+2026-09-01 02:33:20,476 INFO    SECTION name=tx-tail status=PASS passed=23 failed=0 elapsed=1.078s
+2026-09-01 02:33:20,476 INFO    SECTION transport=isr name=rx-tail status=BEGIN cases=23
+2026-09-01 02:33:20,577 INFO    section=rx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.018s
+2026-09-01 02:33:20,678 INFO    section=rx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.018s
+2026-09-01 02:33:20,779 INFO    section=rx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.018s
+2026-09-01 02:33:20,880 INFO    section=rx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.018s
+2026-09-01 02:33:20,981 INFO    section=rx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.019s
+2026-09-01 02:33:21,083 INFO    section=rx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.019s
+2026-09-01 02:33:21,185 INFO    section=rx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.019s
+2026-09-01 02:33:21,286 INFO    section=rx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.019s
+2026-09-01 02:33:21,388 INFO    section=rx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.019s
+2026-09-01 02:33:21,490 INFO    section=rx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.019s
+2026-09-01 02:33:21,592 INFO    section=rx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.019s
+2026-09-01 02:33:21,694 INFO    section=rx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.019s
+2026-09-01 02:33:21,796 INFO    section=rx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.019s
+2026-09-01 02:33:21,898 INFO    section=rx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.019s
+2026-09-01 02:33:22,000 INFO    section=rx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.019s
+2026-09-01 02:33:22,245 INFO    section=rx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.154s
+2026-09-01 02:33:22,490 INFO    section=rx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.154s
+2026-09-01 02:33:22,733 INFO    section=rx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.154s
+2026-09-01 02:33:22,979 INFO    section=rx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.154s
+2026-09-01 02:33:23,224 INFO    section=rx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.154s
+2026-09-01 02:33:23,467 INFO    section=rx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.154s
+2026-09-01 02:33:23,712 INFO    section=rx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.154s
+2026-09-01 02:33:23,957 INFO    section=rx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.154s
+2026-09-01 02:33:23,957 INFO    SECTION name=rx-tail status=PASS passed=23 failed=0 elapsed=1.510s
+2026-09-01 02:33:23,957 INFO    SUITE transport=isr status=PASS passed=58 failed=0 full_profile=SKIPPED
+2026-09-01 02:33:23,957 INFO    SUITE transport=dma status=BEGIN cases=58 full_profile=SKIPPED
+2026-09-01 02:33:23,957 INFO    SECTION transport=dma name=smoke status=BEGIN cases=1 payload=256
+2026-09-01 02:33:24,072 INFO    transport=dma section=smoke cycle=1/1 PASS frame_payload=256 elapsed=0.014s roundtrip=35.5 KiB/s
+2026-09-01 02:33:24,072 INFO    SECTION name=smoke status=PASS passed=1 failed=0 elapsed=0.014s
+2026-09-01 02:33:24,072 INFO    SECTION transport=dma name=large-6144 status=BEGIN cases=1 payload=6144
+2026-09-01 02:33:24,452 INFO    transport=dma section=large-6144 cycle=1/1 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:24,452 INFO    SECTION name=large-6144 status=PASS passed=1 failed=0 elapsed=0.273s
+2026-09-01 02:33:24,452 INFO    SECTION transport=dma name=stress status=BEGIN cases=10 payload=6144
+2026-09-01 02:33:24,832 INFO    transport=dma section=stress cycle=1/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:25,212 INFO    transport=dma section=stress cycle=2/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:25,592 INFO    transport=dma section=stress cycle=3/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:25,972 INFO    transport=dma section=stress cycle=4/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:26,351 INFO    transport=dma section=stress cycle=5/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:26,731 INFO    transport=dma section=stress cycle=6/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:27,111 INFO    transport=dma section=stress cycle=7/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:27,491 INFO    transport=dma section=stress cycle=8/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:27,872 INFO    transport=dma section=stress cycle=9/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:28,253 INFO    transport=dma section=stress cycle=10/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 02:33:28,253 INFO    SECTION name=stress status=PASS passed=10 failed=0 elapsed=2.728s
+2026-09-01 02:33:28,253 INFO    SECTION transport=dma name=tx-tail status=BEGIN cases=23
+2026-09-01 02:33:28,288 INFO    section=tx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.000s
+2026-09-01 02:33:28,321 INFO    section=tx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.000s
+2026-09-01 02:33:28,356 INFO    section=tx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.000s
+2026-09-01 02:33:28,391 INFO    section=tx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.000s
+2026-09-01 02:33:28,426 INFO    section=tx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.000s
+2026-09-01 02:33:28,461 INFO    section=tx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.000s
+2026-09-01 02:33:28,494 INFO    section=tx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.000s
+2026-09-01 02:33:28,529 INFO    section=tx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.000s
+2026-09-01 02:33:28,550 INFO    section=tx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.000s
+2026-09-01 02:33:28,585 INFO    section=tx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.000s
+2026-09-01 02:33:28,621 INFO    section=tx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.001s
+2026-09-01 02:33:28,657 INFO    section=tx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.001s
+2026-09-01 02:33:28,693 INFO    section=tx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.001s
+2026-09-01 02:33:28,729 INFO    section=tx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.001s
+2026-09-01 02:33:28,764 INFO    section=tx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.000s
+2026-09-01 02:33:28,943 INFO    section=tx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.133s
+2026-09-01 02:33:29,120 INFO    section=tx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.133s
+2026-09-01 02:33:29,286 INFO    section=tx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.133s
+2026-09-01 02:33:29,465 INFO    section=tx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.135s
+2026-09-01 02:33:29,642 INFO    section=tx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.135s
+2026-09-01 02:33:29,821 INFO    section=tx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.135s
+2026-09-01 02:33:30,000 INFO    section=tx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.135s
+2026-09-01 02:33:30,178 INFO    section=tx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.135s
+2026-09-01 02:33:30,178 INFO    SECTION name=tx-tail status=PASS passed=23 failed=0 elapsed=1.079s
+2026-09-01 02:33:30,178 INFO    SECTION transport=dma name=rx-tail status=BEGIN cases=23
+2026-09-01 02:33:30,279 INFO    section=rx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.018s
+2026-09-01 02:33:30,380 INFO    section=rx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.018s
+2026-09-01 02:33:30,481 INFO    section=rx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.018s
+2026-09-01 02:33:30,582 INFO    section=rx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.018s
+2026-09-01 02:33:30,682 INFO    section=rx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.018s
+2026-09-01 02:33:30,783 INFO    section=rx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.018s
+2026-09-01 02:33:30,884 INFO    section=rx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.018s
+2026-09-01 02:33:30,985 INFO    section=rx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.019s
+2026-09-01 02:33:31,087 INFO    section=rx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.019s
+2026-09-01 02:33:31,189 INFO    section=rx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.019s
+2026-09-01 02:33:31,291 INFO    section=rx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.019s
+2026-09-01 02:33:31,393 INFO    section=rx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.019s
+2026-09-01 02:33:31,495 INFO    section=rx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.019s
+2026-09-01 02:33:31,597 INFO    section=rx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.019s
+2026-09-01 02:33:31,699 INFO    section=rx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.019s
+2026-09-01 02:33:31,943 INFO    section=rx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.153s
+2026-09-01 02:33:32,187 INFO    section=rx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.153s
+2026-09-01 02:33:32,431 INFO    section=rx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.154s
+2026-09-01 02:33:32,675 INFO    section=rx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.153s
+2026-09-01 02:33:32,920 INFO    section=rx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.154s
+2026-09-01 02:33:33,164 INFO    section=rx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.154s
+2026-09-01 02:33:33,409 INFO    section=rx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.154s
+2026-09-01 02:33:33,654 INFO    section=rx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.154s
+2026-09-01 02:33:33,654 INFO    SECTION name=rx-tail status=PASS passed=23 failed=0 elapsed=1.505s
+2026-09-01 02:33:33,654 INFO    SUITE transport=dma status=PASS passed=58 failed=0 full_profile=SKIPPED
+2026-09-01 02:33:33,654 INFO    BAUD_RATE status=PASS rate=1/2 index=13 baud=460800 passed=174 failed=0 elapsed=16.791s
+2026-09-01 02:33:33,693 INFO    BAUD_SWITCH status=PASS old_index=13 old=460800 new_index=11 new=115200
+2026-09-01 02:33:33,698 INFO    BAUD_RATE status=BEGIN rate=2/2 index=14 baud=921600 timeout=30.0s
+2026-09-01 02:33:33,754 INFO    BAUD_SWITCH status=PASS old_index=11 old=115200 new_index=14 new=921600
+2026-09-01 02:33:33,754 INFO    SUITE transport=polling status=BEGIN cases=58 full_profile=SKIPPED
+2026-09-01 02:33:33,754 INFO    SECTION transport=polling name=smoke status=BEGIN cases=1 payload=256
+2026-09-01 02:33:33,856 INFO    transport=polling section=smoke cycle=1/1 PASS frame_payload=256 elapsed=0.007s roundtrip=67.6 KiB/s
+2026-09-01 02:33:33,856 INFO    SECTION name=smoke status=PASS passed=1 failed=0 elapsed=0.007s
+2026-09-01 02:33:33,856 INFO    SECTION transport=polling name=large-6144 status=BEGIN cases=1 payload=6144
+2026-09-01 02:33:34,095 INFO    transport=polling section=large-6144 cycle=1/1 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.7 KiB/s
+2026-09-01 02:33:34,095 INFO    SECTION name=large-6144 status=PASS passed=1 failed=0 elapsed=0.137s
+2026-09-01 02:33:34,095 INFO    SECTION transport=polling name=stress status=BEGIN cases=10 payload=6144
+2026-09-01 02:33:34,333 INFO    transport=polling section=stress cycle=1/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.7 KiB/s
+2026-09-01 02:33:34,570 INFO    transport=polling section=stress cycle=2/10 PASS frame_payload=6144 elapsed=0.138s roundtrip=87.2 KiB/s
+2026-09-01 02:33:34,808 INFO    transport=polling section=stress cycle=3/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.8 KiB/s
+2026-09-01 02:33:35,045 INFO    transport=polling section=stress cycle=4/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.7 KiB/s
+2026-09-01 02:33:35,282 INFO    transport=polling section=stress cycle=5/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.3 KiB/s
+2026-09-01 02:33:35,520 INFO    transport=polling section=stress cycle=6/10 PASS frame_payload=6144 elapsed=0.138s roundtrip=87.2 KiB/s
+2026-09-01 02:33:35,757 INFO    transport=polling section=stress cycle=7/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.8 KiB/s
+2026-09-01 02:33:35,995 INFO    transport=polling section=stress cycle=8/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.7 KiB/s
+2026-09-01 02:33:36,233 INFO    transport=polling section=stress cycle=9/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.7 KiB/s
+2026-09-01 02:33:36,471 INFO    transport=polling section=stress cycle=10/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.9 KiB/s
+2026-09-01 02:33:36,471 INFO    SECTION name=stress status=PASS passed=10 failed=0 elapsed=1.370s
+2026-09-01 02:33:36,471 INFO    SECTION transport=polling name=tx-tail status=BEGIN cases=23
+2026-09-01 02:33:36,484 INFO    section=tx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.000s
+2026-09-01 02:33:36,512 INFO    section=tx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.000s
+2026-09-01 02:33:36,525 INFO    section=tx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.000s
+2026-09-01 02:33:36,538 INFO    section=tx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.000s
+2026-09-01 02:33:36,551 INFO    section=tx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.000s
+2026-09-01 02:33:36,580 INFO    section=tx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.000s
+2026-09-01 02:33:36,608 INFO    section=tx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.000s
+2026-09-01 02:33:36,621 INFO    section=tx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.000s
+2026-09-01 02:33:36,649 INFO    section=tx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.000s
+2026-09-01 02:33:36,678 INFO    section=tx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.000s
+2026-09-01 02:33:36,706 INFO    section=tx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.000s
+2026-09-01 02:33:36,735 INFO    section=tx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.000s
+2026-09-01 02:33:36,764 INFO    section=tx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.000s
+2026-09-01 02:33:36,793 INFO    section=tx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.000s
+2026-09-01 02:33:36,822 INFO    section=tx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.001s
+2026-09-01 02:33:36,926 INFO    section=tx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.067s
+2026-09-01 02:33:37,029 INFO    section=tx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.067s
+2026-09-01 02:33:37,132 INFO    section=tx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.067s
+2026-09-01 02:33:37,236 INFO    section=tx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.067s
+2026-09-01 02:33:37,327 INFO    section=tx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.067s
+2026-09-01 02:33:37,430 INFO    section=tx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.067s
+2026-09-01 02:33:37,534 INFO    section=tx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.067s
+2026-09-01 02:33:37,625 INFO    section=tx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.067s
+2026-09-01 02:33:37,625 INFO    SECTION name=tx-tail status=PASS passed=23 failed=0 elapsed=0.538s
+2026-09-01 02:33:37,625 INFO    SECTION transport=polling name=rx-tail status=BEGIN cases=23
+2026-09-01 02:33:37,719 INFO    section=rx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.017s
+2026-09-01 02:33:37,814 INFO    section=rx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.018s
+2026-09-01 02:33:37,909 INFO    section=rx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.018s
+2026-09-01 02:33:38,004 INFO    section=rx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.018s
+2026-09-01 02:33:38,098 INFO    section=rx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.017s
+2026-09-01 02:33:38,192 INFO    section=rx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.017s
+2026-09-01 02:33:38,286 INFO    section=rx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.017s
+2026-09-01 02:33:38,380 INFO    section=rx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.017s
+2026-09-01 02:33:38,475 INFO    section=rx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.017s
+2026-09-01 02:33:38,570 INFO    section=rx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.017s
+2026-09-01 02:33:38,665 INFO    section=rx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.017s
+2026-09-01 02:33:38,760 INFO    section=rx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.017s
+2026-09-01 02:33:38,855 INFO    section=rx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.018s
+2026-09-01 02:33:38,950 INFO    section=rx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.017s
+2026-09-01 02:33:39,045 INFO    section=rx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.017s
+2026-09-01 02:33:39,214 INFO    section=rx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.086s
+2026-09-01 02:33:39,383 INFO    section=rx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.086s
+2026-09-01 02:33:39,551 INFO    section=rx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.086s
+2026-09-01 02:33:39,720 INFO    section=rx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.086s
+2026-09-01 02:33:39,889 INFO    section=rx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.086s
+2026-09-01 02:33:40,059 INFO    section=rx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.086s
+2026-09-01 02:33:40,228 INFO    section=rx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.086s
+2026-09-01 02:33:40,397 INFO    section=rx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.086s
+2026-09-01 02:33:40,397 INFO    SECTION name=rx-tail status=PASS passed=23 failed=0 elapsed=0.943s
+2026-09-01 02:33:40,397 INFO    SUITE transport=polling status=PASS passed=58 failed=0 full_profile=SKIPPED
+2026-09-01 02:33:40,397 INFO    SUITE transport=isr status=BEGIN cases=58 full_profile=SKIPPED
+2026-09-01 02:33:40,397 INFO    SECTION transport=isr name=smoke status=BEGIN cases=1 payload=256
+2026-09-01 02:33:40,497 INFO    transport=isr section=smoke cycle=1/1 PASS frame_payload=256 elapsed=0.008s roundtrip=65.7 KiB/s
+2026-09-01 02:33:40,497 INFO    SECTION name=smoke status=PASS passed=1 failed=0 elapsed=0.008s
+2026-09-01 02:33:40,497 INFO    SECTION transport=isr name=large-6144 status=BEGIN cases=1 payload=6144
+2026-09-01 02:33:40,733 INFO    transport=isr section=large-6144 cycle=1/1 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 02:33:40,733 INFO    SECTION name=large-6144 status=PASS passed=1 failed=0 elapsed=0.137s
+2026-09-01 02:33:40,733 INFO    SECTION transport=isr name=stress status=BEGIN cases=10 payload=6144
+2026-09-01 02:33:40,971 INFO    transport=isr section=stress cycle=1/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.6 KiB/s
+2026-09-01 02:33:41,207 INFO    transport=isr section=stress cycle=2/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 02:33:41,443 INFO    transport=isr section=stress cycle=3/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 02:33:41,678 INFO    transport=isr section=stress cycle=4/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 02:33:41,913 INFO    transport=isr section=stress cycle=5/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.6 KiB/s
+2026-09-01 02:33:42,149 INFO    transport=isr section=stress cycle=6/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 02:33:42,384 INFO    transport=isr section=stress cycle=7/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 02:33:42,620 INFO    transport=isr section=stress cycle=8/10 PASS frame_payload=6144 elapsed=0.138s roundtrip=87.0 KiB/s
+2026-09-01 02:33:42,857 INFO    transport=isr section=stress cycle=9/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.6 KiB/s
+2026-09-01 02:33:43,093 INFO    transport=isr section=stress cycle=10/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.6 KiB/s
+2026-09-01 02:33:43,093 INFO    SECTION name=stress status=PASS passed=10 failed=0 elapsed=1.372s
+2026-09-01 02:33:43,093 INFO    SECTION transport=isr name=tx-tail status=BEGIN cases=23
+2026-09-01 02:33:43,120 INFO    section=tx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.000s
+2026-09-01 02:33:43,145 INFO    section=tx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.000s
+2026-09-01 02:33:43,171 INFO    section=tx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.000s
+2026-09-01 02:33:43,197 INFO    section=tx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.000s
+2026-09-01 02:33:43,223 INFO    section=tx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.000s
+2026-09-01 02:33:43,249 INFO    section=tx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.000s
+2026-09-01 02:33:43,274 INFO    section=tx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.000s
+2026-09-01 02:33:43,300 INFO    section=tx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.000s
+2026-09-01 02:33:43,327 INFO    section=tx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.001s
+2026-09-01 02:33:43,353 INFO    section=tx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.000s
+2026-09-01 02:33:43,380 INFO    section=tx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.001s
+2026-09-01 02:33:43,407 INFO    section=tx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.001s
+2026-09-01 02:33:43,418 INFO    section=tx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.000s
+2026-09-01 02:33:43,446 INFO    section=tx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.001s
+2026-09-01 02:33:43,472 INFO    section=tx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.000s
+2026-09-01 02:33:43,561 INFO    section=tx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.067s
+2026-09-01 02:33:43,662 INFO    section=tx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.067s
+2026-09-01 02:33:43,763 INFO    section=tx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.067s
+2026-09-01 02:33:43,864 INFO    section=tx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.067s
+2026-09-01 02:33:43,965 INFO    section=tx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.067s
+2026-09-01 02:33:44,066 INFO    section=tx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.067s
+2026-09-01 02:33:44,154 INFO    section=tx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.067s
+2026-09-01 02:33:44,256 INFO    section=tx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.067s
+2026-09-01 02:33:44,256 INFO    SECTION name=tx-tail status=PASS passed=23 failed=0 elapsed=0.540s
+2026-09-01 02:33:44,256 INFO    SECTION transport=isr name=rx-tail status=BEGIN cases=23
+2026-09-01 02:33:44,348 INFO    section=rx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.017s
+2026-09-01 02:33:44,440 INFO    section=rx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.017s
+2026-09-01 02:33:44,532 INFO    section=rx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.017s
+2026-09-01 02:33:44,624 INFO    section=rx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.017s
+2026-09-01 02:33:44,717 INFO    section=rx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.018s
+2026-09-01 02:33:44,810 INFO    section=rx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.018s
+2026-09-01 02:33:44,903 INFO    section=rx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.018s
+2026-09-01 02:33:44,996 INFO    section=rx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.018s
+2026-09-01 02:33:45,089 INFO    section=rx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.018s
+2026-09-01 02:33:45,182 INFO    section=rx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.018s
+2026-09-01 02:33:45,275 INFO    section=rx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.018s
+2026-09-01 02:33:45,368 INFO    section=rx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.018s
+2026-09-01 02:33:45,461 INFO    section=rx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.018s
+2026-09-01 02:33:45,554 INFO    section=rx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.018s
+2026-09-01 02:33:45,647 INFO    section=rx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.018s
+2026-09-01 02:33:45,815 INFO    section=rx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.086s
+2026-09-01 02:33:45,983 INFO    section=rx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.086s
+2026-09-01 02:33:46,150 INFO    section=rx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.086s
+2026-09-01 02:33:46,317 INFO    section=rx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.086s
+2026-09-01 02:33:46,485 INFO    section=rx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.086s
+2026-09-01 02:33:46,652 INFO    section=rx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.086s
+2026-09-01 02:33:46,820 INFO    section=rx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.086s
+2026-09-01 02:33:46,988 INFO    section=rx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.086s
+2026-09-01 02:33:46,988 INFO    SECTION name=rx-tail status=PASS passed=23 failed=0 elapsed=0.953s
+2026-09-01 02:33:46,988 INFO    SUITE transport=isr status=PASS passed=58 failed=0 full_profile=SKIPPED
+2026-09-01 02:33:46,988 INFO    SUITE transport=dma status=BEGIN cases=58 full_profile=SKIPPED
+2026-09-01 02:33:46,988 INFO    SECTION transport=dma name=smoke status=BEGIN cases=1 payload=256
+2026-09-01 02:33:47,089 INFO    transport=dma section=smoke cycle=1/1 PASS frame_payload=256 elapsed=0.008s roundtrip=65.5 KiB/s
+2026-09-01 02:33:47,089 INFO    SECTION name=smoke status=PASS passed=1 failed=0 elapsed=0.008s
+2026-09-01 02:33:47,089 INFO    SECTION transport=dma name=large-6144 status=BEGIN cases=1 payload=6144
+2026-09-01 02:33:47,324 INFO    transport=dma section=large-6144 cycle=1/1 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 02:33:47,325 INFO    SECTION name=large-6144 status=PASS passed=1 failed=0 elapsed=0.137s
+2026-09-01 02:33:47,325 INFO    SECTION transport=dma name=stress status=BEGIN cases=10 payload=6144
+2026-09-01 02:33:47,560 INFO    transport=dma section=stress cycle=1/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.6 KiB/s
+2026-09-01 02:33:47,796 INFO    transport=dma section=stress cycle=2/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.6 KiB/s
+2026-09-01 02:33:48,031 INFO    transport=dma section=stress cycle=3/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.6 KiB/s
+2026-09-01 02:33:48,267 INFO    transport=dma section=stress cycle=4/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.6 KiB/s
+2026-09-01 02:33:48,503 INFO    transport=dma section=stress cycle=5/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 02:33:48,739 INFO    transport=dma section=stress cycle=6/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 02:33:48,974 INFO    transport=dma section=stress cycle=7/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 02:33:49,210 INFO    transport=dma section=stress cycle=8/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 02:33:49,447 INFO    transport=dma section=stress cycle=9/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.7 KiB/s
+2026-09-01 02:33:49,683 INFO    transport=dma section=stress cycle=10/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.6 KiB/s
+2026-09-01 02:33:49,683 INFO    SECTION name=stress status=PASS passed=10 failed=0 elapsed=1.370s
+2026-09-01 02:33:49,683 INFO    SECTION transport=dma name=tx-tail status=BEGIN cases=23
+2026-09-01 02:33:49,695 INFO    section=tx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.000s
+2026-09-01 02:33:49,720 INFO    section=tx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.000s
+2026-09-01 02:33:49,747 INFO    section=tx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.000s
+2026-09-01 02:33:49,773 INFO    section=tx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.000s
+2026-09-01 02:33:49,799 INFO    section=tx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.000s
+2026-09-01 02:33:49,825 INFO    section=tx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.000s
+2026-09-01 02:33:49,851 INFO    section=tx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.000s
+2026-09-01 02:33:49,877 INFO    section=tx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.000s
+2026-09-01 02:33:49,889 INFO    section=tx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.000s
+2026-09-01 02:33:49,915 INFO    section=tx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.000s
+2026-09-01 02:33:49,942 INFO    section=tx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.000s
+2026-09-01 02:33:49,953 INFO    section=tx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.000s
+2026-09-01 02:33:49,965 INFO    section=tx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.000s
+2026-09-01 02:33:49,977 INFO    section=tx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.001s
+2026-09-01 02:33:50,002 INFO    section=tx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.000s
+2026-09-01 02:33:50,104 INFO    section=tx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.067s
+2026-09-01 02:33:50,205 INFO    section=tx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.067s
+2026-09-01 02:33:50,306 INFO    section=tx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.067s
+2026-09-01 02:33:50,407 INFO    section=tx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.067s
+2026-09-01 02:33:50,508 INFO    section=tx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.067s
+2026-09-01 02:33:50,610 INFO    section=tx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.067s
+2026-09-01 02:33:50,711 INFO    section=tx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.067s
+2026-09-01 02:33:50,812 INFO    section=tx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.068s
+2026-09-01 02:33:50,812 INFO    SECTION name=tx-tail status=PASS passed=23 failed=0 elapsed=0.537s
+2026-09-01 02:33:50,813 INFO    SECTION transport=dma name=rx-tail status=BEGIN cases=23
+2026-09-01 02:33:50,905 INFO    section=rx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.017s
+2026-09-01 02:33:50,997 INFO    section=rx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.017s
+2026-09-01 02:33:51,090 INFO    section=rx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.018s
+2026-09-01 02:33:51,182 INFO    section=rx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.017s
+2026-09-01 02:33:51,274 INFO    section=rx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.017s
+2026-09-01 02:33:51,367 INFO    section=rx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.018s
+2026-09-01 02:33:51,460 INFO    section=rx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.018s
+2026-09-01 02:33:51,552 INFO    section=rx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.018s
+2026-09-01 02:33:51,645 INFO    section=rx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.018s
+2026-09-01 02:33:51,738 INFO    section=rx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.017s
+2026-09-01 02:33:51,832 INFO    section=rx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.018s
+2026-09-01 02:33:51,925 INFO    section=rx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.018s
+2026-09-01 02:33:52,017 INFO    section=rx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.017s
+2026-09-01 02:33:52,110 INFO    section=rx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.018s
+2026-09-01 02:33:52,203 INFO    section=rx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.018s
+2026-09-01 02:33:52,371 INFO    section=rx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.086s
+2026-09-01 02:33:52,539 INFO    section=rx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.086s
+2026-09-01 02:33:52,706 INFO    section=rx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.086s
+2026-09-01 02:33:52,874 INFO    section=rx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.086s
+2026-09-01 02:33:53,043 INFO    section=rx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.086s
+2026-09-01 02:33:53,212 INFO    section=rx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.086s
+2026-09-01 02:33:53,379 INFO    section=rx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.086s
+2026-09-01 02:33:53,547 INFO    section=rx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.086s
+2026-09-01 02:33:53,547 INFO    SECTION name=rx-tail status=PASS passed=23 failed=0 elapsed=0.950s
+2026-09-01 02:33:53,548 INFO    SUITE transport=dma status=PASS passed=58 failed=0 full_profile=SKIPPED
+2026-09-01 02:33:53,548 INFO    BAUD_RATE status=PASS rate=2/2 index=14 baud=921600 passed=174 failed=0 elapsed=9.006s
+2026-09-01 02:33:53,583 INFO    BAUD_SWITCH status=PASS old_index=14 old=921600 new_index=11 new=115200
+2026-09-01 02:33:53,584 INFO    BAUD_MATRIX status=PASS rates_passed=2 rates_unsupported=0 rates_failed=0 hardware_cases_passed=348
+2026-09-01 02:33:53,585 INFO    SUMMARY status=PASS passed=348 failed=0 elapsed=25.797s wall_elapsed=49.283s
