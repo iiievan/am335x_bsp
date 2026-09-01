@@ -154,10 +154,8 @@ namespace HAL::UART::detail
                     abort_rx();
                     return false;
                 }
-                // Stop the EDMA event channel, but keep UART DMA request mode
-                // unchanged while bytes belonging to the same frame may still
-                // be arriving.  Reprogramming SCR at this boundary can corrupt
-                // or drop the short FIFO tail at high baud rates.
+                m_owner.DMA_disable();
+                cp15_DSB_barrier();
                 (void)m_rx.stop();
                 HAL::CACHE::dcache_invalidate_range(
                     address_of(data), static_cast<uint32_t>(dma_size));
@@ -166,37 +164,20 @@ namespace HAL::UART::detail
 
             const std::size_t tail_size = size - dma_size;
             if (tail_size == 0u)
-            {
-                if (dma_size != 0u)
-                    m_owner.DMA_disable();
                 return true;
-            }
-            if (tail_size > 64u)
-            {
-                if (dma_size != 0u)
-                    m_owner.DMA_disable();
-                return false;
-            }
-
-            // Do not let EDMA and the CPU ISR write different bytes of the
-            // same cache line.  Receive the short tail into CPU-owned storage
-            // and copy it only after the DMA destination was invalidated.
-            uint8_t tail_staging[64]{};
             auto* tail = static_cast<uint8_t*>(data) + dma_size;
-            if (!m_owner.read_dma_tail(tail_staging, tail_size,
-                                       tail_timeout_loops))
-            {
-                if (dma_size != 0u)
-                    m_owner.DMA_disable();
-                return false;
-            }
-            if (dma_size != 0u)
-            {
-                m_owner.DMA_disable();
-                cp15_DSB_barrier();
-            }
+            uint32_t tail_timeout = tail_timeout_loops;
             for (std::size_t i = 0u; i < tail_size; ++i)
-                tail[i] = tail_staging[i];
+            {
+                while (!m_owner.rx_data_available())
+                {
+                    if (tail_timeout == 0u)
+                        return false;
+                    --tail_timeout;
+                    __asm volatile("nop");
+                }
+                *tail++ = static_cast<uint8_t>(m_owner.get_char());
+            }
             return true;
         }
 

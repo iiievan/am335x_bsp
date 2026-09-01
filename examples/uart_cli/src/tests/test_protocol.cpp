@@ -635,18 +635,12 @@ namespace
                                      TEST_TIMEOUT_LOOPS,
                                      TEST_TIMEOUT_LOOPS,
                                      dma_timeout_epochs(uart));
-        const auto irq_diag = uart.rx_irq_diagnostics();
-        const bool hardware_timeout_ok = tail_size == 0u ||
-                                         uart.last_rx_hardware_timeout();
         const uint32_t rx_cycles = HAL::PERF::get_cycle_count() - rx_started;
 
         bool crc_ok = false;
         bool data_ok = false;
         uint16_t received_crc = 0u;
         uint16_t calculated_crc = 0u;
-        std::size_t mismatch_index = transfer_size;
-        uint8_t mismatch_expected = 0u;
-        uint8_t mismatch_actual = 0u;
         if (rx_ok)
         {
             received_crc =
@@ -660,41 +654,12 @@ namespace
             data_ok = true;
             for (std::size_t i = 0u; i < transfer_size - DMA_FRAME_CRC_SIZE; ++i)
             {
-                const uint8_t expected =
-                    static_cast<uint8_t>(xorshift32(state) & 0xFFu);
-                if (g_dma_frame[i] != expected)
+                if (g_dma_frame[i] !=
+                    static_cast<uint8_t>(xorshift32(state) & 0xFFu))
                 {
                     data_ok = false;
-                    mismatch_index = i;
-                    mismatch_expected = expected;
-                    mismatch_actual = g_dma_frame[i];
                     break;
                 }
-            }
-        }
-
-        if (!rx_ok || !crc_ok || !data_ok || !hardware_timeout_ok)
-        {
-            RTT_LOG_I("dma_auto",
-                      "RXTAIL IRQ_DIAG irq=%u rhr=%u tout=%u type=%u fifo=%u->%u count=%u->%u expected=%u",
-                      static_cast<unsigned>(irq_diag.irq_count),
-                      static_cast<unsigned>(irq_diag.rhr_count),
-                      static_cast<unsigned>(irq_diag.timeout_count),
-                      static_cast<unsigned>(irq_diag.last_type),
-                      static_cast<unsigned>(irq_diag.fifo_before),
-                      static_cast<unsigned>(irq_diag.fifo_after),
-                      static_cast<unsigned>(irq_diag.count_before),
-                      static_cast<unsigned>(irq_diag.count_after),
-                      static_cast<unsigned>(irq_diag.expected));
-            if (mismatch_index != transfer_size)
-            {
-                RTT_LOG_I("dma_auto",
-                          "RXTAIL MISMATCH index=%u region=%s expected=%02X actual=%02X dma_boundary=%u",
-                          static_cast<unsigned>(mismatch_index),
-                          mismatch_index < dma_size ? "DMA" : "TAIL",
-                          static_cast<unsigned>(mismatch_expected),
-                          static_cast<unsigned>(mismatch_actual),
-                          static_cast<unsigned>(dma_size));
             }
         }
 
@@ -710,9 +675,9 @@ namespace
                          REGS::EDMA::CH_UART0_RX);
 
         uart.init_polling();
-        const bool passed = rx_ok && crc_ok && data_ok && hardware_timeout_ok;
+        const bool passed = rx_ok && crc_ok && data_ok;
         std::snprintf(message, sizeof(message),
-                      "@RESULT mode=rx sequence=%u size=%u dma=%u tail=%u rx=%u crc=%s data=%s hw_timeout=%s status=%s\n",
+                      "@RESULT mode=rx sequence=%u size=%u dma=%u tail=%u rx=%u crc=%s data=%s status=%s\n",
                       static_cast<unsigned>(sequence),
                       static_cast<unsigned>(transfer_size),
                       static_cast<unsigned>(dma_size),
@@ -720,8 +685,6 @@ namespace
                       rx_ok ? static_cast<unsigned>(transfer_size) : 0u,
                       crc_ok ? "PASS" : "FAIL",
                       data_ok ? "PASS" : "FAIL",
-                      tail_size == 0u ? "N/A" :
-                          (hardware_timeout_ok ? "PASS" : "FAIL"),
                       passed ? "PASS" : "FAIL");
         uart.put_string(message);
         RTT_LOG_I("dma_auto", "RXTAIL END seq=%u status=%s",

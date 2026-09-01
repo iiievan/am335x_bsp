@@ -98,10 +98,10 @@ mode and rate are:
   before and after the frame.
 
 For DMA RX sizes with a 1–7 byte remainder, the aligned prefix is transferred
-at the TI-recommended eight-byte FIFO threshold. The remainder is completed by
-the UART character-timeout interrupt (`RX_TOUT_IT`), and every RX-tail case
-requires the firmware result `hw_timeout=PASS`. The loop counter remains a
-separate guard for a missing first byte or a peripheral that never interrupts.
+at the TI-recommended eight-byte FIFO threshold. The exact-length remainder is
+then received by polling with a bounded software timeout. This is the validated
+high-baud strategy; it avoids changing RX ownership to an ISR in the middle of
+one continuous frame.
 
 The intended runtime is about 12–13 minutes on the tested setup and remains
 below 15 minutes with normal host scheduling.

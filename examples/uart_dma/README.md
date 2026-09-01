@@ -6,8 +6,8 @@ through EDMA channel 26.
 
 The RX buffer is cache-line aligned. `HAL::UART::uart0_t` performs the required
 D-cache maintenance before TX, before RX, and after RX completion. Complete
-eight-byte chunks use EDMA; a 1–7 byte RX remainder is drained after the UART
-character-timeout interrupt, while a TX remainder is emitted by polling.
+eight-byte chunks use EDMA; a 1–7 byte remainder is handled by bounded polling
+for RX and by polling for TX.
 
 The example uses the unified API directly: `uart.init_dma()`, `uart.read()` and
 `uart.write()`. The UART object owns and releases channels 26 and 27.

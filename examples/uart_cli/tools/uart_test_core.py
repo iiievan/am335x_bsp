@@ -257,15 +257,11 @@ def run_rx_tail_case(ser: serial.Serial, transport: str, size: int, sequence: in
         written, elapsed, received_crc,
     )
     result = read_line_until(ser, b"@RESULT", time.monotonic() + result_timeout)
-    hardware_timeout_ok = (
-        transport != "dma" or size % DMA_ALIGNMENT == 0 or
-        b"hw_timeout=PASS" in result
-    )
     if (b"mode=rx" not in result or
             f"sequence={sequence}".encode("ascii") not in result or
             f"size={size}".encode("ascii") not in result or
             b"crc=PASS" not in result or
-            b"data=PASS" not in result or not hardware_timeout_ok or
+            b"data=PASS" not in result or
             b"status=PASS" not in result):
         raise TestFailure(
             f"device RX failure: {result.decode('ascii', errors='replace').strip()}"

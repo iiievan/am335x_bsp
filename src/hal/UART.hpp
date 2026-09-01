@@ -33,19 +33,6 @@ namespace HAL::UART
         REGS::UART::e_SCR_DMA_MODE mode {REGS::UART::SCR_DMA_MODE_1};
     };
 
-    struct RxIrqDiagnostics
-    {
-        uint32_t irq_count {0u};
-        uint32_t rhr_count {0u};
-        uint32_t timeout_count {0u};
-        uint32_t last_type {0u};
-        uint32_t fifo_before {0u};
-        uint32_t fifo_after {0u};
-        std::size_t count_before {0u};
-        std::size_t count_after {0u};
-        std::size_t expected {0u};
-    };
-
 }
 
 #include "hal/detail/UartDmaBackend.hpp"
@@ -172,16 +159,6 @@ namespace HAL::UART
     volatile bool m_rx_active{false};
     volatile bool m_rx_complete{false};
     volatile bool m_rx_success{false};
-    volatile bool m_last_hardware_timeout{false};
-    volatile uint32_t m_rx_irq_count{0u};
-    volatile uint32_t m_rx_rhr_count{0u};
-    volatile uint32_t m_rx_timeout_count{0u};
-    volatile uint32_t m_rx_last_irq_type{0u};
-    volatile uint32_t m_rx_last_fifo_before{0u};
-    volatile uint32_t m_rx_last_fifo_after{0u};
-    volatile std::size_t m_rx_last_count_before{0u};
-    volatile std::size_t m_rx_last_count_after{0u};
-    volatile std::size_t m_rx_last_expected{0u};
 
     // CRTP access to base class
     Derived& derived() { return static_cast<Derived&>(*this); }
@@ -205,22 +182,11 @@ namespace HAL::UART
             return;
         }
 
-        ++m_rx_irq_count;
-        if (hardware_timeout)
-            ++m_rx_timeout_count;
-        else
-            ++m_rx_rhr_count;
-        m_rx_last_irq_type = static_cast<uint32_t>(type);
-        m_rx_last_count_before = m_rx_count;
-        m_rx_last_expected = m_rx_expected;
-
         // RXFIFO_LVL is a stable snapshot of the number of readable bytes.
         // Re-checking LSR.RXFIFOE after every RHR access can over-read once at
         // the empty boundary, especially when the character timeout fires at
         // high baud rates.
-        std::size_t fifo_level =
-            static_cast<std::size_t>(m_instance.RXFIFO_LVL.b.RXFIFO_LVL);
-        m_rx_last_fifo_before = static_cast<uint32_t>(fifo_level);
+        auto fifo_level = static_cast<std::size_t>(m_instance.RXFIFO_LVL.b.RXFIFO_LVL);
         while (fifo_level != 0u)
         {
             --fifo_level;
@@ -247,18 +213,6 @@ namespace HAL::UART
             {
                 m_user_callback(static_cast<char>(value));
             }
-        }
-        m_rx_last_fifo_after = m_instance.RXFIFO_LVL.b.RXFIFO_LVL;
-        m_rx_last_count_after = m_rx_count;
-
-        if (hardware_timeout)
-        {
-            m_last_hardware_timeout = true;
-            // A timeout marks an idle gap, not necessarily the end of the
-            // caller's exact-length transaction.  A timeout already pending
-            // at the DMA-to-IRQ handoff may expose only part of the tail.  Keep
-            // the transaction armed; another character-timeout IRQ or the
-            // software guard will finish it deterministically.
         }
     }
 
@@ -320,16 +274,6 @@ namespace HAL::UART
         if ((data == nullptr && size != 0u) || size == 0u)
             return size == 0u;
         reset_rx_transaction();
-        m_last_hardware_timeout = false;
-        m_rx_irq_count = 0u;
-        m_rx_rhr_count = 0u;
-        m_rx_timeout_count = 0u;
-        m_rx_last_irq_type = 0u;
-        m_rx_last_fifo_before = 0u;
-        m_rx_last_fifo_after = 0u;
-        m_rx_last_count_before = 0u;
-        m_rx_last_count_after = 0u;
-        m_rx_last_expected = size;
         m_rx_buffer = static_cast<uint8_t*>(data);
         m_rx_expected = size;
         m_rx_active = true;
@@ -363,19 +307,6 @@ namespace HAL::UART
     {
         return arm_interrupt_receive(data, size) &&
                wait_interrupt_receive(size, timeout_loops);
-    }
-
-    [[nodiscard]] bool read_dma_tail(void* data, const std::size_t size,
-                                     const uint32_t timeout_loops) noexcept
-    {
-        // Arm the destination before unmasking UART.  The DMA tail may already
-        // be resident in the FIFO and RX_TOUT_IT can therefore be pending.
-        if (!arm_interrupt_receive(data, size))
-            return size == 0u;
-        setup_interrupts(nullptr);
-        const bool result = wait_interrupt_receive(size, timeout_loops);
-        cleanup_interrupts();
-        return result;
     }
 
     void finish_common_init() noexcept
@@ -493,18 +424,6 @@ namespace HAL::UART
             ~uart() noexcept { deinit(); }
 
             [[nodiscard]] IOMode io_mode() const noexcept { return m_io_mode; }
-            [[nodiscard]] bool last_rx_hardware_timeout() const noexcept
-            {
-                return m_last_hardware_timeout;
-            }
-            [[nodiscard]] RxIrqDiagnostics rx_irq_diagnostics() const noexcept
-            {
-                return RxIrqDiagnostics{
-                    m_rx_irq_count, m_rx_rhr_count, m_rx_timeout_count,
-                    m_rx_last_irq_type, m_rx_last_fifo_before,
-                    m_rx_last_fifo_after, m_rx_last_count_before,
-                    m_rx_last_count_after, m_rx_last_expected};
-            }
             [[nodiscard]] static constexpr uintptr_t tx_dma_address() noexcept { return UARTBase; }
             [[nodiscard]] static constexpr uintptr_t rx_dma_address() noexcept { return UARTBase; }
 
