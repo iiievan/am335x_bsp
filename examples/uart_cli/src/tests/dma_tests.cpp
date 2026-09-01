@@ -1,5 +1,4 @@
 #include "uart_tests.hpp"
-#include "hal/UartDma.hpp"
 
 namespace UART_TESTS
 {
@@ -28,29 +27,20 @@ namespace UART_TESTS
         if (!uart.init_dma())
             return false;
         alignas(64) uint8_t buffer[64]{};
-        bool passed = false;
-        {
-            HAL::UART::Uart0Dma dma{uart};
-            if (!dma.init())
-            {
-                uart.init_polling();
-                return false;
-            }
-            constexpr char prompt[] =
-                "\r\n[DMA] TX and RX use UART0 EDMA channels.\r\n"
-                "Send DMA12345: ";
-            constexpr char newline[] = "\r\n";
-            const uint32_t epochs = timeout_epochs(uart);
-            passed = dma.transmit(prompt, sizeof(prompt) - 1u,
-                                  TIMEOUT_LOOPS, epochs) &&
-                     dma.receive(buffer, DATA_SIZE, TIMEOUT_LOOPS,
+        constexpr char prompt[] =
+            "\r\n[DMA] TX and RX use UART0 EDMA channels.\r\n"
+            "Send DMA12345: ";
+        constexpr char newline[] = "\r\n";
+        const uint32_t epochs = timeout_epochs(uart);
+        bool passed = uart.write(prompt, sizeof(prompt) - 1u,
                                  TIMEOUT_LOOPS, epochs) &&
-                     dma.transmit(buffer, DATA_SIZE, TIMEOUT_LOOPS, epochs) &&
-                     dma.transmit(newline, sizeof(newline) - 1u,
-                                  TIMEOUT_LOOPS, epochs);
-            for (std::size_t i = 0u; i < DATA_SIZE && passed; ++i)
-                passed = buffer[i] == static_cast<uint8_t>(PATTERN[i]);
-        }
+                      uart.read(buffer, DATA_SIZE, TIMEOUT_LOOPS,
+                                TIMEOUT_LOOPS, epochs) &&
+                      uart.write(buffer, DATA_SIZE, TIMEOUT_LOOPS, epochs) &&
+                      uart.write(newline, sizeof(newline) - 1u,
+                                 TIMEOUT_LOOPS, epochs);
+        for (std::size_t i = 0u; i < DATA_SIZE && passed; ++i)
+            passed = buffer[i] == static_cast<uint8_t>(PATTERN[i]);
         uart.init_polling();
         return passed;
     }

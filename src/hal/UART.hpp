@@ -25,11 +25,20 @@ namespace HAL::UART
 
     struct DMAConfig
     {
+        uint8_t tx_chunk {8u};
+        uint8_t rx_chunk {8u};
         uint8_t tx_trigger_space {8u};
         uint8_t rx_trigger_level {8u};
         uint8_t tx_dma_threshold {5u};
         REGS::UART::e_SCR_DMA_MODE mode {REGS::UART::SCR_DMA_MODE_1};
     };
+
+}
+
+#include "hal/detail/UartDmaBackend.hpp"
+
+namespace HAL::UART
+{
 
     class uart_base
     {
@@ -121,7 +130,10 @@ namespace HAL::UART
                   typename TXPin,
                   typename RXPin,
                   uint32_t UARTBase,
-                  uint32_t IRQNum>
+                  uint32_t IRQNum,
+                  uint8_t TxDmaChannel = 0xFFu,
+                  uint8_t RxDmaChannel = 0xFFu,
+                  uint8_t DummyParam = 63u>
     class uart : protected uart_base
     {
     protected:
@@ -134,17 +146,84 @@ namespace HAL::UART
     RXMode m_rx_mode;
 
     static serial_user_callback m_user_callback;
+    static uart* m_active_instance;
     IOMode m_io_mode{IOMode::UNINITIALIZED};
+    using DmaBackend = detail::UartDmaBackend<uart, TxDmaChannel,
+                                              RxDmaChannel, DummyParam>;
+    friend DmaBackend;
+    DmaBackend m_dma{*this};
+
+    uint8_t* volatile m_rx_buffer{nullptr};
+    volatile std::size_t m_rx_expected{0u};
+    volatile std::size_t m_rx_count{0u};
+    volatile bool m_rx_active{false};
+    volatile bool m_rx_complete{false};
+    volatile bool m_rx_success{false};
+    volatile bool m_last_hardware_timeout{false};
 
     // CRTP access to base class
     Derived& derived() { return static_cast<Derived&>(*this); }
 
     static void uart_isr(void*)
     {
-        auto* uart = reinterpret_cast<REGS::UART::AM335x_UART_Type*>(UARTBase);
-        char c = uart->RHR.reg;
-        if (m_user_callback) m_user_callback(c);
+        if (m_active_instance != nullptr)
+            m_active_instance->handle_uart_irq();
         REGS::INTC::new_IRQ_agree();
+    }
+
+    void handle_uart_irq() noexcept
+    {
+        const auto type = static_cast<REGS::UART::e_IT_TYPES>(
+            m_instance.IIR_UART.b.IT_TYPE);
+        const bool hardware_timeout = type == REGS::UART::RX_TOUT_IT;
+        if (type != REGS::UART::RHR_IT && !hardware_timeout)
+        {
+            if (type == REGS::UART::RX_LINE_STS_ERR)
+                (void)m_instance.LSR_UART.reg;
+            return;
+        }
+
+        // RXFIFO_LVL is a stable snapshot of the number of readable bytes.
+        // Re-checking LSR.RXFIFOE after every RHR access can over-read once at
+        // the empty boundary, especially when the character timeout fires at
+        // high baud rates.
+        std::size_t fifo_level =
+            static_cast<std::size_t>(m_instance.RXFIFO_LVL.b.RXFIFO_LVL);
+        while (fifo_level != 0u)
+        {
+            --fifo_level;
+            const uint8_t value = static_cast<uint8_t>(m_instance.RHR.b.RHR);
+            if (m_rx_active && m_rx_buffer != nullptr)
+            {
+                const std::size_t index = m_rx_count;
+                if (index < m_rx_expected)
+                {
+                    m_rx_buffer[index] = value;
+                    m_rx_count = index + 1u;
+                }
+                if (m_rx_count == m_rx_expected)
+                {
+                    m_rx_active = false;
+                    m_rx_success = true;
+                    m_rx_complete = true;
+                }
+            }
+            else if (m_user_callback != nullptr)
+            {
+                m_user_callback(static_cast<char>(value));
+            }
+        }
+
+        if (hardware_timeout)
+        {
+            m_last_hardware_timeout = true;
+            if (m_rx_active)
+            {
+                m_rx_active = false;
+                m_rx_success = false;
+                m_rx_complete = true;
+            }
+        }
     }
 
     void init_pins() noexcept
@@ -170,16 +249,13 @@ namespace HAL::UART
         using namespace REGS::UART;
         using namespace REGS::INTC;
 
-        int_enable(RECEIVE_IT);  // Из uart_core
-        switch_reg_config_mode(OPERATIONAL_MODE, ENH_DISABLE);  // Из uart_core
-
-        switch_operating_mode(m_baud_mode);  // Из uart_core
-        resume_operation();  // Из uart_core
-
+        m_active_instance = this;
         m_user_callback = cb;
-
-        // Регистрируем обработчик в контроллере прерываний
         INTC::register_handler(static_cast<e_INT_ID>(IRQNum), uart_isr);
+        int_enable(RECEIVE_IT);
+        switch_reg_config_mode(OPERATIONAL_MODE, ENH_DISABLE);
+        switch_operating_mode(m_baud_mode);
+        resume_operation();
         INTC::unmask_interrupt(static_cast<e_INT_ID>(IRQNum));
     }
 
@@ -188,6 +264,71 @@ namespace HAL::UART
         INTC::mask_interrupt(static_cast<REGS::INTC::e_INT_ID>(IRQNum));
         int_disable(REGS::UART::RECEIVE_IT);
         m_user_callback = nullptr;
+        m_active_instance = nullptr;
+        reset_rx_transaction();
+    }
+
+    void reset_rx_transaction() noexcept
+    {
+        m_rx_buffer = nullptr;
+        m_rx_expected = 0u;
+        m_rx_count = 0u;
+        m_rx_active = false;
+        m_rx_complete = false;
+        m_rx_success = false;
+    }
+
+    [[nodiscard]] bool arm_interrupt_receive(void* data,
+                                             const std::size_t size) noexcept
+    {
+        if ((data == nullptr && size != 0u) || size == 0u)
+            return size == 0u;
+        reset_rx_transaction();
+        m_last_hardware_timeout = false;
+        m_rx_buffer = static_cast<uint8_t*>(data);
+        m_rx_expected = size;
+        m_rx_active = true;
+        return true;
+    }
+
+    [[nodiscard]] bool wait_interrupt_receive(
+        const std::size_t size, const uint32_t timeout_loops) noexcept
+    {
+        uint32_t remaining = timeout_loops;
+        while (!m_rx_complete && remaining != 0u)
+        {
+            --remaining;
+            __asm volatile("nop");
+        }
+        if (!m_rx_complete)
+        {
+            m_rx_active = false;
+            m_rx_success = false;
+        }
+        const bool success = m_rx_success && m_rx_count == size;
+        reset_rx_transaction();
+        return success;
+    }
+
+    [[nodiscard]] bool receive_by_interrupt(void* data,
+                                            const std::size_t size,
+                                            const uint32_t timeout_loops) noexcept
+    {
+        return arm_interrupt_receive(data, size) &&
+               wait_interrupt_receive(size, timeout_loops);
+    }
+
+    [[nodiscard]] bool read_dma_tail(void* data, const std::size_t size,
+                                     const uint32_t timeout_loops) noexcept
+    {
+        // Arm the destination before unmasking UART.  The DMA tail may already
+        // be resident in the FIFO and RX_TOUT_IT can therefore be pending.
+        if (!arm_interrupt_receive(data, size))
+            return size == 0u;
+        setup_interrupts(nullptr);
+        const bool result = wait_interrupt_receive(size, timeout_loops);
+        cleanup_interrupts();
+        return result;
     }
 
     void finish_common_init() noexcept
@@ -249,6 +390,8 @@ namespace HAL::UART
 
             [[nodiscard]] bool init_dma(const DMAConfig& config = {}) noexcept
             {
+                if constexpr (TxDmaChannel == 0xFFu || RxDmaChannel == 0xFFu)
+                    return false;
                 deinit();
                 derived().run_clocks();
                 m_save_LCR();
@@ -260,9 +403,11 @@ namespace HAL::UART
                 if (!FIFO_configure(config.tx_trigger_space,
                                     config.rx_trigger_level,
                                     config.mode) ||
-                    !TX_DMA_threshold_configure(config.tx_dma_threshold))
+                    !TX_DMA_threshold_configure(config.tx_dma_threshold) ||
+                    !m_dma.init(config))
                 {
-                    DMA_disable();
+                    m_dma.stop();
+                    init_polling();
                     return false;
                 }
 
@@ -282,6 +427,8 @@ namespace HAL::UART
 
             void deinit() noexcept
             {
+                // A freshly constructed UART has no functional clock yet.
+                // Teardown must not touch its MMIO registers in that state.
                 if (m_io_mode == IOMode::UNINITIALIZED)
                     return;
 
@@ -290,15 +437,87 @@ namespace HAL::UART
                 else
                     INTC::mask_interrupt(static_cast<REGS::INTC::e_INT_ID>(IRQNum));
 
+                m_dma.stop();
                 DMA_disable();
+                reset_rx_transaction();
                 m_io_mode = IOMode::UNINITIALIZED;
             }
 
             ~uart() noexcept { deinit(); }
 
             [[nodiscard]] IOMode io_mode() const noexcept { return m_io_mode; }
+            [[nodiscard]] bool last_rx_hardware_timeout() const noexcept
+            {
+                return m_last_hardware_timeout;
+            }
             [[nodiscard]] static constexpr uintptr_t tx_dma_address() noexcept { return UARTBase; }
             [[nodiscard]] static constexpr uintptr_t rx_dma_address() noexcept { return UARTBase; }
+
+            [[nodiscard]] bool write(const void* data, const std::size_t size,
+                                     const uint32_t timeout_loops = 5'000'000u,
+                                     const uint32_t timeout_epochs = 1u) noexcept
+            {
+                if (m_io_mode == IOMode::UNINITIALIZED ||
+                    (data == nullptr && size != 0u))
+                    return false;
+                if (m_io_mode == IOMode::DMA)
+                    return m_dma.write(data, size, timeout_loops,
+                                       timeout_epochs);
+                put_data(data, size);
+                return true;
+            }
+
+            [[nodiscard]] bool read(void* data, const std::size_t size,
+                                    const uint32_t timeout_loops = 5'000'000u,
+                                    const uint32_t tail_timeout_loops = 5'000'000u,
+                                    const uint32_t timeout_epochs = 1u) noexcept
+            {
+                if (m_io_mode == IOMode::UNINITIALIZED ||
+                    (data == nullptr && size != 0u))
+                    return false;
+                if (size == 0u)
+                    return true;
+                if (m_io_mode == IOMode::DMA)
+                    return m_dma.read(data, size, timeout_loops,
+                                      tail_timeout_loops, timeout_epochs);
+                if (m_io_mode == IOMode::INTERRUPT)
+                    return receive_by_interrupt(data, size, timeout_loops);
+
+                auto* bytes = static_cast<uint8_t*>(data);
+                for (std::size_t i = 0u; i < size; ++i)
+                {
+                    uint32_t remaining = timeout_loops;
+                    while (!rx_data_available() && remaining != 0u)
+                    {
+                        --remaining;
+                        __asm volatile("nop");
+                    }
+                    if (remaining == 0u)
+                        return false;
+                    bytes[i] = static_cast<uint8_t>(get_char());
+                }
+                return true;
+            }
+
+            [[nodiscard]] bool transmit_dma(
+                const void* data, const std::size_t size,
+                const uint32_t timeout_loops = 5'000'000u,
+                const uint32_t timeout_epochs = 1u) noexcept
+            {
+                return m_io_mode == IOMode::DMA &&
+                       m_dma.write(data, size, timeout_loops, timeout_epochs);
+            }
+
+            [[nodiscard]] bool receive_dma(
+                void* data, const std::size_t size,
+                const uint32_t timeout_loops = 5'000'000u,
+                const uint32_t tail_timeout_loops = 5'000'000u,
+                const uint32_t timeout_epochs = 1u) noexcept
+            {
+                return m_io_mode == IOMode::DMA &&
+                       m_dma.read(data, size, timeout_loops,
+                                  tail_timeout_loops, timeout_epochs);
+            }
 
             // Экспортируем нужные методы из uart_core
             using uart_base::put_char;
@@ -312,25 +531,43 @@ namespace HAL::UART
             using uart_base::wait_tx_complete;
     };
 
-    template <typename Derived, typename TXPin, typename RXPin, uint32_t UARTBase, uint32_t IRQNum>
-    serial_user_callback uart<Derived, TXPin, RXPin, UARTBase, IRQNum>::m_user_callback = nullptr;
+    template <typename Derived, typename TXPin, typename RXPin,
+              uint32_t UARTBase, uint32_t IRQNum, uint8_t TxDmaChannel,
+              uint8_t RxDmaChannel, uint8_t DummyParam>
+    serial_user_callback uart<Derived, TXPin, RXPin, UARTBase, IRQNum,
+                              TxDmaChannel, RxDmaChannel,
+                              DummyParam>::m_user_callback = nullptr;
+
+    template <typename Derived, typename TXPin, typename RXPin,
+              uint32_t UARTBase, uint32_t IRQNum, uint8_t TxDmaChannel,
+              uint8_t RxDmaChannel, uint8_t DummyParam>
+    uart<Derived, TXPin, RXPin, UARTBase, IRQNum, TxDmaChannel,
+         RxDmaChannel, DummyParam>*
+    uart<Derived, TXPin, RXPin, UARTBase, IRQNum, TxDmaChannel,
+         RxDmaChannel, DummyParam>::m_active_instance = nullptr;
 
     class uart0_t : public uart<uart0_t,
                           HAL::PINS::UART0_TXD,
                           HAL::PINS::UART0_RXD,
                           REGS::UART::AM335x_UART_0_BASE,
-                          REGS::INTC::UART0INT>
+                          REGS::INTC::UART0INT,
+                          REGS::EDMA::CH_UART0_TX,
+                          REGS::EDMA::CH_UART0_RX>
     {
         using Base = uart<uart0_t,
                           HAL::PINS::UART0_TXD,
                           HAL::PINS::UART0_RXD,
                           REGS::UART::AM335x_UART_0_BASE,
-                          REGS::INTC::UART0INT>;
+                          REGS::INTC::UART0INT,
+                          REGS::EDMA::CH_UART0_TX,
+                          REGS::EDMA::CH_UART0_RX>;
         friend class uart<uart0_t,
                           HAL::PINS::UART0_TXD,
                           HAL::PINS::UART0_RXD,
                           REGS::UART::AM335x_UART_0_BASE,
-                          REGS::INTC::UART0INT>;
+                          REGS::INTC::UART0INT,
+                          REGS::EDMA::CH_UART0_TX,
+                          REGS::EDMA::CH_UART0_RX>;
 
         static void run_clocks() noexcept
         {

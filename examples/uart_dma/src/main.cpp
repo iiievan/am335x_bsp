@@ -1,7 +1,7 @@
 #include <cstdint>
 
 #include "init.h"
-#include "hal/UartDma.hpp"
+#include "hal/UART.hpp"
 #include "hal/boards/beaglebone_black.hpp"
 #include "rtt/rtt_log.h"
 
@@ -24,8 +24,8 @@ int main()
         while (true) __asm volatile("wfi");
     }
 
-    HAL::UART::Uart0Dma uart_dma{Board::get_uart0()};
-    if (!uart_dma.init())
+    auto& uart = Board::get_uart0();
+    if (!uart.init_dma())
     {
         RTT_LOG_E(TAG, "UART EDMA channel initialization failed");
         while (true) __asm volatile("wfi");
@@ -40,7 +40,7 @@ int main()
     constexpr char echo_prefix[] =
         "\r\nEcho: ";
 
-    if (!uart_dma.transmit(welcome, sizeof(welcome) - 1u))
+    if (!uart.write(welcome, sizeof(welcome) - 1u))
     {
         RTT_LOG_E(TAG, "UART EDMA welcome transfer failed");
     }
@@ -50,11 +50,11 @@ int main()
 
         for (uint32_t attempt = 0u; attempt < 2u; ++attempt)
         {
-            if (!uart_dma.transmit(prompt, sizeof(prompt) - 1u) ||
-                !uart_dma.receive(rx_buffer, 8u, 500'000'000u) ||
-                !uart_dma.transmit(echo_prefix,sizeof(echo_prefix) - 1u) ||
-                !uart_dma.transmit(rx_buffer, 8u) ||
-                !uart_dma.transmit("\r\n", 2u))
+            if (!uart.write(prompt, sizeof(prompt) - 1u) ||
+                !uart.read(rx_buffer, 8u, 500'000'000u) ||
+                !uart.write(echo_prefix,sizeof(echo_prefix) - 1u) ||
+                !uart.write(rx_buffer, 8u) ||
+                !uart.write("\r\n", 2u))
             {
                 RTT_LOG_E(TAG, "UART EDMA transfer %lu failed", static_cast<unsigned long>(attempt + 1u));
 

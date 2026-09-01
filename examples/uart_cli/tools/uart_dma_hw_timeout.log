@@ -1,0 +1,27 @@
+2026-09-01 11:09:55,766 INFO    UART mode=rx-tail transports=dma profile=smoke port=/dev/ttyUSB0 baud=115200 payload=256 cycles=1
+2026-09-01 11:09:55,787 INFO    SECTION transport=dma name=rx-tail status=BEGIN cases=23
+2026-09-01 11:09:55,934 INFO    section=rx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.023s
+2026-09-01 11:09:56,081 INFO    section=rx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.023s
+2026-09-01 11:09:56,228 INFO    section=rx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.023s
+2026-09-01 11:09:56,375 INFO    section=rx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.023s
+2026-09-01 11:09:56,522 INFO    section=rx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.023s
+2026-09-01 11:09:56,669 INFO    section=rx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.023s
+2026-09-01 11:09:56,816 INFO    section=rx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.023s
+2026-09-01 11:09:56,964 INFO    section=rx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.024s
+2026-09-01 11:09:57,112 INFO    section=rx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.024s
+2026-09-01 11:09:57,266 INFO    section=rx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.024s
+2026-09-01 11:09:57,419 INFO    section=rx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.024s
+2026-09-01 11:09:57,572 INFO    section=rx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.024s
+2026-09-01 11:09:57,725 INFO    section=rx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.024s
+2026-09-01 11:09:57,879 INFO    section=rx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.024s
+2026-09-01 11:09:58,032 INFO    section=rx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.024s
+2026-09-01 11:09:58,737 INFO    section=rx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.559s
+2026-09-01 11:09:59,442 INFO    section=rx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.559s
+2026-09-01 11:10:00,148 INFO    section=rx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.560s
+2026-09-01 11:10:00,850 INFO    section=rx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.562s
+2026-09-01 11:10:01,557 INFO    section=rx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.561s
+2026-09-01 11:10:02,266 INFO    section=rx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.562s
+2026-09-01 11:10:02,968 INFO    section=rx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.562s
+2026-09-01 11:10:03,676 INFO    section=rx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.562s
+2026-09-01 11:10:03,676 INFO    SECTION name=rx-tail status=PASS passed=23 failed=0 elapsed=4.838s
+2026-09-01 11:10:03,678 INFO    SUMMARY status=PASS passed=23 failed=0 elapsed=4.838s wall_elapsed=7.912s

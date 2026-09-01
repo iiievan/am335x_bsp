@@ -38,6 +38,7 @@ set(BSP_SOURCES  src/hal/INTC.cpp
                  src/hal/UART.hpp
                  src/hal/UART.cpp
                  src/hal/UartDma.hpp
+                 src/hal/detail/UartDmaBackend.hpp
                  src/hal/EDMA/EDMA.cpp
                  src/hal/MMCSD.hpp
                  src/hal/MMCSD.cpp
@@ -152,4 +153,3 @@ message(STATUS "  C Compiler: ${CMAKE_C_COMPILER}")
 message(STATUS "  CXX Compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "  Include: ${CMAKE_CURRENT_SOURCE_DIR}/src")
 message(STATUS "  Build examples: ${AM335X_BSP_BUILD_EXAMPLES}")
-

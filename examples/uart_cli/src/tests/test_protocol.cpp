@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "hal/UartDma.hpp"
 #include "hal/PERF.hpp"
 #include "rtt/rtt_log.h"
 #include "uart_tests.hpp"
@@ -565,15 +564,6 @@ namespace
             return;
         }
 
-        HAL::UART::Uart0Dma uart_dma{uart};
-        if (!uart_dma.init())
-        {
-            RTT_LOG_E("dma_auto", "TXTAIL EDMA channel initialization failed");
-            uart.init_polling();
-            uart.put_string("@RESULT mode=tx status=FAIL error=EDMA_INIT\n");
-            return;
-        }
-
         std::snprintf(message, sizeof(message),
                       "@READY mode=tx sequence=%u size=%u dma=%u tail=%u\n",
                       static_cast<unsigned>(sequence),
@@ -584,14 +574,13 @@ namespace
         uart.wait_tx_complete();
 
         const uint32_t tx_started = HAL::PERF::get_cycle_count();
-        const bool tx_ok = uart_dma.transmit(g_dma_frame, transfer_size,
-                                             TEST_TIMEOUT_LOOPS,
-                                             dma_timeout_epochs(uart));
+        const bool tx_ok = uart.write(g_dma_frame, transfer_size,
+                                      TEST_TIMEOUT_LOOPS,
+                                      dma_timeout_epochs(uart));
         const uint32_t tx_cycles = HAL::PERF::get_cycle_count() - tx_started;
         if (!tx_ok)
             log_dma_hw_state("TXTAIL_FAIL", REGS::EDMA::CH_UART0_TX);
 
-        uart_dma.stop();
         uart.init_polling();
         std::snprintf(message, sizeof(message),
                       "@RESULT mode=tx sequence=%u size=%u tail=%u tx=%u status=%s\n",
@@ -631,15 +620,6 @@ namespace
             return;
         }
 
-        HAL::UART::Uart0Dma uart_dma{uart};
-        if (!uart_dma.init())
-        {
-            RTT_LOG_E("dma_auto", "RXTAIL EDMA channel initialization failed");
-            uart.init_polling();
-            uart.put_string("@RESULT mode=rx status=FAIL error=EDMA_INIT\n");
-            return;
-        }
-
         std::snprintf(message, sizeof(message),
                       "@READY mode=rx sequence=%u size=%u dma=%u tail=%u\n",
                       static_cast<unsigned>(sequence),
@@ -651,10 +631,12 @@ namespace
 
         RTT_LOG_I("dma_auto", "RXTAIL READY sent; entering blocking RX");
         const uint32_t rx_started = HAL::PERF::get_cycle_count();
-        const bool rx_ok = uart_dma.receive(g_dma_frame, transfer_size,
-                                            TEST_TIMEOUT_LOOPS,
-                                            TEST_TIMEOUT_LOOPS,
-                                            dma_timeout_epochs(uart));
+        const bool rx_ok = uart.read(g_dma_frame, transfer_size,
+                                     TEST_TIMEOUT_LOOPS,
+                                     TEST_TIMEOUT_LOOPS,
+                                     dma_timeout_epochs(uart));
+        const bool hardware_timeout_ok = tail_size == 0u ||
+                                         uart.last_rx_hardware_timeout();
         const uint32_t rx_cycles = HAL::PERF::get_cycle_count() - rx_started;
 
         bool crc_ok = false;
@@ -693,11 +675,10 @@ namespace
         log_dma_hw_state(rx_ok ? "RXTAIL_DONE" : "RXTAIL_FAIL",
                          REGS::EDMA::CH_UART0_RX);
 
-        uart_dma.stop();
         uart.init_polling();
-        const bool passed = rx_ok && crc_ok && data_ok;
+        const bool passed = rx_ok && crc_ok && data_ok && hardware_timeout_ok;
         std::snprintf(message, sizeof(message),
-                      "@RESULT mode=rx sequence=%u size=%u dma=%u tail=%u rx=%u crc=%s data=%s status=%s\n",
+                      "@RESULT mode=rx sequence=%u size=%u dma=%u tail=%u rx=%u crc=%s data=%s hw_timeout=%s status=%s\n",
                       static_cast<unsigned>(sequence),
                       static_cast<unsigned>(transfer_size),
                       static_cast<unsigned>(dma_size),
@@ -705,6 +686,8 @@ namespace
                       rx_ok ? static_cast<unsigned>(transfer_size) : 0u,
                       crc_ok ? "PASS" : "FAIL",
                       data_ok ? "PASS" : "FAIL",
+                      tail_size == 0u ? "N/A" :
+                          (hardware_timeout_ok ? "PASS" : "FAIL"),
                       passed ? "PASS" : "FAIL");
         uart.put_string(message);
         RTT_LOG_I("dma_auto", "RXTAIL END seq=%u status=%s",
@@ -941,15 +924,6 @@ namespace
             return;
         }
 
-        HAL::UART::Uart0Dma uart_dma{uart};
-        if (!uart_dma.init())
-        {
-            RTT_LOG_E("dma_auto", "EDMA channel initialization failed");
-            uart.init_polling();
-            uart.put_string("@RESULT mode=dma status=FAIL error=EDMA_INIT\n");
-            return;
-        }
-
         std::snprintf(message, sizeof(message),
                       "@READY mode=dma sequence=%u frame=%u payload=%u\n",
                       static_cast<unsigned>(sequence),
@@ -961,14 +935,13 @@ namespace
         RTT_LOG_I("dma_auto", "READY sent; entering blocking RX");
         const uint32_t rx_started = HAL::PERF::get_cycle_count();
 
-        if (!uart_dma.receive(g_dma_frame, frame_size, TEST_TIMEOUT_LOOPS,
-                              TEST_TIMEOUT_LOOPS, dma_timeout_epochs(uart)))
+        if (!uart.read(g_dma_frame, frame_size, TEST_TIMEOUT_LOOPS,
+                       TEST_TIMEOUT_LOOPS, dma_timeout_epochs(uart)))
         {
             const uint32_t rx_cycles = HAL::PERF::get_cycle_count() - rx_started;
             RTT_LOG_E("dma_auto", "RX failed after %u PMU cycles",
                       static_cast<unsigned>(rx_cycles));
             log_dma_hw_state("RX_FAIL", REGS::EDMA::CH_UART0_RX);
-            uart_dma.stop();
             uart.init_polling();
             std::snprintf(message, sizeof(message),
                           "@RESULT mode=dma sequence=%u status=FAIL error=RX_TIMEOUT\n",
@@ -1009,15 +982,14 @@ namespace
         // Echo the exact bytes received even on a validation failure.  This lets
         // the host locate and report the first corrupted byte.
         const uint32_t tx_started = HAL::PERF::get_cycle_count();
-        const bool tx_ok = uart_dma.transmit(g_dma_frame, frame_size,
-                                             TEST_TIMEOUT_LOOPS,
-                                             dma_timeout_epochs(uart));
+        const bool tx_ok = uart.write(g_dma_frame, frame_size,
+                                      TEST_TIMEOUT_LOOPS,
+                                      dma_timeout_epochs(uart));
         const uint32_t tx_cycles = HAL::PERF::get_cycle_count() - tx_started;
         RTT_LOG_I("dma_auto", "TX %s after %u PMU cycles",
                   tx_ok ? "completed" : "failed",
                   static_cast<unsigned>(tx_cycles));
         log_dma_hw_state(tx_ok ? "TX_DONE" : "TX_FAIL", REGS::EDMA::CH_UART0_TX);
-        uart_dma.stop();
         uart.init_polling();
 
         std::snprintf(message, sizeof(message),
@@ -1093,14 +1065,9 @@ namespace
         }
         else
         {
-            HAL::UART::Uart0Dma dma{uart};
-            if (dma.init())
-            {
-                timed_out = !dma.receive(probe, sizeof(probe),
-                                         RECOVERY_TIMEOUT_LOOPS,
-                                         RECOVERY_TIMEOUT_LOOPS, 1u);
-                dma.stop();
-            }
+            timed_out = !uart.read(probe, sizeof(probe),
+                                   RECOVERY_TIMEOUT_LOOPS,
+                                   RECOVERY_TIMEOUT_LOOPS, 1u);
         }
 
         uart.FIFO_clear(false, true);
@@ -1142,7 +1109,6 @@ namespace
         uint8_t* const frame = g_unaligned_storage + GUARD_SIZE + 1u;
         char message[224]{};
         bool initialized = false;
-        HAL::UART::Uart0Dma dma{uart};
 
         if (mode == AutoMode::POLLING)
         {
@@ -1155,7 +1121,7 @@ namespace
         }
         else
         {
-            initialized = uart.init_dma() && dma.init();
+            initialized = uart.init_dma();
         }
 
         if (!initialized)
@@ -1174,8 +1140,8 @@ namespace
         uart.wait_tx_complete();
 
         const bool rx_ok = mode == AutoMode::DMA
-            ? dma.receive(frame, frame_size, TEST_TIMEOUT_LOOPS,
-                          TEST_TIMEOUT_LOOPS, dma_timeout_epochs(uart))
+            ? uart.read(frame, frame_size, TEST_TIMEOUT_LOOPS,
+                        TEST_TIMEOUT_LOOPS, dma_timeout_epochs(uart))
             : (mode == AutoMode::POLLING
                 ? receive_polling(uart, frame, frame_size)
                 : wait_interrupt_receive(uart, frame_size));
@@ -1206,8 +1172,8 @@ namespace
         if (rx_ok)
         {
             if (mode == AutoMode::DMA)
-                tx_ok = dma.transmit(frame, frame_size, TEST_TIMEOUT_LOOPS,
-                                     dma_timeout_epochs(uart));
+                tx_ok = uart.write(frame, frame_size, TEST_TIMEOUT_LOOPS,
+                                   dma_timeout_epochs(uart));
             else
             {
                 uart.put_data(frame, frame_size);
@@ -1216,7 +1182,6 @@ namespace
             }
         }
         guard_ok = guard_ok && guards_intact(frame, frame_size);
-        dma.stop();
         uart.init_polling();
         const bool passed = rx_ok && tx_ok && crc_ok && data_ok && guard_ok;
         std::snprintf(message, sizeof(message),

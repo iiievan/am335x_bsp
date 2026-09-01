@@ -6,6 +6,24 @@ This bare-metal example verifies UART0 in three transport modes:
 - polling TX and interrupt-driven RX;
 - EDMA TX and EDMA RX on channels 26 and 27.
 
+All three transports are selected on the same RAII `uart0_t` object. DMA is an
+internal `hal/detail` backend; application code does not create or coordinate a
+second channel-owning wrapper:
+
+```cpp
+auto& uart = Board::get_uart0();
+uart.init_polling();
+(void)uart.init_interrupt(on_byte);
+(void)uart.init_dma();
+(void)uart.read(buffer, size);
+(void)uart.write(buffer, size);
+```
+
+Changing mode releases the previous mode's interrupt and EDMA resources before
+acquiring the new ones. A failed DMA initialization rolls the object back to a
+usable polling state. `hal/UartDma.hpp` remains only as a source-compatibility
+adapter for older applications.
+
 ## Source layout
 
 The entry point only initializes the board, registers commands and starts the
@@ -78,6 +96,12 @@ mode and rate are:
 - one forced-timeout case followed by a real CRC loopback recovery check;
 - one 6144-byte payload at cache-line offset `+1`, with guard regions checked
   before and after the frame.
+
+For DMA RX sizes with a 1–7 byte remainder, the aligned prefix is transferred
+at the TI-recommended eight-byte FIFO threshold. The remainder is completed by
+the UART character-timeout interrupt (`RX_TOUT_IT`), and every RX-tail case
+requires the firmware result `hw_timeout=PASS`. The loop counter remains a
+separate guard for a missing first byte or a peripheral that never interrupts.
 
 The intended runtime is about 12–13 minutes on the tested setup and remains
 below 15 minutes with normal host scheduling.
