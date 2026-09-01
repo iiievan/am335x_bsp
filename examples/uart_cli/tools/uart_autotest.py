@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fast UART acceptance test: 3 transports x 3 practical baud rates x 58 cases."""
+"""Fast UART acceptance test: 3 transports x 3 practical baud rates x 60 cases."""
 
 from __future__ import annotations
 

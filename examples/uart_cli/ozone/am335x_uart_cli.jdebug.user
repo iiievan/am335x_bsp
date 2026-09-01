@@ -1,12 +1,12 @@
 
 
 OpenDocument="UART.cpp", FilePath="/home/mbokastnev/code/am335x_bsp/src/hal/UART.cpp", Line=38
-OpenDocument="main.cpp", FilePath="/home/mbokastnev/code/am335x_bsp/examples/uart_cli/src/main.cpp", Line=428
+OpenDocument="main.cpp", FilePath="/home/mbokastnev/code/am335x_bsp/examples/uart_cli/src/main.cpp", Line=0
 OpenToolbar="Debug", Floating=0, x=0, y=0
 OpenWindow="Registers 1", DockArea=LEFT, x=0, y=0, w=706, h=934, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=642, h=443, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=642, h=445, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Memory 1", DockArea=BOTTOM, x=2, y=0, w=704, h=361, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x0
-OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=1, w=642, h=485, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=1, w=642, h=483, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Terminal", DockArea=BOTTOM, x=0, y=0, w=1188, h=361, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 OpenWindow="Console", DockArea=BOTTOM, x=1, y=0, w=590, h=361, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"

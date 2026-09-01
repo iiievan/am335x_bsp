@@ -14,6 +14,7 @@ namespace
     using Uart = HAL::UART::uart0_t;
 
     constexpr uint32_t TEST_TIMEOUT_LOOPS = 500'000'000u;
+    constexpr uint32_t RECOVERY_TIMEOUT_LOOPS = 1'000'000u;
 
     constexpr uint32_t DMA_FRAME_MAGIC = 0x55415254u; // "TRAU" in LE memory
     constexpr uint16_t DMA_FRAME_VERSION = 1u;
@@ -45,6 +46,10 @@ namespace
     volatile bool g_auto_interrupt_active{false};
     volatile bool g_auto_interrupt_complete{false};
     alignas(64) uint8_t g_dma_frame[DMA_MAX_FRAME_SIZE]{};
+    constexpr std::size_t GUARD_SIZE = 64u;
+    constexpr uint8_t GUARD_VALUE = 0xA5u;
+    alignas(64) uint8_t g_unaligned_storage[
+        GUARD_SIZE + DMA_MAX_FRAME_SIZE + GUARD_SIZE + 32u]{};
 
     void log_dma_hw_state(const char* phase, const uint8_t channel) noexcept
     {
@@ -266,6 +271,52 @@ namespace
         while (*cursor == ' ')
             ++cursor;
         return *cursor == '\0';
+    }
+
+    [[nodiscard]] bool parse_auto_special(const char* command,
+                                          const char* prefix,
+                                          const std::size_t prefix_length,
+                                          AutoMode& mode,
+                                          uint32_t& payload_size,
+                                          uint32_t& sequence,
+                                          uint32_t& seed) noexcept
+    {
+        for (std::size_t i = 0u; i < prefix_length; ++i)
+            if (command[i] != prefix[i])
+                return false;
+        const char* cursor = command + prefix_length;
+        if (!parse_auto_mode(cursor, mode) ||
+            !parse_u32(cursor, payload_size) ||
+            !parse_u32(cursor, sequence) ||
+            !parse_u32(cursor, seed))
+        {
+            return false;
+        }
+        while (*cursor == ' ')
+            ++cursor;
+        return *cursor == '\0';
+    }
+
+    [[nodiscard]] bool parse_auto_recover(const char* command,
+                                          AutoMode& mode,
+                                          uint32_t& payload_size,
+                                          uint32_t& sequence,
+                                          uint32_t& seed) noexcept
+    {
+        constexpr char prefix[] = "auto recover";
+        return parse_auto_special(command, prefix, sizeof(prefix) - 1u,
+                                  mode, payload_size, sequence, seed);
+    }
+
+    [[nodiscard]] bool parse_auto_offset(const char* command,
+                                         AutoMode& mode,
+                                         uint32_t& payload_size,
+                                         uint32_t& sequence,
+                                         uint32_t& seed) noexcept
+    {
+        constexpr char prefix[] = "auto offset";
+        return parse_auto_special(command, prefix, sizeof(prefix) - 1u,
+                                  mode, payload_size, sequence, seed);
     }
 
     [[nodiscard]] bool parse_auto_baud(const char* command,
@@ -983,6 +1034,205 @@ namespace
                   (tx_ok && crc_ok && data_ok) ? "PASS" : "FAIL");
     }
 
+    void run_timeout_recovery_probe(Uart& uart, const AutoMode mode,
+                                    const uint16_t sequence) noexcept
+    {
+        PollingRestore restore{uart};
+        uint8_t probe[DMA_ALIGNMENT]{};
+        char message[192]{};
+        bool initialized = false;
+        bool timed_out = false;
+
+        if (mode == AutoMode::POLLING)
+        {
+            uart.init_polling();
+            initialized = true;
+        }
+        else if (mode == AutoMode::ISR)
+        {
+            initialized = start_interrupt_receive(uart, probe, sizeof(probe));
+        }
+        else
+        {
+            initialized = uart.init_dma();
+        }
+
+        if (!initialized)
+        {
+            uart.init_polling();
+            uart.put_string("@RESULT mode=recover status=FAIL error=UART_INIT\n");
+            return;
+        }
+
+        std::snprintf(message, sizeof(message),
+                      "@READY mode=recover transport=%s sequence=%u stage=timeout\n",
+                      auto_mode_name(mode), static_cast<unsigned>(sequence));
+        uart.put_string(message);
+        uart.wait_tx_complete();
+
+        if (mode == AutoMode::POLLING)
+        {
+            uint32_t remaining = RECOVERY_TIMEOUT_LOOPS;
+            while (!uart.rx_data_available() && remaining != 0u)
+            {
+                --remaining;
+                __asm volatile("nop");
+            }
+            timed_out = remaining == 0u && !uart.rx_data_available();
+        }
+        else if (mode == AutoMode::ISR)
+        {
+            uint32_t remaining = RECOVERY_TIMEOUT_LOOPS;
+            while (!g_auto_interrupt_complete && remaining != 0u)
+            {
+                --remaining;
+                __asm volatile("nop");
+            }
+            timed_out = !g_auto_interrupt_complete;
+            reset_auto_interrupt_receiver();
+        }
+        else
+        {
+            HAL::UART::Uart0Dma dma{uart};
+            if (dma.init())
+            {
+                timed_out = !dma.receive(probe, sizeof(probe),
+                                         RECOVERY_TIMEOUT_LOOPS,
+                                         RECOVERY_TIMEOUT_LOOPS, 1u);
+                dma.stop();
+            }
+        }
+
+        uart.FIFO_clear(false, true);
+        uart.init_polling();
+        std::snprintf(message, sizeof(message),
+                      "@RESULT mode=recover transport=%s sequence=%u timeout=%s status=%s\n",
+                      auto_mode_name(mode), static_cast<unsigned>(sequence),
+                      timed_out ? "PASS" : "FAIL",
+                      timed_out ? "PASS" : "FAIL");
+        uart.put_string(message);
+        RTT_LOG_I("uart_auto", "RECOVER mode=%s seq=%u timeout=%s",
+                  auto_mode_name(mode), static_cast<unsigned>(sequence),
+                  timed_out ? "PASS" : "FAIL");
+    }
+
+    [[nodiscard]] bool guards_intact(const uint8_t* frame,
+                                     const std::size_t frame_size) noexcept
+    {
+        const auto* begin = g_unaligned_storage;
+        const auto* end = g_unaligned_storage + sizeof(g_unaligned_storage);
+        for (const uint8_t* cursor = begin; cursor < frame; ++cursor)
+            if (*cursor != GUARD_VALUE)
+                return false;
+        for (const uint8_t* cursor = frame + frame_size; cursor < end; ++cursor)
+            if (*cursor != GUARD_VALUE)
+                return false;
+        return true;
+    }
+
+    void run_unaligned_loop_test(Uart& uart, const AutoMode mode,
+                                 const uint32_t payload_size,
+                                 const uint16_t sequence,
+                                 const uint32_t seed) noexcept
+    {
+        PollingRestore restore{uart};
+        const std::size_t frame_size = dma_frame_size(payload_size);
+        for (auto& byte : g_unaligned_storage)
+            byte = GUARD_VALUE;
+        uint8_t* const frame = g_unaligned_storage + GUARD_SIZE + 1u;
+        char message[224]{};
+        bool initialized = false;
+        HAL::UART::Uart0Dma dma{uart};
+
+        if (mode == AutoMode::POLLING)
+        {
+            uart.init_polling();
+            initialized = true;
+        }
+        else if (mode == AutoMode::ISR)
+        {
+            initialized = start_interrupt_receive(uart, frame, frame_size);
+        }
+        else
+        {
+            initialized = uart.init_dma() && dma.init();
+        }
+
+        if (!initialized)
+        {
+            uart.init_polling();
+            uart.put_string("@RESULT mode=offset status=FAIL error=UART_INIT\n");
+            return;
+        }
+
+        std::snprintf(message, sizeof(message),
+                      "@READY mode=offset transport=%s sequence=%u frame=%u payload=%u offset=1\n",
+                      auto_mode_name(mode), static_cast<unsigned>(sequence),
+                      static_cast<unsigned>(frame_size),
+                      static_cast<unsigned>(payload_size));
+        uart.put_string(message);
+        uart.wait_tx_complete();
+
+        const bool rx_ok = mode == AutoMode::DMA
+            ? dma.receive(frame, frame_size, TEST_TIMEOUT_LOOPS,
+                          TEST_TIMEOUT_LOOPS, dma_timeout_epochs(uart))
+            : (mode == AutoMode::POLLING
+                ? receive_polling(uart, frame, frame_size)
+                : wait_interrupt_receive(uart, frame_size));
+
+        DmaFrameHeader header{};
+        auto* header_bytes = reinterpret_cast<uint8_t*>(&header);
+        for (std::size_t i = 0u; i < sizeof(header); ++i)
+            header_bytes[i] = frame[i];
+        const bool header_ok = rx_ok &&
+            header.magic == DMA_FRAME_MAGIC &&
+            header.version == DMA_FRAME_VERSION &&
+            header.sequence == sequence &&
+            header.payload_size == payload_size && header.seed == seed;
+        const uint16_t received_crc = rx_ok
+            ? static_cast<uint16_t>(frame[frame_size - 2u]) |
+              static_cast<uint16_t>(static_cast<uint16_t>(frame[frame_size - 1u]) << 8u)
+            : 0u;
+        const bool crc_ok = rx_ok && received_crc ==
+            crc16_ccitt_false(frame, frame_size - DMA_FRAME_CRC_SIZE);
+        uint32_t state = seed != 0u ? seed : 0x6D2B79F5u;
+        bool data_ok = header_ok;
+        for (std::size_t i = 0u; i < payload_size && data_ok; ++i)
+            data_ok = frame[DMA_FRAME_HEADER_SIZE + i] ==
+                static_cast<uint8_t>(xorshift32(state) & 0xFFu);
+        bool guard_ok = guards_intact(frame, frame_size);
+
+        bool tx_ok = false;
+        if (rx_ok)
+        {
+            if (mode == AutoMode::DMA)
+                tx_ok = dma.transmit(frame, frame_size, TEST_TIMEOUT_LOOPS,
+                                     dma_timeout_epochs(uart));
+            else
+            {
+                uart.put_data(frame, frame_size);
+                uart.wait_tx_complete();
+                tx_ok = true;
+            }
+        }
+        guard_ok = guard_ok && guards_intact(frame, frame_size);
+        dma.stop();
+        uart.init_polling();
+        const bool passed = rx_ok && tx_ok && crc_ok && data_ok && guard_ok;
+        std::snprintf(message, sizeof(message),
+                      "@RESULT mode=offset transport=%s sequence=%u rx=%u tx=%u crc=%s data=%s guard=%s status=%s\n",
+                      auto_mode_name(mode), static_cast<unsigned>(sequence),
+                      rx_ok ? static_cast<unsigned>(frame_size) : 0u,
+                      tx_ok ? static_cast<unsigned>(frame_size) : 0u,
+                      crc_ok ? "PASS" : "FAIL", data_ok ? "PASS" : "FAIL",
+                      guard_ok ? "PASS" : "FAIL", passed ? "PASS" : "FAIL");
+        uart.put_string(message);
+        RTT_LOG_I("uart_auto", "OFFSET mode=%s seq=%u frame=%u guard=%s status=%s",
+                  auto_mode_name(mode), static_cast<unsigned>(sequence),
+                  static_cast<unsigned>(frame_size),
+                  guard_ok ? "PASS" : "FAIL", passed ? "PASS" : "FAIL");
+    }
+
     void print_test_result(const Uart& uart, const char* name, const bool passed) noexcept
     {
         uart.put_string("[RESULT] ");
@@ -1099,6 +1349,34 @@ namespace
                 else
                     run_cpu_rx_test(uart, auto_mode, payload_size,
                                     static_cast<uint16_t>(sequence), seed);
+            }
+        }
+        else if (parse_auto_recover(command, auto_mode, payload_size,
+                                    sequence, seed))
+        {
+            if (payload_size == 0u || payload_size > DMA_MAX_PAYLOAD_SIZE ||
+                sequence > 0xFFFFu)
+            {
+                uart.put_string("@RESULT mode=recover status=FAIL error=BAD_ARGUMENT\n");
+            }
+            else
+            {
+                run_timeout_recovery_probe(uart, auto_mode,
+                                           static_cast<uint16_t>(sequence));
+            }
+        }
+        else if (parse_auto_offset(command, auto_mode, payload_size,
+                                   sequence, seed))
+        {
+            if (payload_size == 0u || payload_size > DMA_MAX_PAYLOAD_SIZE ||
+                sequence > 0xFFFFu)
+            {
+                uart.put_string("@RESULT mode=offset status=FAIL error=BAD_ARGUMENT\n");
+            }
+            else
+            {
+                run_unaligned_loop_test(uart, auto_mode, payload_size,
+                                        static_cast<uint16_t>(sequence), seed);
             }
         }
         else if (parse_auto_baud(command, baud_index))

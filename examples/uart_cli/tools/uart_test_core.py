@@ -33,6 +33,7 @@ FRAME_VERSION = 1
 HEADER = struct.Struct("<IHHII")
 DMA_ALIGNMENT = 8
 MAX_PAYLOAD_SIZE = 6144
+CASES_PER_SUITE = 60
 TRANSPORTS = ("polling", "isr", "dma")
 QUICK_BAUDS = (14400, 115200, 921600)
 
@@ -267,6 +268,77 @@ def run_rx_tail_case(ser: serial.Serial, transport: str, size: int, sequence: in
     return time.monotonic() - started
 
 
+def run_timeout_recovery_case(ser: serial.Serial, transport: str,
+                              sequence: int, seed: int,
+                              ready_delay: float, timeout: float) -> float:
+    payload_size = 256
+    command = (
+        f"auto recover {transport} {payload_size} {sequence} {seed}\n"
+    ).encode("ascii")
+    started = time.monotonic()
+    ser.write(command)
+    ser.flush()
+    ready = read_line_until(ser, b"@READY", time.monotonic() + max(2.0, timeout))
+    required = (
+        f"mode=recover transport={transport} sequence={sequence} stage=timeout"
+    ).encode("ascii")
+    if required not in ready:
+        raise TestFailure(f"invalid recovery READY response: {ready!r}")
+
+    # Intentionally send no bytes. The target must time out and release every
+    # resource belonging to the selected transport.
+    result = read_line_until(ser, b"@RESULT", time.monotonic() + max(2.0, timeout))
+    if (b"mode=recover" not in result or
+            f"transport={transport}".encode("ascii") not in result or
+            b"timeout=PASS" not in result or b"status=PASS" not in result):
+        raise TestFailure(
+            f"timeout/recovery probe failed: "
+            f"{result.decode('ascii', errors='replace').strip()}"
+        )
+
+    # A normal CRC loopback after the forced timeout proves that UART, ISR and
+    # EDMA resources were restored, rather than merely reporting a timeout.
+    run_cycle(ser, transport, payload_size, sequence, seed,
+              ready_delay, timeout)
+    return time.monotonic() - started
+
+
+def run_unaligned_case(ser: serial.Serial, transport: str,
+                       sequence: int, seed: int,
+                       ready_delay: float, timeout: float) -> float:
+    payload_size = MAX_PAYLOAD_SIZE
+    frame = make_frame(payload_size, sequence, seed)
+    command = (
+        f"auto offset {transport} {payload_size} {sequence} {seed}\n"
+    ).encode("ascii")
+    ser.write(command)
+    ser.flush()
+    ready = read_line_until(ser, b"@READY", time.monotonic() + max(2.0, timeout))
+    required = f"mode=offset transport={transport} sequence={sequence}".encode("ascii")
+    if (required not in ready or b"offset=1" not in ready or
+            f"frame={len(frame)}".encode("ascii") not in ready):
+        raise TestFailure(f"invalid unaligned READY response: {ready!r}")
+
+    time.sleep(ready_delay)
+    started = time.monotonic()
+    written = ser.write(frame)
+    ser.flush()
+    if written != len(frame):
+        raise TestFailure(f"short unaligned write: {written} of {len(frame)}")
+    echo = read_exactly(ser, len(frame), time.monotonic() + timeout)
+    if echo != frame:
+        raise TestFailure(f"unaligned echo mismatch: {first_mismatch(frame, echo)}")
+    result = read_line_until(ser, b"@RESULT", time.monotonic() + max(2.0, timeout))
+    if (b"mode=offset" not in result or b"crc=PASS" not in result or
+            b"data=PASS" not in result or b"guard=PASS" not in result or
+            b"status=PASS" not in result):
+        raise TestFailure(
+            f"unaligned/cache test failed: "
+            f"{result.decode('ascii', errors='replace').strip()}"
+        )
+    return time.monotonic() - started
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", help="serial device; CP210x is detected when omitted")
@@ -391,7 +463,9 @@ def run_tail_group(ser: serial.Serial, transport: str, mode: str, cycles: int,
 
 def run_complete_suite(ser: serial.Serial, transport: str,
                        args: argparse.Namespace) -> tuple[int, float]:
-    suite_cases = 12 + 2 * len(TAIL_SIZES)
+    suite_cases = 14 + 2 * len(TAIL_SIZES)
+    if suite_cases != CASES_PER_SUITE:
+        raise TestFailure(f"internal suite size mismatch: {suite_cases}")
     logging.info("SUITE transport=%s status=BEGIN cases=%d full_profile=SKIPPED",
                  transport, suite_cases)
     passed = 0
@@ -413,6 +487,38 @@ def run_complete_suite(ser: serial.Serial, transport: str,
         )
         passed += group_passed
         total_time += group_time
+
+    logging.info("SECTION transport=%s name=recovery status=BEGIN cases=1",
+                 transport)
+    try:
+        recovery_elapsed = run_timeout_recovery_case(
+            ser, transport, passed & 0xFFFF, suite_seed(args.seed, passed),
+            args.ready_delay, args.echo_timeout,
+        )
+    except (TestFailure, OSError) as error:
+        raise TestFailure(f"section=recovery: {error}") from error
+    passed += 1
+    total_time += recovery_elapsed
+    logging.info(
+        "SECTION transport=%s name=recovery status=PASS passed=1 failed=0 elapsed=%.3fs",
+        transport, recovery_elapsed,
+    )
+
+    logging.info("SECTION transport=%s name=unaligned-cache status=BEGIN cases=1",
+                 transport)
+    try:
+        unaligned_elapsed = run_unaligned_case(
+            ser, transport, passed & 0xFFFF, suite_seed(args.seed, passed),
+            args.ready_delay, args.echo_timeout,
+        )
+    except (TestFailure, OSError) as error:
+        raise TestFailure(f"section=unaligned-cache: {error}") from error
+    passed += 1
+    total_time += unaligned_elapsed
+    logging.info(
+        "SECTION transport=%s name=unaligned-cache status=PASS passed=1 failed=0 elapsed=%.3fs",
+        transport, unaligned_elapsed,
+    )
     logging.info(
         "SUITE transport=%s status=PASS passed=%d failed=0 full_profile=SKIPPED",
         transport, passed,
@@ -524,6 +630,8 @@ def main() -> int:
             raise TestFailure("transport selection self-test failed")
         if QUICK_BAUDS != (14400, 115200, 921600):
             raise TestFailure("quick baud selection self-test failed")
+        if 14 + 2 * len(TAIL_SIZES) != CASES_PER_SUITE:
+            raise TestFailure("suite case-count self-test failed")
         logging.info("SELF-TEST status=PASS crc=0x29B1 frame_size=%d", len(frame))
         return 0
     if not 1 <= payload_size <= MAX_PAYLOAD_SIZE:
@@ -574,7 +682,8 @@ def main() -> int:
                 rates_failed = 0
                 logging.info(
                     "BAUD_MATRIX status=BEGIN rates=%d transports=%d cases_per_rate=%d order=%s",
-                    len(selected_bauds), len(transports), 58 * len(transports),
+                    len(selected_bauds), len(transports),
+                    CASES_PER_SUITE * len(transports),
                     ",".join(str(BAUDRATES[index]) for index in selected_bauds),
                 )
                 for rate_number, baud_index in enumerate(selected_bauds, 1):

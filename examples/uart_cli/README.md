@@ -66,8 +66,8 @@ The port option can be omitted when exactly one CP210x adapter with VID:PID
 `10c4:ea60` is connected.
 
 The fast test is deliberately fixed and suitable for a future board-wide
-acceptance suite. It runs the same 58 cases in polling, ISR and DMA modes at
-14400, 115200 and 921600 baud: 522 hardware cases in total. The 58 cases per
+acceptance suite. It runs the same 60 cases in polling, ISR and DMA modes at
+14400, 115200 and 921600 baud: 540 hardware cases in total. The 60 cases per
 mode and rate are:
 
 - one 256-byte loopback;
@@ -75,9 +75,12 @@ mode and rate are:
 - ten 6144-byte stress loopbacks;
 - 23 exact-length TX cases covering every `size % 8` value;
 - 23 exact-length RX cases covering every `size % 8` value.
+- one forced-timeout case followed by a real CRC loopback recovery check;
+- one 6144-byte payload at cache-line offset `+1`, with guard regions checked
+  before and after the frame.
 
-The intended runtime is about 12 minutes on the tested setup and remains below
-15 minutes with normal host scheduling.
+The intended runtime is about 12–13 minutes on the tested setup and remains
+below 15 minutes with normal host scheduling.
 Actual time depends on the USB-UART adapter, host scheduling and configured
 timeouts. The runner stops on the first real hardware failure, records the
 failing transport/rate/section, and restores 115200 baud after every rate.
@@ -94,7 +97,7 @@ Use `uart_extended_autotest.py` when investigating a driver change, a corner
 case or a particular adapter. Its internal automation protocol is intentionally
 not shown in CLI help and is not intended for manual terminal use.
 
-Run the 58-case suite for all transports at the current 115200 baud:
+Run the 60-case suite for all transports at the current 115200 baud:
 
 ```bash
 python3 tools/uart_extended_autotest.py --mode suite \
