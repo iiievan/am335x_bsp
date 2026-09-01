@@ -1,0 +1,122 @@
+2026-09-01 11:39:06,257 INFO    UART mode=baud-matrix transports=dma profile=smoke port=/dev/ttyUSB0 baud=115200 payload=256 cycles=1
+2026-09-01 11:39:06,276 INFO    BAUD_MATRIX status=BEGIN rates=2 transports=1 cases_per_rate=60 order=460800,921600
+2026-09-01 11:39:06,282 INFO    BAUD_RATE status=BEGIN rate=1/2 index=13 baud=460800 timeout=30.0s
+2026-09-01 11:39:06,338 INFO    BAUD_SWITCH status=PASS old_index=11 old=115200 new_index=13 new=460800
+2026-09-01 11:39:06,338 INFO    SUITE transport=dma status=BEGIN cases=60 full_profile=SKIPPED
+2026-09-01 11:39:06,338 INFO    SECTION transport=dma name=smoke status=BEGIN cases=1 payload=256
+2026-09-01 11:39:06,453 INFO    transport=dma section=smoke cycle=1/1 PASS frame_payload=256 elapsed=0.014s roundtrip=35.3 KiB/s
+2026-09-01 11:39:06,453 INFO    SECTION name=smoke status=PASS passed=1 failed=0 elapsed=0.014s
+2026-09-01 11:39:06,453 INFO    SECTION transport=dma name=large-6144 status=BEGIN cases=1 payload=6144
+2026-09-01 11:39:06,833 INFO    transport=dma section=large-6144 cycle=1/1 PASS frame_payload=6144 elapsed=0.271s roundtrip=44.2 KiB/s
+2026-09-01 11:39:06,834 INFO    SECTION name=large-6144 status=PASS passed=1 failed=0 elapsed=0.271s
+2026-09-01 11:39:06,834 INFO    SECTION transport=dma name=stress status=BEGIN cases=10 payload=6144
+2026-09-01 11:39:07,213 INFO    transport=dma section=stress cycle=1/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 11:39:07,593 INFO    transport=dma section=stress cycle=2/10 PASS frame_payload=6144 elapsed=0.271s roundtrip=44.2 KiB/s
+2026-09-01 11:39:07,973 INFO    transport=dma section=stress cycle=3/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 11:39:08,353 INFO    transport=dma section=stress cycle=4/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 11:39:08,733 INFO    transport=dma section=stress cycle=5/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=43.9 KiB/s
+2026-09-01 11:39:09,113 INFO    transport=dma section=stress cycle=6/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 11:39:09,490 INFO    transport=dma section=stress cycle=7/10 PASS frame_payload=6144 elapsed=0.271s roundtrip=44.2 KiB/s
+2026-09-01 11:39:09,870 INFO    transport=dma section=stress cycle=8/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 11:39:10,252 INFO    transport=dma section=stress cycle=9/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 11:39:10,633 INFO    transport=dma section=stress cycle=10/10 PASS frame_payload=6144 elapsed=0.273s roundtrip=44.0 KiB/s
+2026-09-01 11:39:10,633 INFO    SECTION name=stress status=PASS passed=10 failed=0 elapsed=2.726s
+2026-09-01 11:39:10,633 INFO    SECTION transport=dma name=tx-tail status=BEGIN cases=23
+2026-09-01 11:39:10,667 INFO    section=tx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.000s
+2026-09-01 11:39:10,701 INFO    section=tx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.000s
+2026-09-01 11:39:10,736 INFO    section=tx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.000s
+2026-09-01 11:39:10,770 INFO    section=tx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.000s
+2026-09-01 11:39:10,806 INFO    section=tx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.000s
+2026-09-01 11:39:10,840 INFO    section=tx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.000s
+2026-09-01 11:39:10,874 INFO    section=tx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.000s
+2026-09-01 11:39:10,909 INFO    section=tx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.000s
+2026-09-01 11:39:10,929 INFO    section=tx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.000s
+2026-09-01 11:39:10,965 INFO    section=tx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.000s
+2026-09-01 11:39:11,000 INFO    section=tx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.001s
+2026-09-01 11:39:11,021 INFO    section=tx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.000s
+2026-09-01 11:39:11,057 INFO    section=tx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.001s
+2026-09-01 11:39:11,093 INFO    section=tx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.001s
+2026-09-01 11:39:11,129 INFO    section=tx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.000s
+2026-09-01 11:39:11,294 INFO    section=tx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.133s
+2026-09-01 11:39:11,472 INFO    section=tx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.133s
+2026-09-01 11:39:11,638 INFO    section=tx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.133s
+2026-09-01 11:39:11,816 INFO    section=tx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.135s
+2026-09-01 11:39:11,994 INFO    section=tx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.135s
+2026-09-01 11:39:12,172 INFO    section=tx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.133s
+2026-09-01 11:39:12,351 INFO    section=tx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.135s
+2026-09-01 11:39:12,529 INFO    section=tx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.135s
+2026-09-01 11:39:12,529 INFO    SECTION name=tx-tail status=PASS passed=23 failed=0 elapsed=1.076s
+2026-09-01 11:39:12,529 INFO    SECTION transport=dma name=rx-tail status=BEGIN cases=23
+2026-09-01 11:39:12,630 INFO    section=rx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.018s
+2026-09-01 11:39:12,731 INFO    section=rx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.018s
+2026-09-01 11:39:12,832 INFO    section=rx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.018s
+2026-09-01 11:39:12,933 INFO    section=rx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.018s
+2026-09-01 11:39:13,033 INFO    section=rx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.018s
+2026-09-01 11:39:13,134 INFO    section=rx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.018s
+2026-09-01 11:39:13,235 INFO    section=rx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.018s
+2026-09-01 11:39:13,335 INFO    section=rx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.018s
+2026-09-01 11:39:13,437 INFO    section=rx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.019s
+2026-09-01 11:39:13,539 INFO    section=rx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.019s
+2026-09-01 11:39:13,641 INFO    section=rx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.019s
+2026-09-01 11:39:22,742 ERROR   BAUD_RATE status=FAIL rate=1/2 index=13 baud=460800 error=section=rx-tail case=12/23 size=13 tail=5: device RX failure: @RESULT mode=rx sequence=46 size=13 dma=8 tail=5 rx=0 crc=FAIL data=FAIL hw_timeout=PASS status=FAIL
+2026-09-01 11:39:22,781 INFO    BAUD_SWITCH status=PASS old_index=13 old=460800 new_index=11 new=115200
+2026-09-01 11:39:22,789 INFO    BAUD_RATE status=BEGIN rate=2/2 index=14 baud=921600 timeout=30.0s
+2026-09-01 11:39:22,845 INFO    BAUD_SWITCH status=PASS old_index=11 old=115200 new_index=14 new=921600
+2026-09-01 11:39:22,845 INFO    SUITE transport=dma status=BEGIN cases=60 full_profile=SKIPPED
+2026-09-01 11:39:22,845 INFO    SECTION transport=dma name=smoke status=BEGIN cases=1 payload=256
+2026-09-01 11:39:22,945 INFO    transport=dma section=smoke cycle=1/1 PASS frame_payload=256 elapsed=0.008s roundtrip=66.2 KiB/s
+2026-09-01 11:39:22,945 INFO    SECTION name=smoke status=PASS passed=1 failed=0 elapsed=0.008s
+2026-09-01 11:39:22,945 INFO    SECTION transport=dma name=large-6144 status=BEGIN cases=1 payload=6144
+2026-09-01 11:39:23,181 INFO    transport=dma section=large-6144 cycle=1/1 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 11:39:23,181 INFO    SECTION name=large-6144 status=PASS passed=1 failed=0 elapsed=0.137s
+2026-09-01 11:39:23,181 INFO    SECTION transport=dma name=stress status=BEGIN cases=10 payload=6144
+2026-09-01 11:39:23,417 INFO    transport=dma section=stress cycle=1/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 11:39:23,652 INFO    transport=dma section=stress cycle=2/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 11:39:23,888 INFO    transport=dma section=stress cycle=3/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 11:39:24,111 INFO    transport=dma section=stress cycle=4/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.4 KiB/s
+2026-09-01 11:39:24,346 INFO    transport=dma section=stress cycle=5/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 11:39:24,582 INFO    transport=dma section=stress cycle=6/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 11:39:24,817 INFO    transport=dma section=stress cycle=7/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 11:39:25,053 INFO    transport=dma section=stress cycle=8/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 11:39:25,289 INFO    transport=dma section=stress cycle=9/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.5 KiB/s
+2026-09-01 11:39:25,512 INFO    transport=dma section=stress cycle=10/10 PASS frame_payload=6144 elapsed=0.137s roundtrip=87.4 KiB/s
+2026-09-01 11:39:25,512 INFO    SECTION name=stress status=PASS passed=10 failed=0 elapsed=1.372s
+2026-09-01 11:39:25,512 INFO    SECTION transport=dma name=tx-tail status=BEGIN cases=23
+2026-09-01 11:39:25,538 INFO    section=tx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.000s
+2026-09-01 11:39:25,563 INFO    section=tx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.000s
+2026-09-01 11:39:25,589 INFO    section=tx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.000s
+2026-09-01 11:39:25,615 INFO    section=tx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.000s
+2026-09-01 11:39:25,641 INFO    section=tx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.000s
+2026-09-01 11:39:25,667 INFO    section=tx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.000s
+2026-09-01 11:39:25,692 INFO    section=tx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.000s
+2026-09-01 11:39:25,718 INFO    section=tx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.000s
+2026-09-01 11:39:25,729 INFO    section=tx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.000s
+2026-09-01 11:39:25,756 INFO    section=tx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.001s
+2026-09-01 11:39:25,767 INFO    section=tx-tail case=11/23 PASS size=12 dma=8 tail=4 elapsed=0.000s
+2026-09-01 11:39:25,794 INFO    section=tx-tail case=12/23 PASS size=13 dma=8 tail=5 elapsed=0.000s
+2026-09-01 11:39:25,806 INFO    section=tx-tail case=13/23 PASS size=14 dma=8 tail=6 elapsed=0.001s
+2026-09-01 11:39:25,833 INFO    section=tx-tail case=14/23 PASS size=15 dma=8 tail=7 elapsed=0.001s
+2026-09-01 11:39:25,859 INFO    section=tx-tail case=15/23 PASS size=16 dma=16 tail=0 elapsed=0.000s
+2026-09-01 11:39:25,960 INFO    section=tx-tail case=16/23 PASS size=6144 dma=6144 tail=0 elapsed=0.067s
+2026-09-01 11:39:26,061 INFO    section=tx-tail case=17/23 PASS size=6145 dma=6144 tail=1 elapsed=0.067s
+2026-09-01 11:39:26,162 INFO    section=tx-tail case=18/23 PASS size=6146 dma=6144 tail=2 elapsed=0.067s
+2026-09-01 11:39:26,263 INFO    section=tx-tail case=19/23 PASS size=6147 dma=6144 tail=3 elapsed=0.067s
+2026-09-01 11:39:26,364 INFO    section=tx-tail case=20/23 PASS size=6148 dma=6144 tail=4 elapsed=0.067s
+2026-09-01 11:39:26,465 INFO    section=tx-tail case=21/23 PASS size=6149 dma=6144 tail=5 elapsed=0.067s
+2026-09-01 11:39:26,567 INFO    section=tx-tail case=22/23 PASS size=6150 dma=6144 tail=6 elapsed=0.067s
+2026-09-01 11:39:26,669 INFO    section=tx-tail case=23/23 PASS size=6151 dma=6144 tail=7 elapsed=0.067s
+2026-09-01 11:39:26,669 INFO    SECTION name=tx-tail status=PASS passed=23 failed=0 elapsed=0.538s
+2026-09-01 11:39:26,669 INFO    SECTION transport=dma name=rx-tail status=BEGIN cases=23
+2026-09-01 11:39:26,761 INFO    section=rx-tail case=1/23 PASS size=2 dma=0 tail=2 elapsed=0.017s
+2026-09-01 11:39:26,854 INFO    section=rx-tail case=2/23 PASS size=3 dma=0 tail=3 elapsed=0.018s
+2026-09-01 11:39:26,946 INFO    section=rx-tail case=3/23 PASS size=4 dma=0 tail=4 elapsed=0.017s
+2026-09-01 11:39:27,038 INFO    section=rx-tail case=4/23 PASS size=5 dma=0 tail=5 elapsed=0.017s
+2026-09-01 11:39:27,131 INFO    section=rx-tail case=5/23 PASS size=6 dma=0 tail=6 elapsed=0.018s
+2026-09-01 11:39:27,223 INFO    section=rx-tail case=6/23 PASS size=7 dma=0 tail=7 elapsed=0.017s
+2026-09-01 11:39:27,315 INFO    section=rx-tail case=7/23 PASS size=8 dma=8 tail=0 elapsed=0.017s
+2026-09-01 11:39:27,408 INFO    section=rx-tail case=8/23 PASS size=9 dma=8 tail=1 elapsed=0.018s
+2026-09-01 11:39:27,501 INFO    section=rx-tail case=9/23 PASS size=10 dma=8 tail=2 elapsed=0.018s
+2026-09-01 11:39:27,594 INFO    section=rx-tail case=10/23 PASS size=11 dma=8 tail=3 elapsed=0.018s
+2026-09-01 11:39:27,687 ERROR   BAUD_RATE status=FAIL rate=2/2 index=14 baud=921600 error=section=rx-tail case=11/23 size=12 tail=4: device RX failure: @RESULT mode=rx sequence=45 size=12 dma=8 tail=4 rx=12 crc=FAIL data=PASS hw_timeout=PASS status=FAIL
+2026-09-01 11:39:27,723 INFO    BAUD_SWITCH status=PASS old_index=14 old=921600 new_index=11 new=115200
+2026-09-01 11:39:27,723 INFO    BAUD_MATRIX status=FAIL rates_passed=0 rates_unsupported=0 rates_failed=2 hardware_cases_passed=0
