@@ -88,7 +88,6 @@ add_am335x_firmware(${FREERTOS_EXAMPLE_TARGET}
         SOURCES
         src/main.cpp
         src/init.cpp
-        src/edma_test.cpp
 
         LIBRARIES
         am335x_freertos_port

@@ -206,8 +206,6 @@ static void rtt_cache_clean()
     cp15_DSB_ISB_sync_barrier();
 }
 
-static void input_callback(char c);
-
 bool init_board()
 {
     copy_vector_table();
@@ -227,17 +225,12 @@ bool init_board()
 
     Board::init_user_leds();
 
-    Board::get_uart0().init(input_callback);
+    Board::get_uart0().init_polling();
 
     Board::get_uart0().put_string((char *)"\r\n Application started... \r\n");
     Board::get_uart0().put_string((char *)"UART0 initialized... \r\n");
 
     return true;
-}
-
-void input_callback(char c)
-{
-    Board::get_uart0().put_char(c);
 }
 
 static void mpu_pll_init()

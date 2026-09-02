@@ -170,11 +170,7 @@ bool init_board()
 
     Board::init_user_leds();
 
-    if (!Board::get_uart0().init_dma())
-    {
-        RTT_LOG_E(TAG, "UART0 DMA-mode initialization failed");
-        return false;
-    }
+    Board::get_uart0().init_polling();
 
     HAL::EDMA::module_clock_config();
     HAL::EDMA::init(REGS::EDMA::EVENT_Q0);

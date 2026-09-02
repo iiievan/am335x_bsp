@@ -1,5 +1,3 @@
-#include <stdint.h>
-#include <stdbool.h>
 #include "init.h"
 #include "rtt/rtt_log.h"
 #include "hal/boards/beaglebone_black.hpp"

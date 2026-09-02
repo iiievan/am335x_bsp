@@ -1,13 +1,9 @@
-#include <stdint.h>
-#include <stdbool.h>
 #include "init.h"
 #include "rtt/rtt_log.h"
 #include "hal/boards/beaglebone_black.hpp"
 #include "hal/sysTimer.hpp"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "hal/EDMA/EDMA.hpp"
-#include "edma_test.h"
 #include "hal/PERF.hpp"
 
 #define TAG "main"
@@ -45,22 +41,20 @@ void vPerfBenchmarkTask(void *pvParameters)
 {
     (void)pvParameters;
 
-    // 1. Настройка PMU на отслеживание промахов Data TLB и сбоев предсказателя переходов
+    // Configuring the PMU to Monitor Data TLB Misses and Branch Predictor Failures
     HAL::PERF::configure_event(HAL::PERF::Counter::COUNTER_0, HAL::PERF::EventType::L1D_TLB_REFILL);
     HAL::PERF::configure_event(HAL::PERF::Counter::COUNTER_1, HAL::PERF::EventType::BRANCH_MISPRED);
 
-    // 2. Запуск синтетического теста производительности оперативной памяти
+    // Running a synthetic RAM performance test
     HAL::PERF::run_ddr_benchmark();
 
     for(;;)
     {
         {
             HAL::PERF::ScopedProfiler prof("EDMA_EXEC");
-
-            edma_test();
         }
 
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 

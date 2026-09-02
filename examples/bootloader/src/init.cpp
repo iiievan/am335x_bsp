@@ -159,8 +159,6 @@ static void rtt_cache_clean()
     cp15_DSB_ISB_sync_barrier();
 }
 
-static void input_callback(char c);
-
 bool init_board()
 {
     copy_vector_table();
@@ -192,7 +190,7 @@ bool init_board()
     Board::init_user_leds();
 
     RTT_CHECK_MODULE_SIZE(REGS::UART::AM335x_UART_Type,0x84);
-    Board::get_uart0().init(input_callback);
+    Board::get_uart0().init_polling();
 
     HAL::INTC::master_IRQ_enable();
 
@@ -219,15 +217,7 @@ bool init_board()
     Board::get_uart0().put_string((char *)"DDR initialization successful! \r\n");
     RTT_LOG_I(TAG, "DDR initialization successful!");
 
-    cp15_MMU_enable();
-    HAL::CACHE::enable(HAL::CACHE::Type::ALL);
-
     return true;
-}
-
-void input_callback(char c)
-{
-    Board::get_uart0().put_char(c);
 }
 
 static void mpu_pll_init()

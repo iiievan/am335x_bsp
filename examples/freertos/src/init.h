@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
 bool init_board(void);
-void delay_ms(const uint32_t ms);
+void delay_ms(uint32_t ms);
 
 #ifdef __cplusplus
 }
