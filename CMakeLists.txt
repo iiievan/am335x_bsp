@@ -37,8 +37,7 @@ set(BSP_SOURCES  src/hal/INTC.cpp
                  src/startup/cxx_support.cpp
                  src/hal/UART.hpp
                  src/hal/UART.cpp
-                 src/hal/UartDma.hpp
-                 src/hal/detail/UartDmaBackend.hpp
+                 src/hal/EDMA/periph/UartBackend.hpp
                  src/hal/EDMA/EDMA.cpp
                  src/hal/MMCSD.hpp
                  src/hal/MMCSD.cpp

@@ -1,5 +1,5 @@
-#ifndef HAL_UART_DETAIL_DMA_BACKEND_HPP
-#define HAL_UART_DETAIL_DMA_BACKEND_HPP
+#ifndef HAL_EDMA_PERIPH_UART_BACKEND_HPP
+#define HAL_EDMA_PERIPH_UART_BACKEND_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -9,22 +9,22 @@
 #include "hal/EDMA/ParamBuilder.hpp"
 #include "startup/cp15.h"
 
-namespace HAL::UART::detail
+namespace HAL::EDMA::periph
 {
     template<class Owner, uint8_t TxChannel, uint8_t RxChannel,
              uint8_t DummyParam>
-    class UartDmaBackend final
+    class UartBackend final
     {
     public:
-        explicit UartDmaBackend(Owner& owner) noexcept : m_owner(owner) {}
-        ~UartDmaBackend() noexcept { stop(); }
+        explicit UartBackend(Owner& owner) noexcept : m_owner(owner) {}
+        ~UartBackend() noexcept { stop(); }
 
-        UartDmaBackend(const UartDmaBackend&) = delete;
-        UartDmaBackend& operator=(const UartDmaBackend&) = delete;
-        UartDmaBackend(UartDmaBackend&&) = delete;
-        UartDmaBackend& operator=(UartDmaBackend&&) = delete;
+        UartBackend(const UartBackend&) = delete;
+        UartBackend& operator=(const UartBackend&) = delete;
+        UartBackend(UartBackend&&) = delete;
+        UartBackend& operator=(UartBackend&&) = delete;
 
-        [[nodiscard]] bool init(const DMAConfig& config) noexcept
+        [[nodiscard]] bool init(const HAL::UART::DMAConfig& config) noexcept
         {
             if (m_initialized)
                 return true;
@@ -185,7 +185,7 @@ namespace HAL::UART::detail
         Owner& m_owner;
         HAL::EDMA::DmaChannel m_tx{TxChannel};
         HAL::EDMA::DmaChannel m_rx{RxChannel};
-        DMAConfig m_config{};
+        HAL::UART::DMAConfig m_config{};
         bool m_initialized{false};
 
         [[nodiscard]] static uint32_t address_of(const void* pointer) noexcept
@@ -193,7 +193,7 @@ namespace HAL::UART::detail
             return static_cast<uint32_t>(reinterpret_cast<uintptr_t>(pointer));
         }
 
-        [[nodiscard]] static bool valid(const DMAConfig& config) noexcept
+        [[nodiscard]] static bool valid(const HAL::UART::DMAConfig& config) noexcept
         {
             return TxChannel != 0xFFu && RxChannel != 0xFFu &&
                    TxChannel != RxChannel && DummyParam != TxChannel &&
@@ -218,4 +218,4 @@ namespace HAL::UART::detail
     };
 }
 
-#endif
+#endif  //HAL_EDMA_PERIPH_UART_BACKEND_HPP

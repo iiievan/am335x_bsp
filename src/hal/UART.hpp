@@ -35,7 +35,7 @@ namespace HAL::UART
 
 }
 
-#include "hal/detail/UartDmaBackend.hpp"
+#include "hal/EDMA/periph/UartBackend.hpp"
 
 namespace HAL::UART
 {
@@ -148,8 +148,8 @@ namespace HAL::UART
     static serial_user_callback m_user_callback;
     static uart* m_active_instance;
     IOMode m_io_mode{IOMode::UNINITIALIZED};
-    using DmaBackend = detail::UartDmaBackend<uart, TxDmaChannel,
-                                              RxDmaChannel, DummyParam>;
+    using DmaBackend = EDMA::periph::UartBackend<uart, TxDmaChannel,
+                                                 RxDmaChannel, DummyParam>;
     friend DmaBackend;
     DmaBackend m_dma{*this};
 
@@ -186,7 +186,8 @@ namespace HAL::UART
         // Re-checking LSR.RXFIFOE after every RHR access can over-read once at
         // the empty boundary, especially when the character timeout fires at
         // high baud rates.
-        auto fifo_level = static_cast<std::size_t>(m_instance.RXFIFO_LVL.b.RXFIFO_LVL);
+        std::size_t fifo_level =
+            static_cast<std::size_t>(m_instance.RXFIFO_LVL.b.RXFIFO_LVL);
         while (fifo_level != 0u)
         {
             --fifo_level;

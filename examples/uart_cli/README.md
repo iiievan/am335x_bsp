@@ -21,8 +21,9 @@ uart.init_polling();
 
 Changing mode releases the previous mode's interrupt and EDMA resources before
 acquiring the new ones. A failed DMA initialization rolls the object back to a
-usable polling state. `hal/UartDma.hpp` remains only as a source-compatibility
-adapter for older applications.
+usable polling state. DMA implementation details live in
+`hal/EDMA/detail/UartBackend.hpp`; applications do not include that header
+directly.
 
 ## Source layout
 
