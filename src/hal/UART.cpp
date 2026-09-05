@@ -111,6 +111,37 @@ namespace HAL::UART
         wait_tx_complete();
     }
 
+    bool uart_base::put_data_bounded(const void* data, const std::size_t size,
+                                     uint32_t timeout_loops) const noexcept
+    {
+        if (size == 0u)
+            return true;
+        if (data == nullptr)
+            return false;
+        const auto* bytes = static_cast<const uint8_t*>(data);
+        for (std::size_t i = 0u; i < size; ++i)
+        {
+            while (tx_fifo_full())
+            {
+                if (timeout_loops == 0u)
+                {
+                    cp15_DSB_barrier();
+                    return false;
+                }
+                --timeout_loops;
+            }
+            m_instance.THR.reg = bytes[i];
+        }
+        cp15_DSB_barrier();
+        while (tx_busy())
+        {
+            if (timeout_loops == 0u)
+                return false;
+            --timeout_loops;
+        }
+        return true;
+    }
+
     /**
      * @brief  This API configures the operating mode for the UART instance.
      *         The different operating modes are:

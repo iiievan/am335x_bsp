@@ -2,6 +2,7 @@
 #include "rtt/rtt_log.h"
 #include "hal/boards/beaglebone_black.hpp"
 #include "hal/sysTimer.hpp"
+#include "log/sinks/UartSink.hpp"
 
 
 #define TAG "main"
@@ -15,6 +16,11 @@ void delay_ms(const uint32_t ms)
 
 int main ()
 {
+#if AM335X_BOOT_LOG_UART
+    // Registered before init_board, but silent until UART0 enters POLLING.
+    // Lifetime covers board initialization and the entire foreground loop.
+    HAL::LOG::UartSink uart_log{Board::get_uart0()};
+#endif
     bool init_sts = false;
 
     init_sts = init_board();
@@ -26,6 +32,16 @@ int main ()
     }
 
     RTT_LOG_I(TAG, "Board initialization seccess!");
+#if AM335X_BOOT_LOG_UART
+    if (!uart_log.registered())
+        LOG_E("LOG_TEST", "UART sink registration failed");
+    else
+    {
+        LOG_I("LOG_TEST", "RTT + UART: shared record 1/2");
+        delay_ms(10u);
+        LOG_I("LOG_TEST", "RTT + UART: shared record 2/2");
+    }
+#endif
 
     uint8_t counter = 0;
     while(true)

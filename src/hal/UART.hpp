@@ -80,6 +80,9 @@ namespace HAL::UART
         [[nodiscard]] bool tx_fifo_empty() const noexcept;
         [[nodiscard]] bool tx_busy() const noexcept;
         void put_data(const void* data, std::size_t size) const noexcept;
+        // Bounded polling TX for diagnostics. Caller must own the UART TX path.
+        [[nodiscard]] bool put_data_bounded(const void* data, std::size_t size,
+                                            uint32_t timeout_loops) const noexcept;
 
         /// <--- FIFO management methods TRM 19.3 ---> ///
         [[gnu::noinline]] void FIFO_register_write(REGS::UART::FCR_reg_t fcr) noexcept;
@@ -503,6 +506,7 @@ namespace HAL::UART
             using uart_base::DMA_disable;
             using uart_base::FIFO_clear;
             using uart_base::put_data;
+            using uart_base::put_data_bounded;
             using uart_base::wait_tx_complete;
     };
 

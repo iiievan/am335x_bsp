@@ -1,4 +1,5 @@
 set(BOOTLOADER_TARGET am335x_boot)
+option(AM335X_BOOT_LOG_UART "Mirror bootloader logs to polling UART0" ON)
 
 set(BOOTLOADER_LINKER_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/am335x_boot.ld")
 
@@ -25,6 +26,8 @@ add_am335x_firmware(${BOOTLOADER_TARGET}
 
 # ELF будет называться am335x_boot.elf.
 set_target_properties(${BOOTLOADER_TARGET} PROPERTIES SUFFIX ".elf")
+target_compile_definitions(${BOOTLOADER_TARGET} PRIVATE
+        AM335X_BOOT_LOG_UART=$<BOOL:${AM335X_BOOT_LOG_UART}>)
 
 # ============================================================================
 # Генерация MLO
