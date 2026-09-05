@@ -152,6 +152,7 @@ static void copy_vector_table()
     }
 }
 
+#if AM335X_BOOT_LOG_RTT
 static void rtt_cache_clean()
 {
     // Очищаем и инвалидируем кэш для RTT области
@@ -161,11 +162,15 @@ static void rtt_cache_clean()
     cp15_DSB_ISB_sync_barrier();
 }
 
+#endif
+
 bool init_board()
 {
     copy_vector_table();
 
+#if AM335X_BOOT_LOG_RTT
     rtt_log_init();
+#endif
     RTT_LOG_I(TAG, "=== AM335x Boot Loader Starting ===");
     cp15_MMU_disable();
     cp15_D_cache_disable();
@@ -173,7 +178,9 @@ bool init_board()
 
     cp15_DSB_ISB_sync_barrier();
 
+#if AM335X_BOOT_LOG_RTT
     rtt_cache_clean();
+#endif
 
     mpu_pll_init();
     core_pll_init();

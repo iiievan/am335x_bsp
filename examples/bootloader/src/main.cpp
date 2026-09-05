@@ -37,9 +37,11 @@ int main ()
         LOG_E("LOG_TEST", "UART sink registration failed");
     else
     {
-        LOG_I("LOG_TEST", "RTT + UART: shared record 1/2");
+        LOG_I("LOG_TEST", "Outputs RTT=%u UART=1; record 1/2",
+              unsigned(AM335X_BOOT_LOG_RTT));
         delay_ms(10u);
-        LOG_I("LOG_TEST", "RTT + UART: shared record 2/2");
+        LOG_I("LOG_TEST", "Outputs RTT=%u UART=1; record 2/2",
+              unsigned(AM335X_BOOT_LOG_RTT));
     }
 #endif
 

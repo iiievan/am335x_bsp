@@ -1,0 +1,12 @@
+if(NOT NM OR NOT ELF)
+    message(FATAL_ERROR "CheckNoRtt requires NM and ELF")
+endif()
+execute_process(COMMAND "${NM}" -a "${ELF}"
+        RESULT_VARIABLE result OUTPUT_VARIABLE symbols ERROR_VARIABLE errors)
+if(NOT result EQUAL 0)
+    message(FATAL_ERROR "nm failed: ${errors}")
+endif()
+if(symbols MATCHES "SEGGER_RTT|rtt_backend|rtt_log_init|_acUpBuffer|_acDownBuffer")
+    message(FATAL_ERROR "RTT symbols found in RTT-disabled bootloader")
+endif()
+message(STATUS "Bootloader: no SEGGER RTT symbols")

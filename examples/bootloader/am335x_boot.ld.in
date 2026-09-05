@@ -2,8 +2,8 @@
 
 MEMORY
 {
-    SRAM (rwx) : ORIGIN = 0x402F0400, LENGTH = 0x1FBFF
-    RTT_RAM (rw) : ORIGIN = 0x40300000, LENGTH = 0x10000
+    SRAM (rwx) : ORIGIN = 0x402F0400, LENGTH = @BOOT_SRAM_LENGTH@
+    RTT_RAM (rw) : ORIGIN = @BOOT_RTT_ORIGIN@, LENGTH = @BOOT_RTT_LENGTH@
     /* 64KB as in segger documentation
        Гранулярность MMU страниц: На ARMv7-A минимальный размер страницы MMU - 4KB (small page) или 64KB (large page).
        Когда память кешируется/не кешируется, это делается на уровне страниц MMU.
@@ -27,7 +27,8 @@ UND_STACK_SIZE  = 0x8;
 ABT_STACK_SIZE  = 0x8;
 HEAP_SIZE       = 0x0;      /* 0b */
 
-RTT_BUFFER_SIZE = 0x1000;   /* 4KB */
+/* Reserved region size, not SEGGER's payload buffer size. Zero when disabled. */
+RTT_BUFFER_SIZE = @BOOT_RTT_LENGTH@;
 
 __SRAM_START = ORIGIN(SRAM);
 __SRAM_END = ORIGIN(SRAM) + LENGTH(SRAM);
@@ -134,17 +135,13 @@ SECTIONS
     PROVIDE(_end = __heap_end);
     PROVIDE(__end = __heap_end);
 
+    __end_of_memory = .;
+    ASSERT(__end_of_memory <= __SRAM_END, "Error: SRAM overflow!")
+
     .rtt (NOLOAD) : ALIGN(64) {  /* Выравнивание по 64 байта (размер кэш-линии) */
-        __rtt_start = .;
         KEEP(*(.rtt))
         KEEP(*(.rtt.*))
-        . = ALIGN(64);
-        __rtt_end = .;
     } > RTT_RAM
 
-    /* Конец используемой памяти */
-    __end_of_memory = .;
-
-    /* Проверка переполнения */
-    ASSERT(__end_of_memory <= __SRAM_END, "Error: SRAM overflow!")
+    ASSERT(SIZEOF(.rtt) <= RTT_BUFFER_SIZE, "Error: RTT present while disabled or RTT overflow!")
 }

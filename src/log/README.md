@@ -89,8 +89,9 @@ records. To restore the previous UART output, configure
 UART CLI and all other examples are unchanged: binary autotests must not receive
 UART log text. The CLI's uninitialized timestamp timer is not changed in this step.
 
-RTT-off bootloader linking and OCMC repartitioning remain a separate step.
-This change does not modify any linker script or claim to reclaim RTT memory.
+Step 3 now adds RTT-off bootloader linking and OCMC repartitioning. See
+`examples/bootloader/LOGGING.md`: bootloader RTT defaults OFF, UART defaults ON.
+The dual-output test above requires `AM335X_BOOT_LOG_RTT=ON` in this version.
 
 Host checks (no board/toolchain required): `bash tests/log/run_host_tests.sh`.
 The host test uses the real formatter and RTT sink with fake transports; it does
