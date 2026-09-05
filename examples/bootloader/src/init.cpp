@@ -10,6 +10,8 @@
 #include "hal/sysTimer.hpp"
 #include "hal/boards/beaglebone_black.hpp"
 //#include "hal/MMU.hpp"
+#include <cstdio>
+
 #include "hal/CACHE.hpp"
 
 

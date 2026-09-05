@@ -3,15 +3,15 @@
 OpenDocument="am335x_edma_test.jdebug", FilePath="/home/mbokastnev/code/am335x_bsp/examples/edma_test/ozone/am335x_edma_test.jdebug", Line=0
 OpenDocument="main.cpp", FilePath="/home/mbokastnev/code/am335x_bsp/examples/edma_test/src/main.cpp", Line=0
 OpenToolbar="Debug", Floating=0, x=0, y=0
-OpenWindow="Registers 1", DockArea=LEFT, x=0, y=0, w=567, h=653, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
-OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=597, h=316, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Memory 1", DockArea=BOTTOM, x=2, y=0, w=685, h=642, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x0
-OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=1, w=597, h=331, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Terminal", DockArea=BOTTOM, x=0, y=0, w=1222, h=642, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
-OpenWindow="Console", DockArea=BOTTOM, x=1, y=0, w=575, h=642, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Registers 1", DockArea=LEFT, x=0, y=0, w=438, h=884, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, FilteredItems=[], RefreshRate=1
+OpenWindow="Disassembly", DockArea=RIGHT, x=0, y=0, w=426, h=430, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Memory 1", DockArea=BOTTOM, x=2, y=0, w=446, h=356, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0, EditorAddress=0x0
+OpenWindow="Watched Data 1", DockArea=RIGHT, x=0, y=1, w=426, h=448, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Terminal", DockArea=BOTTOM, x=0, y=0, w=795, h=356, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
+OpenWindow="Console", DockArea=BOTTOM, x=1, y=0, w=373, h=356, FilterBarShown=0, TotalValueBarShown=0, ToolBarShown=0
 SmartViewPlugin="", Page="", Toolbar="Hidden", Window="SmartView 1"
 TableHeader="Power Sampling", SortCol="None", SortOrder="ASCENDING", VisibleCols=["Index";"Time";"Ch 0"], ColWidths=[100;100;100]
 TableHeader="Registers 1", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[193;184;77;315]
-TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Access"], ColWidths=[197;100;300;100]
+TableHeader="Watched Data 1", SortCol="Expression", SortOrder="ASCENDING", VisibleCols=["Expression";"Value";"Location";"Access"], ColWidths=[197;100;300;0]
 TableHeader="RegisterSelectionDialog", SortCol="None", SortOrder="ASCENDING", VisibleCols=[], ColWidths=[]
 TableHeader="TargetExceptionDialog", SortCol="Name", SortOrder="ASCENDING", VisibleCols=["Name";"Value";"Address";"Description"], ColWidths=[27;27;27;26]

@@ -1,7 +1,5 @@
-/*=======================================================================*/
-/*  Includes                                                             */
-/*=======================================================================*/
 #include "init.h"
+#include <cstdio>
 #include "startup/cp15.h"
 #include "regs/REGS.hpp"
 #include "rtt/rtt_log.h"

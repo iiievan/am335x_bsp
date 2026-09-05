@@ -91,6 +91,7 @@ add_am335x_firmware(${FREERTOS_EXAMPLE_TARGET}
 
         LIBRARIES
         am335x_freertos_port
+        am335x::log_rtt
 
         INCLUDE_DIRECTORIES
         "${CMAKE_CURRENT_SOURCE_DIR}/src"

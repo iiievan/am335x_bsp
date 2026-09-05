@@ -11,6 +11,7 @@ add_am335x_firmware(${EDMA_TEST_TARGET}
 
         LIBRARIES
         am335x::bsp
+        am335x::log_rtt
         am335x::baremetal_runtime
 
         INCLUDE_DIRECTORIES

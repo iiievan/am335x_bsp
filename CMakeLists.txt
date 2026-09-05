@@ -11,6 +11,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(AM335X_BSP_BUILD_EXAMPLES "Build AM335x BSP examples" ON)
 option(BSP_USE_HARD_FLOAT "Use hardware floating point" ON)
+option(AM335X_BSP_ENABLE_RTT_BACKEND "Build the optional SEGGER RTT log backend" ON)
+set(BSP_LOG_COMPILED_LEVEL 6 CACHE STRING
+        "Maximum compiled log level: 0=off, 2=error, 3=warn, 4=info, 5=debug, 6=trace")
+
+if(NOT BSP_LOG_COMPILED_LEVEL MATCHES "^[0-6]$")
+    message(FATAL_ERROR "BSP_LOG_COMPILED_LEVEL must be an integer from 0 to 6")
+endif()
 
 if(NOT CMAKE_C_COMPILER MATCHES "arm-none-eabi")
     message(WARNING "Expected arm-none-eabi-gcc, found ${CMAKE_C_COMPILER}")
@@ -21,7 +28,9 @@ list(APPEND CMAKE_MODULE_PATH
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
 )
 
-add_subdirectory(thirdparty/SEGGER_RTT)
+if(AM335X_BSP_ENABLE_RTT_BACKEND)
+    add_subdirectory(thirdparty/SEGGER_RTT)
+endif()
 
 set(BSP_SOURCES  src/hal/INTC.cpp
                  src/hal/BRANCH_PREDICTION.cpp
@@ -30,8 +39,8 @@ set(BSP_SOURCES  src/hal/INTC.cpp
                  src/hal/hwTimer.cpp
                  src/hal/pins/am335x_pins.cpp
                  src/hal/boards/beaglebone_black.cpp
-                 src/rtt/rtt_log.c
-                 src/rtt/rtt_log_capi.cpp
+                 src/log/log.c
+                 src/log/log_time.cpp
                  src/startup/cp15.s
                  src/startup/cpu.s
                  src/startup/cxx_support.cpp
@@ -62,13 +71,26 @@ add_library(am335x::bsp ALIAS am335x_bsp)
 target_include_directories(am335x_bsp PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-target_link_libraries(am335x_bsp PUBLIC SEGGER_RTT)
+if(AM335X_BSP_ENABLE_RTT_BACKEND)
+    add_library(am335x_log_rtt STATIC
+            src/log/sinks/RttSink.cpp)
+    add_library(am335x::log_rtt ALIAS am335x_log_rtt)
+
+    target_include_directories(am335x_log_rtt PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+    target_link_libraries(am335x_log_rtt PUBLIC SEGGER_RTT)
+
+    target_compile_options(am335x_log_rtt PRIVATE
+            $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti -fno-use-cxa-atexit>)
+endif()
 
 target_compile_definitions(am335x_bsp PUBLIC
         __ARM_ARCH_7A__=1
         __ARM_ARCH_7__=1
         __CORTEX_A=1
         am335x
+        LOG_COMPILED_LEVEL=${BSP_LOG_COMPILED_LEVEL}
 )
 
 if(CMAKE_C_COMPILER MATCHES "arm-none-eabi")
@@ -152,3 +174,5 @@ message(STATUS "  C Compiler: ${CMAKE_C_COMPILER}")
 message(STATUS "  CXX Compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "  Include: ${CMAKE_CURRENT_SOURCE_DIR}/src")
 message(STATUS "  Build examples: ${AM335X_BSP_BUILD_EXAMPLES}")
+message(STATUS "  RTT log backend: ${AM335X_BSP_ENABLE_RTT_BACKEND}")
+message(STATUS "  Compiled log level: ${BSP_LOG_COMPILED_LEVEL}")

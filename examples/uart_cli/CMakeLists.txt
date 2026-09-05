@@ -16,6 +16,7 @@ add_am335x_firmware(${UART_CLI_TARGET}
 
         LIBRARIES
         am335x::bsp
+        am335x::log_rtt
         am335x::baremetal_runtime
 
         INCLUDE_DIRECTORIES
