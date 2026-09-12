@@ -4,7 +4,8 @@
 #include "task.h"
 #include "startup/cp15.h"
 #include "regs/REGS.hpp"
-#include "rtt/rtt_log.h"
+#include "log/log.h"
+#include "logging.hpp"
 #include "hal/INTC.hpp"
 #include "hal/sysTimer.hpp"
 #include "hal/boards/beaglebone_black.hpp"
@@ -118,7 +119,7 @@ extern "C" __attribute__((noinline)) void c_data_abort_handler(const FaultContex
     uint32_t dfsr = ctx->dfsr_ifsr;
     uint32_t status_code = (dfsr & 0x0F) | ((dfsr >> 6) & 0x10);
 
-    RTT_LOG_E("ABORT",
+    LOG_E("ABORT",
         "\n=== DATA ABORT DETECTED ===\n"
         "Faulting PC : 0x%08x\n"
         "DFAR (Addr) : 0x%08x\n"
@@ -161,7 +162,7 @@ extern "C" __attribute__((noinline)) void c_prefetch_abort_handler(const FaultCo
         snprintf(opcode_str, sizeof(opcode_str), "[UNMAPPED MEMORY]");
     }
 
-    RTT_LOG_E("ABORT",
+    LOG_E("ABORT",
         "\n=== PREFETCH ABORT DETECTED ===\n"
         "Faulting PC : 0x%08x\n"
         "IFAR        : 0x%08x\n"
@@ -195,6 +196,7 @@ static void copy_vector_table()
     }
 }
 
+#if AM335X_FREERTOS_LOG_RTT
 static void rtt_cache_clean()
 {
     // Очищаем и инвалидируем кэш для RTT области
@@ -204,13 +206,18 @@ static void rtt_cache_clean()
     cp15_DSB_ISB_sync_barrier();
 }
 
+#endif
+
 bool init_board()
 {
     copy_vector_table();
 
-    rtt_log_init();
-    RTT_LOG_I(TAG, "=== AM335x FreeRTOS application starting ===");
+#if AM335X_FREERTOS_LOG_RTT
     rtt_cache_clean();
+#endif
+    if (!App::Logging::init())
+        return false;
+    LOG_I(TAG, "=== AM335x FreeRTOS application starting ===");
 
     init_memory();
 
@@ -223,10 +230,11 @@ bool init_board()
 
     Board::init_user_leds();
 
+#if AM335X_FREERTOS_LOG_UART
     Board::get_uart0().init_polling();
-
-    Board::get_uart0().put_string((char *)"\r\n Application started... \r\n");
-    Board::get_uart0().put_string((char *)"UART0 initialized... \r\n");
+#endif
+    LOG_I(TAG, "Logging ready: RTT=%u UART=%u",
+          unsigned(AM335X_FREERTOS_LOG_RTT), unsigned(AM335X_FREERTOS_LOG_UART));
 
     return true;
 }
@@ -322,4 +330,3 @@ static void interface_clocks_init()
     per.L4LS_CLKSTCTRL.b.CLKTRCTRL = SW_WKUP;
     per.L3S_CLKSTCTRL.b.CLKTRCTRL = SW_WKUP;
 }
-

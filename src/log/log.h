@@ -31,6 +31,14 @@ typedef struct
 int log_register_sink(const log_sink_t* sink);
 void log_unregister_sink(const log_sink_t* sink);
 
+/* Optional application serialization. Configure only while no logs are active.
+ * acquire returns 0 to drop the record, otherwise a token passed to release.
+ * Registry, filters and level changes must also be made while logging is idle.
+ * Callbacks must not themselves log. NULL/NULL restores baremetal behavior. */
+typedef int (*log_acquire_fn)(void* context);
+typedef void (*log_release_fn)(void* context, int token);
+int log_set_lock(void* context, log_acquire_fn acquire, log_release_fn release);
+
 void log_print_format(log_level_t level, const char* tag,
                       const char* format, ...)
     __attribute__((__format__(__printf__, 3, 4)));

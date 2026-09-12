@@ -9,3 +9,6 @@ g++ -std=c++17 -Wall -Wextra -Werror -Isrc \
     tests/log/uart_sink_test.cpp src/log/sinks/RttSink.cpp "$test_build/log.o" \
     -o "$test_build/uart_sink_test"
 "$test_build/uart_sink_test"
+g++ -std=c++17 -Wall -Wextra -Werror -pthread -Isrc \
+    tests/log/lock_test.cpp "$test_build/log.o" -o "$test_build/lock_test"
+"$test_build/lock_test"

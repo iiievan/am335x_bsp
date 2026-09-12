@@ -1,4 +1,13 @@
 set(FREERTOS_EXAMPLE_TARGET am335x_freertos)
+option(AM335X_FREERTOS_LOG_RTT "FreeRTOS example RTT logging" ON)
+option(AM335X_FREERTOS_LOG_UART "FreeRTOS example UART0 logging" ON)
+set(FREERTOS_LOG_LIBRARIES)
+if(AM335X_FREERTOS_LOG_RTT)
+    if(NOT TARGET am335x::log_rtt)
+        message(FATAL_ERROR "FreeRTOS RTT logging requires AM335X_BSP_ENABLE_RTT_BACKEND=ON")
+    endif()
+    list(APPEND FREERTOS_LOG_LIBRARIES am335x::log_rtt)
+endif()
 
 set(FREERTOS_KERNEL_DIR "${PROJECT_SOURCE_DIR}/thirdparty/FreeRTOS-Kernel")
 
@@ -88,10 +97,11 @@ add_am335x_firmware(${FREERTOS_EXAMPLE_TARGET}
         SOURCES
         src/main.cpp
         src/init.cpp
+        src/logging.cpp
 
         LIBRARIES
         am335x_freertos_port
-        am335x::log_rtt
+        ${FREERTOS_LOG_LIBRARIES}
 
         INCLUDE_DIRECTORIES
         "${CMAKE_CURRENT_SOURCE_DIR}/src"
@@ -99,6 +109,8 @@ add_am335x_firmware(${FREERTOS_EXAMPLE_TARGET}
 
         COMPILE_DEFINITIONS
         AM335X_FREERTOS=1
+        AM335X_FREERTOS_LOG_RTT=$<BOOL:${AM335X_FREERTOS_LOG_RTT}>
+        AM335X_FREERTOS_LOG_UART=$<BOOL:${AM335X_FREERTOS_LOG_UART}>
 
         GENERATE_HEX
         GENERATE_BIN

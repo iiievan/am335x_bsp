@@ -1,5 +1,6 @@
 #include "init.h"
-#include "rtt/rtt_log.h"
+#include "log/log.h"
+#include "logging.hpp"
 #include "hal/boards/beaglebone_black.hpp"
 #include "hal/sysTimer.hpp"
 #include "FreeRTOS.h"
@@ -8,21 +9,14 @@
 
 #define TAG "main"
 
-void delay_ms(const uint32_t ms)
-{
-    using namespace HAL::TIMERS;
-    const volatile uint32_t start = sys_time.get_ms();
-    while((sys_time.get_ms() - start) < ms);
-}
-
 void vTask1(void *pvParameters)
 {
     (void)pvParameters;
     for(;;)
     {
         Board::USR0.toggle();
-        vTaskDelay(1250);
-        RTT_LOG_I(TAG, "USR2.LED toggle!");
+        LOG_I("LED0", "USR0.LED toggle!");
+        vTaskDelay(pdMS_TO_TICKS(1250));
     }
 }
 
@@ -32,8 +26,8 @@ void vTask2(void *pvParameters)
     for(;;)
     {
         Board::USR1.toggle();
-        vTaskDelay(750);
-        RTT_LOG_I(TAG, "USR1.LED toggle!");
+        LOG_I("LED1", "USR1.LED toggle!");
+        vTaskDelay(pdMS_TO_TICKS(750));
     }
 }
 
@@ -66,19 +60,29 @@ int main ()
 
     if (!init_sts)
     {
-        RTT_LOG_E(TAG, "Board initialization failed!");
+        LOG_E(TAG, "Board initialization failed!");
         while (true){}
     }
-    RTT_LOG_I(TAG, "Board initialization done!");
+    LOG_I(TAG, "Board initialization done!");
+    if (!App::Logging::prepare_scheduler())
+    {
+        LOG_E(TAG, "Logging mutex allocation failed; scheduler not started");
+        for (;;) { }
+    }
 
-    xTaskCreate(vPerfBenchmarkTask, "PerfTask", 8192, NULL, 2, NULL);
-    xTaskCreate(vTask1, "Task1", 512, NULL, 1, NULL);
-    xTaskCreate(vTask2, "Task2", 512, NULL, 1, NULL);
+    // Stack depths are StackType_t words. Formatter + newlib need headroom.
+    if (xTaskCreate(vPerfBenchmarkTask, "PerfTask", 8192, nullptr, 2, nullptr) != pdPASS ||
+        xTaskCreate(vTask1, "Task1", 2048, nullptr, 1, nullptr) != pdPASS ||
+        xTaskCreate(vTask2, "Task2", 2048, nullptr, 1, nullptr) != pdPASS)
+    {
+        LOG_E(TAG, "Task creation failed; scheduler not started");
+        for (;;) { }
+    }
 
     vTaskStartScheduler();
+    LOG_E(TAG, "Scheduler returned unexpectedly");
 
     for(;;){} // Should never reach here
 
     return(0);
 }
-

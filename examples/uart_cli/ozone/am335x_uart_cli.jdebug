@@ -11,8 +11,13 @@
 void OnProjectLoad (void) 
 {
   Edit.SysVar (VAR_RTT_ENABLED, 1);
+  // Ozone 3.34: allow memory access through temporary CPU halts.
+  Edit.SysVar (VAR_ALLOW_BMA_EMULATION, 1);
   Project.SetJLinkScript("../../../tools/AM335x_DDR_Init.jlinkscript");
-  Project.SetRTT(0);
+  // Relative paths are resolved beside this .jdebug file.
+  Project.SetJLinkLogFile("am335x_rtt_v3_jlink.log");
+  Project.SetConsoleLogFile("am335x_rtt_v3_console.log");
+  Util.Log("RTT setup v3: project loaded");
 
   // Вот эти две строки решают проблему неработающего Reset с открытой вкладкой Peripherals
   Edit.SysVar("PERIPHERAL_UPDATE_INTERVAL", 0);       // полностью отключает авто-обновление
@@ -27,15 +32,18 @@ void OnProjectLoad (void)
   Project.SetTargetIF ("JTAG");
   Project.SetTIFSpeed ("12 MHz");
 
-  Edit.SysVar (VAR_ALLOW_BMA_EMULATION, 1);
+  // RTT is in OCMC; BGMemAP selection is in the DDR script SetupTarget().
+  Project.AddRTTSearchRange(0x40300000, 0x00010000);
 
   Project.AddSvdFile("Cortex-A8.svd");
   Project.AddSvdFile ("../../../tools/AM335x.svd");
 
   File.Open("../../../cmake-build-debug/examples/uart_cli/am335x_uart_cli.elf");
+  // File.Open may auto-detect RTT. Keep capture off until startup completion.
+  Project.SetRTT(0);
 
-  // Используем числовое значение 1 для режима "Halt after reset"
-  Debug.SetResetMode(1);
+  // Use the named Reset & Halt mode; numeric 1 selects Break at Symbol.
+  Debug.SetResetMode(RM_RESET_HALT);
 }
 
 /*********************************************************************
@@ -61,8 +69,7 @@ void DisableWatchdog(void)
    Target.WriteU32(0x44E35048, 0x0000AAAA);
    Target.WriteU32(0x44E35048, 0x00005555);
 
-   // Включаем RTT обратно после записи
-   Project.SetRTT(1);
+   // RTT stays disabled during reset/download; OnStartupComplete enables it.
 }
 
 /*********************************************************************
@@ -77,14 +84,16 @@ void DisableWatchdog(void)
 void SetExecModeARM(void) 
 {
    unsigned int CPSR;
+   unsigned int thumb_bit;
    
    CPSR = Target.GetReg("CPSR");
    if (CPSR != 0xFFFFFFFF) 
    {
-      if ((CPSR & (1 << 5)) == (1 << 5))
+      thumb_bit = CPSR & 0x20;
+      if (thumb_bit != 0)
       {
          Util.Log("Setting Execution Mode to ARM.");
-         CPSR = CPSR & ~(1 << 5);
+         CPSR = CPSR & 0xFFFFFFDF;
          Target.SetReg("CPSR", CPSR);
       }
    }
@@ -104,13 +113,19 @@ void SetPCtoEntryPoint(void)
    unsigned int PC;
 
    PC = Elf.GetEntryPointPC();
-   if (PC == 0xFFFFFFFF || PC == 0)
+   if (PC == 0xFFFFFFFF)
    {
       Util.Log("WARNING: Failed to get entry point from ELF, using 0x80000000");
       PC = 0x80000000;  // fallback на начало DDR
    }
 
-   Util.Log("Setting PC to entry point: 0x80000000");
+   if (PC == 0)
+   {
+      Util.Log("WARNING: Zero ELF entry point, using 0x80000000");
+      PC = 0x80000000;
+   }
+
+   Util.LogHex("Setting PC to ELF entry point:", PC);
    Target.SetReg("PC", PC); 
 }
 
@@ -126,6 +141,7 @@ void SetPCtoEntryPoint(void)
 void TargetDownload (void)
 {
    int test;
+   Project.SetRTT(0);
    Util.Log("TargetDownload: Loading application to DDR (0x80000000)");
 
    Target.WriteU32(0x80000000, 0xDEADBEEF);
@@ -138,8 +154,6 @@ void TargetDownload (void)
        Util.Log("FAILED: DDR still not accessible");
    }
 
-   Edit.SysVar(VAR_RESET_MODE, RM_RESET_HALT);
-
    // Загружаем ELF (он сам разложит секции по нужным адресам, включая 0x80000000)
    Exec.Download("../../../cmake-build-debug/examples/uart_cli/am335x_uart_cli.elf");
 }
@@ -150,7 +164,7 @@ void TargetDownload (void)
 *                                                                     
 * Function description                                                
 *   Replaces the default reset routine.
-*   Runs the bootloader and then resets to symbol.                             
+*   Restarts at the ELF entry point while preserving the initialized DDR.                             
 *                                                                     
 **********************************************************************
 */                                                                
@@ -162,8 +176,8 @@ void TargetReset(void)
    SetExecModeARM();
    SetPCtoEntryPoint();
 
-   // Используем числовое значение 1 для режима "Halt after reset"
-   Debug.SetResetMode(1);
+   // Use the named Reset & Halt mode; numeric 1 selects Break at Symbol.
+   Debug.SetResetMode(RM_RESET_HALT);
 }   
 
 /*********************************************************************
@@ -177,7 +191,10 @@ void TargetReset(void)
 */                                                                
 void AfterTargetReset(void) 
 {
-   Util.Log("AfterTargetReset: Target ready at 0x80000000");
+   U32 PC;
+
+   PC = Target.GetReg("PC");
+   Util.LogHex("AfterTargetReset: PC:", PC);
    
 }
 
@@ -195,7 +212,8 @@ void AfterTargetDownload (void)
    U32 test_val;
    U32 PC;
 
-   Util.Log("AfterTargetDownload: Download complete");
+   Project.SetRTT(0);
+   Util.Log("AfterTargetDownload: Download complete; RTT awaits startup");
    
    // Просто останавливаемся, пусть пользователь сам запускает
    test_val = Target.ReadU32(0x80000000);
@@ -232,8 +250,100 @@ void AfterTargetHalt (void)
    PC = Target.GetReg("PC");
    if (PC != 0xFFFFFFFF)
    {
-      Util.Log("Halted at PC = 0x80000000");
+      Util.LogHex("Halted at PC:", PC);
    }
 } 
+
+
+/*********************************************************************
+* BeforeTargetConnect: suspend capture while connecting.
+*********************************************************************/
+void BeforeTargetConnect(void)
+{
+   Project.SetRTT(0);
+}
+
+/*********************************************************************
+* AfterTargetConnect
+* The observed library rejects BGMemAP selection before creating its AP map.
+* Select AP[0] after device connection; retain AP[1] for core debugging.
+* This is a diagnostic attempt, not proof of working background access.
+*********************************************************************/
+void AfterTargetConnect(void)
+{
+   Util.Log("RTT setup v3: selecting background AP after target connect");
+
+   // Ozone returned zero even when the command text reported an error.
+   Util.Log("RTT setup v3: inspect command messages and J-Link log for result");
+}
+
+/*********************************************************************
+* DumpRttControlBlock
+* Diagnostic read while halted, including during the startup completion hook.
+* Ordinary reads while halted do not prove live AHB-AP access works.
+* Manual use after halting: Script.Exec("DumpRttControlBlock");
+*********************************************************************/
+void DumpRttControlBlock(void)
+{
+   U32 addr;
+   U32 offset;
+   U32 read_addr;
+   U32 value;
+   int valid;
+
+   addr = Elf.GetExprValue("&_SEGGER_RTT");
+   Util.LogHex("RTT setup v3: &_SEGGER_RTT:", addr);
+
+   // Keep conditions simple for the Ozone script interpreter.
+   // The range checks also reject 0 and the error value 0xFFFFFFFF.
+   valid = 1;
+   if (addr < 0x40300000)
+   {
+      valid = 0;
+   }
+   if (addr > 0x4030FFE8)
+   {
+      valid = 0;
+   }
+
+   if (valid == 1)
+   {
+      // 16-byte ID, then MaxNumUpBuffers and MaxNumDownBuffers.
+      // Expected ID starts with 0x47474553, 0x52205245, 0x00005454.
+      // Zero ID may mean SEGGER_RTT_Init has not run yet.
+      offset = 0;
+      while (offset < 24)
+      {
+         read_addr = addr + offset;
+         value = Target.ReadU32(read_addr);
+         Util.LogHex("RTT setup v3: control-block byte offset:", offset);
+         Util.LogHex("RTT setup v3: word:", value);
+         offset = offset + 4;
+      }
+   }
+   else
+   {
+      Util.Log("RTT setup v3: symbol unavailable or outside OCMC; dump skipped");
+   }
+}
+
+/*********************************************************************
+* OnStartupComplete
+* Ozone calls this when the configured startup completion point is reached.
+* That point may precede the application's own SEGGER_RTT_Init call.
+*********************************************************************/
+void OnStartupComplete(void)
+{
+   Util.Log("RTT setup v3: startup complete");
+   DumpRttControlBlock();
+   Project.SetRTT(1);
+   // The request's return code did not reflect the observed activation failure.
+   Util.Log("RTT setup v3: RTT requested; inspect Ozone activation messages");
+}
+
+void BeforeTargetDisconnect(void)
+{
+   Project.SetRTT(0);
+}
 
 /*** EOF ***/

@@ -28,6 +28,19 @@
 static log_level_t s_log_level = LOG_DEFAULT_LEVEL;
 static const log_sink_t* s_sinks[LOG_MAX_SINK_COUNT];
 static char s_excluded_tags[LOG_MAX_TAG_COUNT][LOG_MAX_TAG_LENGTH];
+static void* s_lock_context;
+static log_acquire_fn s_acquire;
+static log_release_fn s_release;
+
+int log_set_lock(void* context, log_acquire_fn acquire, log_release_fn release)
+{
+    if ((acquire == NULL) != (release == NULL))
+        return 0;
+    s_lock_context = context;
+    s_acquire = acquire;
+    s_release = release;
+    return 1;
+}
 
 static int tag_is_excluded(const char* tag)
 {
@@ -88,8 +101,9 @@ void log_unregister_sink(const log_sink_t* sink)
     }
 }
 
-void log_print_format(log_level_t level, const char* tag,
-                      const char* format, ...)
+/* Keep the large formatter frame out of rejected IRQ/Abort calls. */
+static __attribute__((noinline)) void log_vprint_locked(log_level_t level,
+                      const char* tag, const char* format, va_list args)
 {
     char line[LOG_MESSAGE_BUFFER_SIZE];
     uint64_t timestamp;
@@ -100,17 +114,16 @@ void log_print_format(log_level_t level, const char* tag,
     size_t line_size;
     size_t i;
     int has_sink = 0;
-    va_list args;
 
     if (level == LOG_LEVEL_NONE || level > s_log_level ||
         tag == NULL || format == NULL)
-        return;
+        goto done;
 
     for (i = 0u; i < LOG_MAX_SINK_COUNT; ++i)
         has_sink |= s_sinks[i] != NULL;
 
     if (!has_sink || tag_is_excluded(tag))
-        return;
+        goto done;
 
     timestamp = log_get_system_time_ms();
     seconds = (uint32_t)(timestamp / 1000u);
@@ -121,17 +134,15 @@ void log_print_format(log_level_t level, const char* tag,
                            (unsigned int)milliseconds,
                            level_letter(level), tag);
     if (prefix_size < 0)
-        return;
+        goto done;
     if ((size_t)prefix_size >= sizeof(line))
         prefix_size = (int)(sizeof(line) - 1u);
 
-    va_start(args, format);
     message_size = vsnprintf(line + prefix_size,
                              sizeof(line) - (size_t)prefix_size,
                              format, args);
-    va_end(args);
     if (message_size < 0)
-        return;
+        goto done;
 
     line_size = (size_t)prefix_size + (size_t)message_size;
     if (line_size >= sizeof(line) - 1u)
@@ -145,6 +156,25 @@ void log_print_format(log_level_t level, const char* tag,
         if (sink != NULL)
             sink->write(sink->context, level, line, line_size);
     }
+done:
+    return;
+}
+
+void log_print_format(log_level_t level, const char* tag, const char* format, ...)
+{
+    int lock_token = 1;
+    va_list args;
+    if (s_acquire != NULL)
+    {
+        lock_token = s_acquire(s_lock_context);
+        if (lock_token == 0)
+            return;
+    }
+    va_start(args, format);
+    log_vprint_locked(level, tag, format, args);
+    va_end(args);
+    if (s_release != NULL)
+        s_release(s_lock_context, lock_token);
 }
 
 void log_set_level(log_level_t level)
