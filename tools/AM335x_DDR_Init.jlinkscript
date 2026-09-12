@@ -512,8 +512,9 @@ int SetupTarget(void)
         return -1;
     }
 
-    JLINK_SYS_Report("RTT: selecting BGMemAP before connect returns");
-    JLINK_ExecCommand("CORESIGHT_SetIndexBGMemAPToUse = 0");
+    JLINK_SYS_Report("RTT: selecting BGMemAP 0");
+    test = JLINK_ExecCommand("CORESIGHT_SetIndexBGMemAPToUse = 0");
+    JLINK_SYS_Report1("RTT: CORESIGHT_SetIndexBGMemAPToUse result: ",test);
 
     return 0;
 }

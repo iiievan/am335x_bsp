@@ -10,7 +10,6 @@
 */
 void OnProjectLoad (void) 
 {
-  Edit.SysVar (VAR_RTT_ENABLED, 1);
   // Ozone 3.34: allow memory access through temporary CPU halts.
   Edit.SysVar (VAR_ALLOW_BMA_EMULATION, 1);
   Project.SetJLinkScript("../../../tools/AM335x_DDR_Init.jlinkscript");
