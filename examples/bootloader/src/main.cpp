@@ -1,5 +1,5 @@
 #include "init.h"
-#include "rtt/rtt_log.h"
+#include "log/log.h"
 #include "hal/boards/beaglebone_black.hpp"
 #include "hal/sysTimer.hpp"
 #include "log/sinks/UartSink.hpp"
@@ -27,11 +27,11 @@ int main ()
 
     if (!init_sts)
     {
-        RTT_LOG_E(TAG, "Board initialization failed!");
+        LOG_E(TAG, "Board initialization failed!");
         while (1);
     }
 
-    RTT_LOG_I(TAG, "Board initialization seccess!");
+    LOG_I(TAG, "Board initialization succeeded");
 #if AM335X_BOOT_LOG_UART
     if (!uart_log.registered())
         LOG_E("LOG_TEST", "UART sink registration failed");

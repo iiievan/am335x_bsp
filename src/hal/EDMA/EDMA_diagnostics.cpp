@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include "rtt/rtt_log.h"
+#include "log/log.h"
 
 #define TAG "EDMA_DIAG"
 
@@ -197,7 +197,7 @@ namespace HAL::EDMA
 
         capture(&s);
 
-        RTT_LOG_E(TAG, "=== EDMA DIAGNOSTIC DUMP [%s] (%s CH %u) ===",
+        LOG_E(TAG, "=== EDMA DIAGNOSTIC DUMP [%s] (%s CH %u) ===",
                   reason, is_qdma ? "QDMA" : "DMA", channel);
 
         decodeChannel(s, channel, is_qdma);
@@ -216,14 +216,14 @@ namespace HAL::EDMA
         {
             clearTCError(tc, 0xFFFFFFFF);
         }
-        RTT_LOG_E(TAG, "===============================================");
+        LOG_E(TAG, "===============================================");
     }
 
     void EDMA_Diagnostics::decodeCC(const EDMA_DiagnosticSnapshot& s) noexcept
     {
         const EDMA_CC_Diagnostic& d = s.cc;
-        RTT_LOG_I("CC_STAT","  EMR   :  EMRH  :  QEMR  : CCERR  :  EEVAL {          QSTAT           } CCSTAT : MPFAR  :  MPFSR");
-        RTT_LOG_I("CC_STAT","%08X:%08X:%08X:%08X: W/O{%08X,%08X,%08X}%08X:%08X:%08X", static_cast<unsigned>(d.emr),
+        LOG_I("CC_STAT","  EMR   :  EMRH  :  QEMR  : CCERR  :  EEVAL {          QSTAT           } CCSTAT : MPFAR  :  MPFSR");
+        LOG_I("CC_STAT","%08X:%08X:%08X:%08X: W/O{%08X,%08X,%08X}%08X:%08X:%08X", static_cast<unsigned>(d.emr),
                                                                                         static_cast<unsigned>(d.emrh),
                                                                                         static_cast<unsigned>(d.qemr),
                                                                                         static_cast<unsigned>(d.ccerr),
@@ -247,9 +247,9 @@ namespace HAL::EDMA
         const EDMA_TC_Diagnostic & d = s.tc[tc_idx];
         const EDMA_Channel_Diagnostic & cd = is_qdma ? s.qdma[channel] : s.dma[channel];
         const char* stat = d.errstat == 0 ? "no err" : (d.errors.mmra_error ? "rd err" : "wr err");
-        RTT_LOG_I(tc_name, "----------------------------------------------------------------------");
-        RTT_LOG_I("ERROR","ERRSTAT :[BUSERR:TRERR:MMRAERR]: ERRDET :[   STAT():TCC:TCINTEN:TCCHEN]");
-        RTT_LOG_I("ERROR","%08X:[   %u   :  %u  :   %u  ]:%08X:[%X(%s): %u :   %u   :   %u  ]",(unsigned)d.errstat,
+        LOG_I(tc_name, "----------------------------------------------------------------------");
+        LOG_I("ERROR","ERRSTAT :[BUSERR:TRERR:MMRAERR]: ERRDET :[   STAT():TCC:TCINTEN:TCCHEN]");
+        LOG_I("ERROR","%08X:[   %u   :  %u  :   %u  ]:%08X:[%X(%s): %u :   %u   :   %u  ]",(unsigned)d.errstat,
                                                                      (unsigned)d.errors.bus_error,
                                                                      (unsigned)d.errors.tr_error,
                                                                      (unsigned)d.errors.mmra_error,
@@ -259,15 +259,15 @@ namespace HAL::EDMA
                                                                      (unsigned)d.errors.tcc,
                                                                      (unsigned)d.errors.tcinten,
                                                                      (unsigned)d.errors.tcchen);
-        RTT_LOG_I("STAT"," TCSTAT [PROGBUSY:SRCACTV:WSACTV:DSTACTV:DFSTRTPTR]");
-        RTT_LOG_I("STAT","%08X[    %u   :   %u   :   %u  :   %u   :    %u    ]",(unsigned)d.tcstat,
+        LOG_I("STAT"," TCSTAT [PROGBUSY:SRCACTV:WSACTV:DSTACTV:DFSTRTPTR]");
+        LOG_I("STAT","%08X[    %u   :   %u   :   %u  :   %u   :    %u    ]",(unsigned)d.tcstat,
                                                     (unsigned)d.tcstat_progbusy,
                                                     (unsigned)d.tcstat_srcactive,
                                                     (unsigned)d.tcstat_wsactive,
                                                     (unsigned)d.tcstat_dstactv,
                                                     (unsigned)d.tcstat_dfstrtptr);
-        RTT_LOG_I("ACTIVE","  SRC   :   DST  :  SACNT [TCC:TCINTEN:TCCHEN]");
-        RTT_LOG_I("ACTIVE","%08X:%08X:%08X[ %u :   %u   :  %u   ]",    (unsigned)d.sasrc,
+        LOG_I("ACTIVE","  SRC   :   DST  :  SACNT [TCC:TCINTEN:TCCHEN]");
+        LOG_I("ACTIVE","%08X:%08X:%08X[ %u :   %u   :  %u   ]",    (unsigned)d.sasrc,
                                                        (unsigned)d.sadst,
                                                        (unsigned)d.sacnt,
                                                        (unsigned)cd.tcc,
@@ -283,8 +283,8 @@ namespace HAL::EDMA
         const auto str = "CH";
         char ch_stat[8];
         std::snprintf(ch_stat, sizeof(ch_stat), "%s%u_STAT", str, (unsigned)channel);
-        RTT_LOG_I(ch_stat,"TYPE:CH:PaRAM:TCC:QUEUE:   OPT  [EV:EER:SER:IPR:IER:CER:SH_ACCESS]");
-        RTT_LOG_I(ch_stat,"%s: %u:  %u : %u :  %d  :%08X[ %u: %u : %u : %u : %u : %u :    %u    ]",  d.is_qdma ? "QDMA" : "DMA ",
+        LOG_I(ch_stat,"TYPE:CH:PaRAM:TCC:QUEUE:   OPT  [EV:EER:SER:IPR:IER:CER:SH_ACCESS]");
+        LOG_I(ch_stat,"%s: %u:  %u : %u :  %d  :%08X[ %u: %u : %u : %u : %u : %u :    %u    ]",  d.is_qdma ? "QDMA" : "DMA ",
                                                                         (unsigned)d.channel,
                                                                         (unsigned)d.param_id,
                                                                         (unsigned)d.tcc,
@@ -338,8 +338,8 @@ namespace HAL::EDMA
             }
         }
 
-        RTT_LOG_I("CH_BY_TCC", "TCC->Mapped Queue:PaRAM:Channel Match");
-        RTT_LOG_I("CH_BY_TCC", " %u :       %u     :  %d :     %s    ",
+        LOG_I("CH_BY_TCC", "TCC->Mapped Queue:PaRAM:Channel Match");
+        LOG_I("CH_BY_TCC", " %u :       %u     :  %d :     %s    ",
                   static_cast<unsigned>(tcc),
                   (int)set_queue<>(trace.mapped_queue),
                    static_cast<int>(trace.param_id),
@@ -412,7 +412,7 @@ namespace HAL::EDMA
 
         if (!captureQdmaProgrammingState(qdma_channel, state))
         {
-            RTT_LOG_E(TAG, "Cannot capture QDMA channel %u", static_cast<unsigned>(qdma_channel));
+            LOG_E(TAG, "Cannot capture QDMA channel %u", static_cast<unsigned>(qdma_channel));
             return;
         }
 
@@ -436,9 +436,9 @@ namespace HAL::EDMA
 
         const uint32_t mask = 1u << s.qdma_channel;
 
-        RTT_LOG_I(TAG, "=== QDMA%u PROGRAMMING STATE [%s] ===", static_cast<unsigned>(s.qdma_channel), reason ? reason : "snapshot");
+        LOG_I(TAG, "=== QDMA%u PROGRAMMING STATE [%s] ===", static_cast<unsigned>(s.qdma_channel), reason ? reason : "snapshot");
 
-        RTT_LOG_I(TAG, "QCHMAP=%08X PaRAM=%u TRWORD=%u(%s) QUEUE=%u", static_cast<unsigned>(s.qchmap),
+        LOG_I(TAG, "QCHMAP=%08X PaRAM=%u TRWORD=%u(%s) QUEUE=%u", static_cast<unsigned>(s.qchmap),
                                                                       static_cast<unsigned>(s.param_id),
                                                                       static_cast<unsigned>(s.trigger_word),
                                                                       field_names[s.trigger_word],
@@ -446,19 +446,19 @@ namespace HAL::EDMA
 
         for (uint32_t i = 0; i < 8; ++i)
         {
-            RTT_LOG_I(TAG,"PaRAM[%u].%s [%u] = %08X%s", static_cast<unsigned>(s.param_id),
+            LOG_I(TAG,"PaRAM[%u].%s [%u] = %08X%s", static_cast<unsigned>(s.param_id),
                                                         field_names[i],
                                                         static_cast<unsigned>(i),
                                                         static_cast<unsigned>(s.param_words[i]),
                                                         i == s.trigger_word ? "  <TRIGGER>" : "");
         }
 
-        RTT_LOG_I(TAG,"EVENTS QEER=%u QER=%u QSER=%u QEMR=%u", (s.qeer & mask) != 0u,
+        LOG_I(TAG,"EVENTS QEER=%u QER=%u QSER=%u QEMR=%u", (s.qeer & mask) != 0u,
                                                                (s.qer  & mask) != 0u,
                                                                (s.qser & mask) != 0u,
                                                                (s.qemr & mask) != 0u);
 
-        RTT_LOG_I(TAG, "==================================");
+        LOG_I(TAG, "==================================");
     }
 
     void EDMA_Diagnostics::clearTCError(const uint32_t tc_idx, const uint32_t mask) noexcept

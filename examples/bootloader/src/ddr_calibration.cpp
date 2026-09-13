@@ -1,6 +1,6 @@
 #include "ddr_calibration.hpp"
 #include "regs/EMIF.hpp"
-#include "rtt/rtt_log.h"
+#include "log/log.h"
 #include "startup/cp15.h"
 
 #define TAG "ddr_calib"
@@ -30,7 +30,7 @@ static bool test_address(volatile uint32_t* addr, uint32_t pattern)
     uint32_t readback = *addr;
     if (readback != pattern)
     {
-        RTT_LOG_E(TAG, "Pattern mismatch: wrote 0x%08X, read 0x%08X at 0x%p", 
+        LOG_E(TAG, "Pattern mismatch: wrote 0x%08X, read 0x%08X at 0x%p", 
                   (unsigned int)pattern, (unsigned int)readback, addr);
         return false;
     }
@@ -127,12 +127,12 @@ static bool find_read_dqs_range(int data_slice, uint8_t* first_ok, uint8_t* last
     
     if (found)
     {
-        RTT_LOG_I(TAG, "DATA%d RD_DQS: range [0x%02X .. 0x%02X] (width=%d)", 
+        LOG_I(TAG, "DATA%d RD_DQS: range [0x%02X .. 0x%02X] (width=%d)", 
                   data_slice, *first_ok, *last_ok, *last_ok - *first_ok + 1);
     }
     else
     {
-        RTT_LOG_E(TAG, "DATA%d RD_DQS: NO WORKING RATIO FOUND!", data_slice);
+        LOG_E(TAG, "DATA%d RD_DQS: NO WORKING RATIO FOUND!", data_slice);
     }
     
     return found;
@@ -176,12 +176,12 @@ static bool find_write_dqs_range(int data_slice, uint8_t* first_ok, uint8_t* las
     
     if (found)
     {
-        RTT_LOG_I(TAG, "DATA%d WR_DQS: range [0x%02X .. 0x%02X] (width=%d)", 
+        LOG_I(TAG, "DATA%d WR_DQS: range [0x%02X .. 0x%02X] (width=%d)", 
                   data_slice, *first_ok, *last_ok, *last_ok - *first_ok + 1);
     }
     else
     {
-        RTT_LOG_E(TAG, "DATA%d WR_DQS: NO WORKING RATIO FOUND!", data_slice);
+        LOG_E(TAG, "DATA%d WR_DQS: NO WORKING RATIO FOUND!", data_slice);
     }
     
     return found;
@@ -225,12 +225,12 @@ static bool find_write_data_range(int data_slice, uint8_t* first_ok, uint8_t* la
     
     if (found)
     {
-        RTT_LOG_I(TAG, "DATA%d WR_DATA: range [0x%02X .. 0x%02X] (width=%d)", 
+        LOG_I(TAG, "DATA%d WR_DATA: range [0x%02X .. 0x%02X] (width=%d)", 
                   data_slice, *first_ok, *last_ok, *last_ok - *first_ok + 1);
     }
     else
     {
-        RTT_LOG_E(TAG, "DATA%d WR_DATA: NO WORKING RATIO FOUND!", data_slice);
+        LOG_E(TAG, "DATA%d WR_DATA: NO WORKING RATIO FOUND!", data_slice);
     }
     
     return found;
@@ -252,7 +252,7 @@ static void calibrate_command_regs(ddr_calib_values_t* values)
     phy.CMD1_CTRL_SLAVE_RATIO_0.b.CMD_SLAVE_RATIO = values->cmd1_ratio;
     phy.CMD2_CTRL_SLAVE_RATIO_0.b.CMD_SLAVE_RATIO = values->cmd2_ratio;
     
-    RTT_LOG_I(TAG, "CMD ratios set to 0x%02X (default)", values->cmd0_ratio);
+    LOG_I(TAG, "CMD ratios set to 0x%02X (default)", values->cmd0_ratio);
 }
 
 // Основная функция калибровки
@@ -262,26 +262,26 @@ bool ddr_calibrate(ddr_calib_values_t* values)
 
     if (!values) return false;
     
-    RTT_LOG_I(TAG, "=== Starting DDR3 calibration ===");
+    LOG_I(TAG, "=== Starting DDR3 calibration ===");
     
     uint8_t first, last;
     
     // Калибровка READ DQS (самая важная!)
-    RTT_LOG_I(TAG, "Calibrating READ DQS...");
+    LOG_I(TAG, "Calibrating READ DQS...");
     if (!find_read_dqs_range(0, &first, &last)) return false;
     values->rd_dqs0_ratio = (first + last) / 2;
     
     if (!find_read_dqs_range(1, &first, &last)) return false;
     values->rd_dqs1_ratio = (first + last) / 2;
 
-    RTT_LOG_I(TAG, "Calibrating WRITE DQS...");
+    LOG_I(TAG, "Calibrating WRITE DQS...");
     if (!find_write_dqs_range(0, &first, &last)) return false;
     values->wr_dqs0_ratio = (first + last) / 2;
     
     if (!find_write_dqs_range(1, &first, &last)) return false;
     values->wr_dqs1_ratio = (first + last) / 2;
 
-    RTT_LOG_I(TAG, "Calibrating WRITE DATA...");
+    LOG_I(TAG, "Calibrating WRITE DATA...");
     if (!find_write_data_range(0, &first, &last)) return false;
     values->wr_data0_ratio = (first + last) / 2;
     
@@ -296,10 +296,10 @@ bool ddr_calibrate(ddr_calib_values_t* values)
 
     ddr_apply_calibration(values);
     
-    RTT_LOG_I(TAG, "=== Calibration complete ===");
-    RTT_LOG_I(TAG, "RD_DQS: 0=%02X, 1=%02X", values->rd_dqs0_ratio, values->rd_dqs1_ratio);
-    RTT_LOG_I(TAG, "WR_DQS: 0=%02X, 1=%02X", values->wr_dqs0_ratio, values->wr_dqs1_ratio);
-    RTT_LOG_I(TAG, "WR_DATA: 0=%02X, 1=%02X", values->wr_data0_ratio, values->wr_data1_ratio);
+    LOG_I(TAG, "=== Calibration complete ===");
+    LOG_I(TAG, "RD_DQS: 0=%02X, 1=%02X", values->rd_dqs0_ratio, values->rd_dqs1_ratio);
+    LOG_I(TAG, "WR_DQS: 0=%02X, 1=%02X", values->wr_dqs0_ratio, values->wr_dqs1_ratio);
+    LOG_I(TAG, "WR_DATA: 0=%02X, 1=%02X", values->wr_data0_ratio, values->wr_data1_ratio);
     
     return true;
 }
@@ -336,7 +336,7 @@ bool ddr_stress_test(int iterations)
     const int test_size = 1024 * 1024;  // 1MB для теста
     const int num_words = test_size / 4;
     
-    RTT_LOG_I(TAG, "Starting DDR stress test (%d iterations)...", iterations);
+    LOG_I(TAG, "Starting DDR stress test (%d iterations)...", iterations);
     
     for (int iter = 0; iter < iterations; iter++)
     {
@@ -357,7 +357,7 @@ bool ddr_stress_test(int iterations)
 
             if (base[i] != expected)
             {
-                RTT_LOG_E(TAG, "Stress test failed at 0x%08X: expected 0x%08X, got 0x%08X",
+                LOG_E(TAG, "Stress test failed at 0x%08X: expected 0x%08X, got 0x%08X",
                           (unsigned int)&base[i], (unsigned int)expected, (unsigned int)base[i]);
                 return false;
             }
@@ -365,10 +365,10 @@ bool ddr_stress_test(int iterations)
         
         if ((iter + 1) % 10 == 0)
         {
-            RTT_LOG_I(TAG, "Stress test iteration %d/%d passed", iter + 1, iterations);
+            LOG_I(TAG, "Stress test iteration %d/%d passed", iter + 1, iterations);
         }
     }
     
-    RTT_LOG_I(TAG, "Stress test passed!");
+    LOG_I(TAG, "Stress test passed!");
     return true;
 }

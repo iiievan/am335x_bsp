@@ -4,10 +4,9 @@ Default: `AM335X_FREERTOS_LOG_RTT=ON`, `AM335X_FREERTOS_LOG_UART=ON`.
 These target-specific options do not change bootloader or UART CLI.
 Keep global `AM335X_BSP_ENABLE_RTT_BACKEND=ON` while other examples need RTT.
 
-All example source calls now use log/log.h and LOG_*; plain UART boot strings
-are replaced by structured logs. Legacy compatibility remains elsewhere in BSP.
-Calls made inside PERF/MMU still pass through the same common logger/lock even
-while those modules retain their old macro spelling.
+All BSP and example source calls use `log/log.h` and `LOG_*`; plain UART boot
+strings are replaced by structured logs. PERF/MMU use the same common
+logger/lock as the application.
 
 ## Lifecycle
 
@@ -69,4 +68,4 @@ This step does not change the FreeRTOS linker map or reclaim its RTT region.
 Host tests: bash tests/log/run_host_tests.sh. They check serialized dispatch
 with two host threads and existing sink regression. They do not execute the
 AM335x port, FreeRTOS scheduling, CPU-mode checks or MMIO: hardware validation
-remains required. The other examples and compatibility headers are not migrated.
+remains required.

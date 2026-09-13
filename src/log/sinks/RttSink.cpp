@@ -67,10 +67,3 @@ void HAL::LOG::rtt_backend_deinit() noexcept
     if (s_users == 0u)
         log_unregister_sink(&s_rtt_sink);
 }
-
-extern "C" void rtt_log_init(void)
-{
-    static bool initialized = false;
-    if (!initialized)
-        initialized = HAL::LOG::rtt_backend_init();
-}

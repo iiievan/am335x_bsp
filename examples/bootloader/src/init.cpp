@@ -4,7 +4,10 @@
 #include "init.h"
 #include "startup/cp15.h"
 #include "regs/REGS.hpp"
-#include "rtt/rtt_log.h"
+#include "log/log.h"
+#if AM335X_BOOT_LOG_RTT
+#include "log/sinks/RttSink.hpp"
+#endif
 //#include "ddr_calibration.hpp"
 #include "hal/INTC.hpp"
 #include "hal/sysTimer.hpp"
@@ -75,7 +78,7 @@ extern "C" __attribute__((noinline)) void c_data_abort_handler(const FaultContex
     uint32_t dfsr = ctx->dfsr_ifsr;
     uint32_t status_code = (dfsr & 0x0F) | ((dfsr >> 6) & 0x10);
 
-    RTT_LOG_E("ABORT",
+    LOG_E("ABORT",
         "\n=== DATA ABORT DETECTED ===\n"
         "Faulting PC : 0x%08x\n"
         "DFAR (Addr) : 0x%08x\n"
@@ -118,7 +121,7 @@ extern "C" __attribute__((noinline)) void c_prefetch_abort_handler(const FaultCo
         snprintf(opcode_str, sizeof(opcode_str), "[UNMAPPED MEMORY]");
     }
 
-    RTT_LOG_E("ABORT",
+    LOG_E("ABORT",
         "\n=== PREFETCH ABORT DETECTED ===\n"
         "Faulting PC : 0x%08x\n"
         "IFAR        : 0x%08x\n"
@@ -169,9 +172,10 @@ bool init_board()
     copy_vector_table();
 
 #if AM335X_BOOT_LOG_RTT
-    rtt_log_init();
+    if (!HAL::LOG::rtt_backend_init())
+        return false;
 #endif
-    RTT_LOG_I(TAG, "=== AM335x Boot Loader Starting ===");
+    LOG_I(TAG, "=== AM335x Boot Loader Starting ===");
     cp15_MMU_disable();
     cp15_D_cache_disable();
     cp15_I_cache_disable();
@@ -188,17 +192,21 @@ bool init_board()
     ddr_pll_init();
     interface_clocks_init();
 
+#if AM335X_BOOT_LOG_RTT
     RTT_CHECK_MODULE_SIZE(REGS::INTC::AM335x_INTC_Type,0x2FC);
     RTT_CHECK_MODULE_SIZE(REGS::DMTIMER::AM335x_DMTIMER_Type,0x58);
     RTT_CHECK_MODULE_SIZE(REGS::DMTIMER1MS::AM335x_DMTIMER1MS_Type,0x58);
     RTT_CHECK_MODULE_SIZE(REGS::RTC::AM335x_RTC_Type,0x9C);
-
+#endif
     HAL::INTC::init();              //Initializing the ARM Interrupt Controller.
     HAL::TIMERS::sys_time.init();   // setup system timer for 1ms interrupt
 
     Board::init_user_leds();
 
+#if AM335X_BOOT_LOG_RTT
     RTT_CHECK_MODULE_SIZE(REGS::UART::AM335x_UART_Type,0x84);
+#endif
+
     Board::get_uart0().init_polling();
 
     HAL::INTC::master_IRQ_enable();
@@ -213,18 +221,17 @@ bool init_board()
 
     if(!emif.is_phy_ready())
     {
-        RTT_LOG_E(TAG,"EMIF PHY initialization failed!");
+        LOG_E(TAG,"EMIF PHY initialization failed!");
         return false;
     }
 
     if (!ddr_check())
     {
-        RTT_LOG_E(TAG,"DDR check failed!");
+        LOG_E(TAG,"DDR check failed!");
         return false;
     }
 
-    Board::get_uart0().put_string((char *)"DDR initialization successful! \r\n");
-    RTT_LOG_I(TAG, "DDR initialization successful!");
+    LOG_I(TAG, "DDR initialization successful!");
 
     return true;
 }
@@ -339,8 +346,10 @@ static void interface_clocks_init()
     auto& per = *AM335x_CM_PER;
     auto& wkup = *AM335x_CM_WKUP;
 
+#if AM335X_BOOT_LOG_RTT
     RTT_CHECK_MODULE_SIZE(AM335x_CM_PER_Type,0x150);
     RTT_CHECK_MODULE_SIZE(AM335x_CM_WKUP_Type,0xD8);
+#endif
 
     wkup.CONTROL_CLKCTRL.b.MODULEMODE = MODULEMODE_ENABLE;
     per.L4LS_CLKCTRL.b.MODULEMODE = MODULEMODE_ENABLE;
@@ -360,8 +369,9 @@ static void ddr_init()
     auto& emif = *AM335x_EMIF0;
     auto& phy = *AM335x_DDR23mPHY;
 
+#if AM335X_BOOT_LOG_RTT
     RTT_CHECK_MODULE_SIZE(AM335x_CTRL_MODULE_Type, 0x1444);
-
+#endif
     per.EMIF_CLKCTRL.reg = MODULEMODE_ENABLE;
     per.EMIF_FW_CLKCTRL.reg = MODULEMODE_ENABLE;
 
@@ -432,19 +442,19 @@ static bool ddr_check()
 
     if (ddr_calibrate(&calib_values))
     {
-        RTT_LOG_I(TAG, "Calibration successful!");
+        LOG_I(TAG, "Calibration successful!");
 
         if (ddr_stress_test(100))
-            RTT_LOG_I(TAG, "DDR fully initialized and stable!");
+            LOG_I(TAG, "DDR fully initialized and stable!");
         else
         {
-            RTT_LOG_W(TAG, "Stress test failed, but calibration values may still work");
+            LOG_W(TAG, "Stress test failed, but calibration values may still work");
             ddr_init();
         }
     }
     else
     {
-        RTT_LOG_E(TAG, "Calibration failed! Using default values.");
+        LOG_E(TAG, "Calibration failed! Using default values.");
         ddr_init();
     }
 */

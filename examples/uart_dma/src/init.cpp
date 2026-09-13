@@ -2,7 +2,8 @@
 #include <cstdio>
 #include "startup/cp15.h"
 #include "regs/REGS.hpp"
-#include "rtt/rtt_log.h"
+#include "log/log.h"
+#include "log/sinks/RttSink.hpp"
 #include "hal/INTC.hpp"
 #include "hal/sysTimer.hpp"
 #include "hal/boards/beaglebone_black.hpp"
@@ -63,7 +64,7 @@ extern "C" __attribute__((noinline)) void c_data_abort_handler(const FaultContex
     uint32_t dfsr = ctx->dfsr_ifsr;
     uint32_t status_code = (dfsr & 0x0F) | ((dfsr >> 6) & 0x10);
 
-    RTT_LOG_E("ABORT",
+    LOG_E("ABORT",
         "\n=== DATA ABORT DETECTED ===\n"
         "Faulting PC : 0x%08x\n"
         "DFAR (Addr) : 0x%08x\n"
@@ -106,7 +107,7 @@ extern "C" __attribute__((noinline)) void c_prefetch_abort_handler(const FaultCo
         snprintf(opcode_str, sizeof(opcode_str), "[UNMAPPED MEMORY]");
     }
 
-    RTT_LOG_E("ABORT",
+    LOG_E("ABORT",
         "\n=== PREFETCH ABORT DETECTED ===\n"
         "Faulting PC : 0x%08x\n"
         "IFAR        : 0x%08x\n"
@@ -153,8 +154,9 @@ bool init_board()
 {
     copy_vector_table();
 
-    rtt_log_init();
-    RTT_LOG_I(TAG, "=== AM335x EDMA test starting ===");
+    if (!HAL::LOG::rtt_backend_init())
+        return false;
+    LOG_I(TAG, "=== AM335x UART DMA starting ===");
     rtt_cache_clean();
 
     init_memory();
@@ -175,8 +177,8 @@ bool init_board()
 
     HAL::INTC::master_IRQ_enable();
 
-    RTT_LOG_I(TAG, "UART0 initialized in DMA mode");
-    RTT_LOG_I(TAG, "EDMA initialized");
+    LOG_I(TAG, "UART0 initialized in DMA mode");
+    LOG_I(TAG, "EDMA initialized");
 
     return true;
 }
@@ -272,4 +274,3 @@ static void interface_clocks_init()
     per.L4LS_CLKSTCTRL.b.CLKTRCTRL = SW_WKUP;
     per.L3S_CLKSTCTRL.b.CLKTRCTRL = SW_WKUP;
 }
-

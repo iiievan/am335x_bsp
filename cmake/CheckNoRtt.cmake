@@ -6,7 +6,7 @@ execute_process(COMMAND "${NM}" -a "${ELF}"
 if(NOT result EQUAL 0)
     message(FATAL_ERROR "nm failed: ${errors}")
 endif()
-if(symbols MATCHES "SEGGER_RTT|rtt_backend|rtt_log_init|_acUpBuffer|_acDownBuffer")
+if(symbols MATCHES "SEGGER_RTT|rtt_backend|_acUpBuffer|_acDownBuffer")
     message(FATAL_ERROR "RTT symbols found in RTT-disabled bootloader")
 endif()
 message(STATUS "Bootloader: no SEGGER RTT symbols")

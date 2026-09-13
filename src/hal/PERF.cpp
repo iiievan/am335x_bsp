@@ -4,7 +4,7 @@
 #include "hal/PERF.hpp"
 #include "regs/PRCM.hpp"
 #include "startup/cp15.h"
-#include "rtt/rtt_log.h"
+#include "log/log.h"
 #include <cstring>
 
 #define TAG "PERF"
@@ -34,7 +34,7 @@ namespace HAL::PERF
         uint32_t pmcntenset = (1U << 31);
         __asm volatile("mcr p15, 0, %0, c9, c12, 1" :: "r"(pmcntenset));
 
-        RTT_LOG_I(TAG, "Cortex-A8 PMU Hardware initialized");
+        LOG_I(TAG, "Cortex-A8 PMU Hardware initialized");
     }
 
     void reset_all() noexcept
@@ -114,7 +114,7 @@ namespace HAL::PERF
         static uint32_t src_buf[TEST_WORDS] __attribute__((section(".perf_data")));
         static uint32_t dst_buf[TEST_WORDS] __attribute__((section(".perf_data")));
 
-        RTT_LOG_I(TAG, "=== Running Memory Performance Benchmark ===");
+        LOG_I(TAG, "=== Running Memory Performance Benchmark ===");
 
         for (size_t i = 0; i < TEST_WORDS; ++i)
         {
@@ -145,12 +145,12 @@ namespace HAL::PERF
         const float seconds = static_cast<float>(elapsed_cycles) / static_cast<float>(s_cpu_freq_hz);
         const float mb_per_sec = (1.0f / seconds);
         const uint32_t elapsed_ms = ticks_to_ms(elapsed_cycles);
-        RTT_LOG_I(TAG, "Memcpy 1MB Result:");
-        RTT_LOG_I(TAG, "  Elapsed CPU Cycles/ms : %u/%u", (unsigned)elapsed_cycles,(unsigned)elapsed_ms);
-        RTT_LOG_I(TAG, "  Calculated Speed   : %u MB/s (at %u MHz)", (unsigned)mb_per_sec,(unsigned)(static_cast<float>(s_cpu_freq_hz)/1000000.0f));
-        RTT_LOG_I(TAG, "  L1 D-Cache Refills : %u", (unsigned)l1_misses);
-        RTT_LOG_I(TAG, "  L2 Cache Refills   : %u", (unsigned)l2_misses);
-        RTT_LOG_I(TAG, "===========================================");
+        LOG_I(TAG, "Memcpy 1MB Result:");
+        LOG_I(TAG, "  Elapsed CPU Cycles/ms : %u/%u", (unsigned)elapsed_cycles,(unsigned)elapsed_ms);
+        LOG_I(TAG, "  Calculated Speed   : %u MB/s (at %u MHz)", (unsigned)mb_per_sec,(unsigned)(static_cast<float>(s_cpu_freq_hz)/1000000.0f));
+        LOG_I(TAG, "  L1 D-Cache Refills : %u", (unsigned)l1_misses);
+        LOG_I(TAG, "  L2 Cache Refills   : %u", (unsigned)l2_misses);
+        LOG_I(TAG, "===========================================");
     }
 
     uint32_t get_mpu_freq_hz()
@@ -202,7 +202,7 @@ namespace HAL::PERF
         const uint32_t elapsed_us = ticks_to_us(cycles);
         const uint32_t elapsed_ms = ticks_to_ms(cycles);
 
-        RTT_LOG_I(m_tag, "Prof: %u cycles | %u us | %u ms | Evt0: %u | Evt1: %u", (unsigned)cycles,
+        LOG_I(m_tag, "Prof: %u cycles | %u us | %u ms | Evt0: %u | Evt1: %u", (unsigned)cycles,
                                                                                   (unsigned)elapsed_us,
                                                                                   (unsigned)elapsed_ms,
                                                                                   (unsigned)evt0,

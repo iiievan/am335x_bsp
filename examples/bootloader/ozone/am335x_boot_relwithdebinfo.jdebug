@@ -8,29 +8,66 @@
 *
 **********************************************************************
 */
+int OZONE_RTT_ENABLED;
+int OZONE_JLINK_LOG_ENABLED;
+int OZONE_CONSOLE_LOG_ENABLED;
+
+void SetRtt(int enabled)
+{
+  if (OZONE_RTT_ENABLED != 0)
+  {
+    Project.SetRTT(enabled);
+  }
+}
+
 void OnProjectLoad (void) 
 {
-  Edit.SysVar (VAR_RTT_ENABLED, 1);
-  Project.SetRTT(0);
+  // Keep this in sync with AM335X_BOOT_LOG_RTT (OFF by default).
+  OZONE_RTT_ENABLED = 0;
+  OZONE_JLINK_LOG_ENABLED = 0;
+  OZONE_CONSOLE_LOG_ENABLED = 0;
+
+  Edit.SysVar(VAR_RTT_ENABLED, OZONE_RTT_ENABLED);
+  if (OZONE_RTT_ENABLED != 0)
+  {
+    // AM335x requires stop-mode BMA emulation (available through Ozone 3.38g).
+    Edit.SysVar(VAR_ALLOW_BMA_EMULATION, 1);
+  }
+
+  if (OZONE_JLINK_LOG_ENABLED != 0)
+  {
+    Project.SetJLinkLogFile("am335x_boot_relwithdebinfo_jlink.log");
+  }
+  if (OZONE_CONSOLE_LOG_ENABLED != 0)
+  {
+    Project.SetConsoleLogFile("am335x_boot_relwithdebinfo_console.log");
+  }
 
   // Вот эти две строки решают проблему неработающего Reset с открытой вкладкой Peripherals
   Edit.SysVar("PERIPHERAL_UPDATE_INTERVAL", 0);       // полностью отключает авто-обновление
   Edit.SysVar("PERIPHERAL_UPDATE_ON_HALT", 0);        // не обновлять при halt/reset
+
+  Edit.SysVar("RESET_ON_CONNECT", 0);
+  Edit.SysVar("CPU_DISABLE_CACHES_MMU_ON_CONNECT", 0);
+  Edit.SysVar("CORESIGHT_CORE_RESET_ON_CONNECT", 0);
 
   Project.SetDevice ("AM3359");
   Project.SetHostIF ("USB", "941000024");
   Project.SetTargetIF ("JTAG");
   Project.SetTIFSpeed ("12 MHz");
 
-  Edit.SysVar (VAR_ALLOW_BMA_EMULATION, 1);
+  if (OZONE_RTT_ENABLED != 0)
+  {
+    Project.AddRTTSearchRange(0x40300000, 0x00010000);
+  }
 
   Project.AddSvdFile("Cortex-A8.svd");
-  Project.AddSvdFile ("AM335x.svd");
+  Project.AddSvdFile ("../../../tools/AM335x.svd");
 
-  File.Open("../../../cmake-build-relwithdebinfo/am335x_boot.elf");
+  File.Open("../../../cmake-build-relwithdebinfo/examples/bootloader/am335x_boot.elf");
+  SetRtt(0);
 
-  // Используем числовое значение 1 для режима "Halt after reset"
-  Debug.SetResetMode(1);
+  Debug.SetResetMode(RM_RESET_HALT);
 }
 
 /*********************************************************************
@@ -48,7 +85,7 @@ void DisableWatchdog(void)
 
    // ВАЖНО: Отключаем RTT перед остановкой ядра
    // Это ключевое решение проблемы
-   Project.SetRTT(0);
+   SetRtt(0);
 
    // Небольшая пауза не нужна, SetRTT выполняется синхронно
 
@@ -56,8 +93,7 @@ void DisableWatchdog(void)
    Target.WriteU32(0x44E35048, 0x0000AAAA);
    Target.WriteU32(0x44E35048, 0x00005555);
 
-   // Включаем RTT обратно после записи
-   Project.SetRTT(1);
+   // RTT stays disabled during reset/download; OnStartupComplete enables it.
 }
 
 /*********************************************************************
@@ -72,14 +108,16 @@ void DisableWatchdog(void)
 void SetExecModeARM(void) 
 {
    unsigned int CPSR;
+   unsigned int thumb_bit;
    
    CPSR = Target.GetReg("CPSR");
    if (CPSR != 0xFFFFFFFF) 
    {
-      if ((CPSR & (1 << 5)) == (1 << 5))
+      thumb_bit = CPSR & 0x20;
+      if (thumb_bit != 0)
       {
          Util.Log("Setting Execution Mode to ARM.");
-         CPSR -= (1 << 5);
+         CPSR = CPSR & 0xFFFFFFDF;
          Target.SetReg("CPSR", CPSR);
       }
    }  
@@ -132,11 +170,11 @@ void SetPCtoMainImageEntry(void)
 */                                                                
 void TargetDownload (void) 
 {
+   SetRtt(0);
    Util.Log("TargetDownload");
    Util.Log("Loading Bootloader application");
    
-   Edit.SysVar(VAR_RESET_MODE, RM_RESET_HALT);
-   Exec.Download("../../../cmake-build-relwithdebinfo/am335x_boot.hex");
+   Exec.Download("../../../cmake-build-relwithdebinfo/examples/bootloader/am335x_boot.elf");
 }
 
 /*********************************************************************
@@ -157,8 +195,7 @@ void TargetReset(void)
    SetExecModeARM();
    SetPCtoBootloaderEntry();
 
-   // Используем числовое значение 1 для режима "Halt after reset"
-   Debug.SetResetMode(1);
+   Debug.SetResetMode(RM_RESET_HALT);
 }   
 
 /*********************************************************************
@@ -172,7 +209,10 @@ void TargetReset(void)
 */                                                                
 void AfterTargetReset(void) 
 {
-   Util.Log("AfterTargetReset");
+   unsigned int PC;
+
+   PC = Target.GetReg("PC");
+   Util.LogHex("AfterTargetReset: PC:", PC);
 }
 
 /*********************************************************************
@@ -223,6 +263,7 @@ void AfterTargetDownload (void)
    unsigned int PC;
    unsigned int Inst;
    
+   SetRtt(0);
    Util.Log("AfterTargetDownload");
    Util.Log("Initializing PC.");
 
@@ -284,5 +325,20 @@ void AfterTargetHalt (void)
       }         
    }
 }  
+
+void BeforeTargetConnect(void)
+{
+   SetRtt(0);
+}
+
+void OnStartupComplete(void)
+{
+   SetRtt(1);
+}
+
+void BeforeTargetDisconnect(void)
+{
+   SetRtt(0);
+}
 
 /*** EOF ***/

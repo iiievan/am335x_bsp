@@ -46,8 +46,8 @@ An RTT-off post-build check runs arm-none-eabi-nm and rejects SEGGER RTT symbols
    MEMORY regions to bypass the error.
 
 Early logs before UART initialization are dropped with RTT OFF; there is no
-early-message buffer. Legacy RTT_LOG calls still route through the common LOG
-frontend. Turning both boot channels OFF produces no physical log output but
+early-message buffer. All call sites use the common `LOG_*` frontend. Turning
+both boot channels OFF produces no physical log output but
 does not compile away formatting call sites; BSP_LOG_COMPILED_LEVEL controls
 that separately for the shared BSP build. No UART ISR logging is added.
 

@@ -4,14 +4,9 @@
 levels, timestamps, tag filtering and formatting. Output transports register a
 `log_sink_t`; one formatted message is then sent to every registered sink.
 
-## Compatibility
-
-Existing `rtt/rtt_log.h` includes remain supported. `RTT_LOG_*` macros map to
-the generic `LOG_*` frontend, while `rtt_log_init()` initializes the optional
-RTT sink.
-
-New code should include `log/log.h` and use `LOG_E`, `LOG_W`, `LOG_I`, `LOG_D`
-and `LOG_T`.
+All BSP and example code includes `log/log.h` and uses `LOG_E`, `LOG_W`,
+`LOG_I`, `LOG_D` and `LOG_T`. The former `rtt/rtt_log.h` compatibility layer
+has been removed; transport selection belongs to application initialization.
 
 ## Build configuration
 
@@ -23,6 +18,10 @@ and `LOG_T`.
 
 Firmware using RTT must link `am335x::log_rtt`. Merely linking the BSP does not
 pull in SEGGER RTT or allocate an RTT control block/buffer.
+
+Bare-metal applications initialize RTT once with
+`HAL::LOG::rtt_backend_init()`. FreeRTOS owns its transports through the
+application logging session described in `examples/freertos/LOGGING.md`.
 
 ## Tag filtering
 
@@ -86,8 +85,8 @@ twice, once plain and once as a structured log. That is intentional for regressi
 Open `tio -b 115200 /dev/ttyUSB0`, run bootloader in Ozone, and compare `LOG_TEST`
 records. To restore the previous UART output, configure
 `-DAM335X_BOOT_LOG_UART=OFF` and rebuild bootloader. No call-site edits are needed.
-UART CLI and all other examples are unchanged: binary autotests must not receive
-UART log text. The CLI's uninitialized timestamp timer is not changed in this step.
+UART CLI and the DMA examples use RTT only: binary autotests do not receive UART
+log text. The CLI's uninitialized timestamp timer is unchanged.
 
 Step 3 now adds RTT-off bootloader linking and OCMC repartitioning. See
 `examples/bootloader/LOGGING.md`: bootloader RTT defaults OFF, UART defaults ON.

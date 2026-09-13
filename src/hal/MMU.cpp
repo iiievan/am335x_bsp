@@ -5,7 +5,7 @@
 #include "hal/CACHE.hpp"
 #include "hal/BRANCH_PREDICTION.hpp"
 #include "startup/cp15.h"
-#include "rtt/rtt_log.h"
+#include "log/log.h"
 #include "hal/PERF.hpp"
 
 #define TAG "MMU"
@@ -60,7 +60,7 @@ namespace HAL::MMU
 
     void init() noexcept
     {
-        RTT_LOG_I(TAG, "Initializing MMU page tables...");
+        LOG_I(TAG, "Initializing MMU page tables...");
 
         // 1. Invalidate TLB
         cp15_TLB_invalidate();
@@ -81,7 +81,7 @@ namespace HAL::MMU
         init_page_table_fault_entries();
 
         // 6. Map DDR region
-        RTT_LOG_I(TAG, "Mapping DDR: 0x%08X - 0x%08X", (int)DDR_START_ADDR, (int)(DDR_START_ADDR + (DDR_NUM_SECTIONS << 20)));
+        LOG_I(TAG, "Mapping DDR: 0x%08X - 0x%08X", (int)DDR_START_ADDR, (int)(DDR_START_ADDR + (DDR_NUM_SECTIONS << 20)));
 
         Region_t ddr_region(PageType::SECTION,
                                     DDR_START_ADDR,
@@ -95,7 +95,7 @@ namespace HAL::MMU
         map_region(ddr_region);
 
         // 7. Map OCMC region
-        RTT_LOG_I(TAG, "Mapping OCMC: 0x%08X - 0x%08X", (int)OCMC_START_ADDR, (int)(OCMC_START_ADDR + (OCMC_NUM_SECTIONS << 20)));
+        LOG_I(TAG, "Mapping OCMC: 0x%08X - 0x%08X", (int)OCMC_START_ADDR, (int)(OCMC_START_ADDR + (OCMC_NUM_SECTIONS << 20)));
 
         Region_t ocmc_region(PageType::SECTION,
                            OCMC_START_ADDR,
@@ -109,7 +109,7 @@ namespace HAL::MMU
         map_region(ocmc_region);
 
         // 8. Map Device region (with XN flag)
-        RTT_LOG_I(TAG, "Mapping Device: 0x%08X - 0x%08X",
+        LOG_I(TAG, "Mapping Device: 0x%08X - 0x%08X",
                   (int)DEV_START_ADDR, (int)(DEV_START_ADDR + (DEV_NUM_SECTIONS << 20)));
 
         Region_t dev_region(PageType::SECTION,
@@ -121,12 +121,12 @@ namespace HAL::MMU
                           s_page_table);
         map_region(dev_region);
 
-        RTT_LOG_I(TAG, "MMU page tables initialized");
+        LOG_I(TAG, "MMU page tables initialized");
     }
 
     void enable() noexcept
     {
-        RTT_LOG_I(TAG, "Enabling MMU...");
+        LOG_I(TAG, "Enabling MMU...");
 
         cp15_D_cache_clean_buff(
             reinterpret_cast<uint32_t>(s_page_table),
@@ -155,15 +155,15 @@ namespace HAL::MMU
 
         cp15_DSB_ISB_sync_barrier();
 
-        RTT_LOG_I(TAG, "MMU enabled");
+        LOG_I(TAG, "MMU enabled");
     }
 
     void disable() noexcept
     {
-        RTT_LOG_I(TAG, "Disabling MMU...");
+        LOG_I(TAG, "Disabling MMU...");
         cp15_MMU_disable();
         cp15_DSB_ISB_sync_barrier();
-        RTT_LOG_I(TAG, "MMU disabled");
+        LOG_I(TAG, "MMU disabled");
     }
 
     bool is_enabled() noexcept
@@ -182,9 +182,9 @@ namespace HAL::MMU
     {
         uint32_t idx = va >> 20;
         if (idx < PAGE_TABLE_NUM_ENTRY)
-            RTT_LOG_I(TAG, "PTE[0x%08X] = 0x%08X", (int)va, (int)s_page_table[idx]);
+            LOG_I(TAG, "PTE[0x%08X] = 0x%08X", (int)va, (int)s_page_table[idx]);
         else
-            RTT_LOG_E(TAG, "Invalid VA for PTE dump: 0x%08X", (int)va);
+            LOG_E(TAG, "Invalid VA for PTE dump: 0x%08X", (int)va);
     }
 }
 
@@ -192,7 +192,7 @@ extern "C"
 {
     void init_memory(void) noexcept
     {
-        RTT_LOG_I(TAG, "=== InitMem: MMU & Cache initialization ===");
+        LOG_I(TAG, "=== InitMem: MMU & Cache initialization ===");
 
         // 1. Предварительная инвалидация кэшей и предсказателя ДО включения MMU
         HAL::CACHE::init();
@@ -210,8 +210,8 @@ extern "C"
 
         HAL::PERF::init();
 
-        RTT_LOG_I(TAG, "=== InitMem complete ===");
-        RTT_LOG_I(TAG, "MMU: %s, I-Cache: %s, D-Cache: %s, Branch Pred: %s",
+        LOG_I(TAG, "=== InitMem complete ===");
+        LOG_I(TAG, "MMU: %s, I-Cache: %s, D-Cache: %s, Branch Pred: %s",
                   HAL::MMU::is_enabled() ? "ON" : "OFF",
                   HAL::CACHE::is_icache_enabled() ? "ON" : "OFF",
                   HAL::CACHE::is_dcache_enabled() ? "ON" : "OFF",

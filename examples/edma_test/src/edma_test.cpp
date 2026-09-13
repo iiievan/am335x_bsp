@@ -5,7 +5,7 @@
 #include "hal/EDMA/ParamBuilder.hpp"
 #include "hal/EDMA/EDMA_diagnostics.hpp"
 #include "hal/INTC.hpp"
-#include "rtt/rtt_log.h"
+#include "log/log.h"
 #include "startup/cp15.h"
 
 #define TAG "EDMA_TEST"
@@ -35,7 +35,7 @@ namespace
 
         for (size_t i = 0; i < BUFFER_SIZE; ++i) {
             if (src_buf[i] != dst_buf[i]) {
-                RTT_LOG_E(TAG, "%s ch%u mismatch @%u: src=0x%02X dst=0x%02X",
+                LOG_E(TAG, "%s ch%u mismatch @%u: src=0x%02X dst=0x%02X",
                           who, ch, static_cast<unsigned>(i), src_buf[i], dst_buf[i]);
                 return false;
             }
@@ -90,7 +90,7 @@ bool test_dma_channel_a(const uint8_t channel)
     DmaChannel dma(channel, REGS::EDMA::EVENT_Q0);
     if (!dma.init())
     {
-        RTT_LOG_E(TAG, "%s ch%u: request failed",who, channel);
+        LOG_E(TAG, "%s ch%u: request failed",who, channel);
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, channel, false, "INIT_FAILED");
         return false;
     }
@@ -102,14 +102,14 @@ bool test_dma_channel_a(const uint8_t channel)
 
     if (!dma.configure(param))
     {
-        RTT_LOG_E(TAG, "%s: DMA chain configure failed", who);
+        LOG_E(TAG, "%s: DMA chain configure failed", who);
         return false;
     }
     dma.trigger(TriggerMode::TRIG_MODE_MANUAL);
 
     if (!dma.wait_completion())
     {
-        RTT_LOG_E(TAG, "%s ch%u: %s", who, channel, dma.has_error() ? "ERROR" : "TIMEOUT");
+        LOG_E(TAG, "%s ch%u: %s", who, channel, dma.has_error() ? "ERROR" : "TIMEOUT");
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, channel, false,
                                                  dma.has_error() ? "ERROR" : "TIMEOUT");
         return false;
@@ -134,7 +134,7 @@ bool test_dma_channel_ab(const uint8_t channel)
     DmaChannel dma(channel, REGS::EDMA::EVENT_Q0);
     if (!dma.init())
     {
-        RTT_LOG_E(TAG, "%s ch%u: request failed", who, channel);
+        LOG_E(TAG, "%s ch%u: request failed", who, channel);
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, channel, false, "INIT_FAILED");
         return false;
     }
@@ -150,7 +150,7 @@ bool test_dma_channel_ab(const uint8_t channel)
 
     if (!dma.configure(param))
     {
-        RTT_LOG_E(TAG, "%s: DMA chain configure failed", who);
+        LOG_E(TAG, "%s: DMA chain configure failed", who);
         return false;
     }
 
@@ -158,7 +158,7 @@ bool test_dma_channel_ab(const uint8_t channel)
 
     if (!dma.wait_completion())
     {
-        RTT_LOG_E(TAG, "%s ch%u: %s", who, channel, dma.has_error() ? "ERROR" : "TIMEOUT");
+        LOG_E(TAG, "%s ch%u: %s", who, channel, dma.has_error() ? "ERROR" : "TIMEOUT");
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, channel, false,
                                                  dma.has_error() ? "ERROR" : "TIMEOUT");
         return false;
@@ -187,7 +187,7 @@ bool test_dma_channel_chain(const uint8_t channel)
     DmaChannel dma(channel, REGS::EDMA::EVENT_Q0);
     if (!dma.init())
     {
-        RTT_LOG_E(TAG, "%s ch%u: request failed", who,  channel);
+        LOG_E(TAG, "%s ch%u: request failed", who,  channel);
         return false;
     }
 
@@ -201,7 +201,7 @@ bool test_dma_channel_chain(const uint8_t channel)
     if (!dma.configure(REGS::EDMA::PaRAMConfig{param0, param_first},
                            REGS::EDMA::PaRAMConfig{param1, param_last}))
     {
-        RTT_LOG_E(TAG, "%s: DMA chain configure failed", who);
+        LOG_E(TAG, "%s: DMA chain configure failed", who);
         return false;
     }
 
@@ -209,7 +209,7 @@ bool test_dma_channel_chain(const uint8_t channel)
 
     if (!dma.wait_completion())
     {
-        RTT_LOG_E(TAG, "%s ch%u: %s", who, channel, dma.has_error() ? "ERROR" : "TIMEOUT");
+        LOG_E(TAG, "%s ch%u: %s", who, channel, dma.has_error() ? "ERROR" : "TIMEOUT");
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, channel, false,
                                                  dma.has_error() ? "ERROR" : "TIMEOUT");
         return false;
@@ -260,7 +260,7 @@ bool test_dma_channel_pingpong(const uint8_t channel, const uint32_t repetitions
 
     if (!dma.init(on_pingpong_completion, on_pingpong_error, &g_pingpong_ctx))
     {
-        RTT_LOG_E(TAG, "%s ch%u: request failed", who, channel);
+        LOG_E(TAG, "%s ch%u: request failed", who, channel);
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, channel, false, "INIT_FAILED");
         return false;
     }
@@ -275,7 +275,7 @@ bool test_dma_channel_pingpong(const uint8_t channel, const uint32_t repetitions
     if (!dma.configure(REGS::EDMA::PaRAMConfig{ping_param_id, param_ping},
                        REGS::EDMA::PaRAMConfig{pong_param_id, param_pong}))
     {
-        RTT_LOG_E(TAG, "%s: DMA chain configure failed", who);
+        LOG_E(TAG, "%s: DMA chain configure failed", who);
         return false;
     }
 
@@ -295,7 +295,7 @@ bool test_dma_channel_pingpong(const uint8_t channel, const uint32_t repetitions
 
         if (timeout_loops == 0u)
         {
-            RTT_LOG_E( TAG, "%s ch%u: transfer %u TIMEOUT, done %u/%u", who, static_cast<unsigned>(channel),
+            LOG_E( TAG, "%s ch%u: transfer %u TIMEOUT, done %u/%u", who, static_cast<unsigned>(channel),
                                                                              static_cast<unsigned>(transfer),
                                                                              static_cast<unsigned>(g_pingpong_ctx.completed_transfers),
                                                                              static_cast<unsigned>(NUM_TRANSFERS));
@@ -313,7 +313,7 @@ bool test_dma_channel_pingpong(const uint8_t channel, const uint32_t repetitions
     {
         if (bufA[i] != src_buf[i] && bufA[i] != src_buf[i + HALF])
         {
-            RTT_LOG_E(TAG, "%s ch%u mismatch @%u: A=0x%02X B=0x%02X", who,
+            LOG_E(TAG, "%s ch%u mismatch @%u: A=0x%02X B=0x%02X", who,
                       channel, static_cast<unsigned>(i), bufA[i], bufB[i]);
             ok = false;
             break;
@@ -325,7 +325,7 @@ bool test_dma_channel_pingpong(const uint8_t channel, const uint32_t repetitions
         return false;
     }
 
-    RTT_LOG_I(TAG, "Hardware Ping-Pong test (%u transfers) for ch%u PASSED.", NUM_TRANSFERS, channel);
+    LOG_I(TAG, "Hardware Ping-Pong test (%u transfers) for ch%u PASSED.", NUM_TRANSFERS, channel);
     return true;
 }
 
@@ -346,7 +346,7 @@ bool test_dma_channel_selflink(const uint8_t channel, const uint32_t repetitions
     g_pingpong_ctx.last_error = {};
 
     if (!dma.init(on_pingpong_completion, on_pingpong_error, &g_pingpong_ctx)) {
-        RTT_LOG_E(TAG, "%s ch%u: request failed", who, channel);
+        LOG_E(TAG, "%s ch%u: request failed", who, channel);
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, channel, false, "INIT_FAILED");
         return false;
     }
@@ -359,7 +359,7 @@ bool test_dma_channel_selflink(const uint8_t channel, const uint32_t repetitions
 
     if (!dma.configure(param))
     {
-        RTT_LOG_E(TAG, "DMA configure failed");
+        LOG_E(TAG, "DMA configure failed");
         return false;
     }
 
@@ -379,7 +379,7 @@ bool test_dma_channel_selflink(const uint8_t channel, const uint32_t repetitions
 
         if (g_pingpong_ctx.transfer_error)
         {
-            RTT_LOG_E(TAG, "%s ch%u: transfer %u ERROR", who, static_cast<unsigned>(channel),
+            LOG_E(TAG, "%s ch%u: transfer %u ERROR", who, static_cast<unsigned>(channel),
                                                               static_cast<unsigned>(transfer));
 
             EDMA_Diagnostics::dump_full_diagnostics(snapshot, channel,false,"EVENT_MISSED");
@@ -389,7 +389,7 @@ bool test_dma_channel_selflink(const uint8_t channel, const uint32_t repetitions
 
         if (timeout_loops == 0u)
         {
-            RTT_LOG_E(TAG,"%s ch%u: transfer %u TIMEOUT, done %u/%u",who, static_cast<unsigned>(channel),
+            LOG_E(TAG,"%s ch%u: transfer %u TIMEOUT, done %u/%u",who, static_cast<unsigned>(channel),
                                                                           static_cast<unsigned>(transfer),
                                                                           static_cast<unsigned>(
                                                                               g_pingpong_ctx.completed_transfers),
@@ -406,7 +406,7 @@ bool test_dma_channel_selflink(const uint8_t channel, const uint32_t repetitions
         return false;
     }
 
-    RTT_LOG_I(TAG, "%s ch%u: PASSED (%u transfers)", who, channel, (unsigned)NUM_TRANSFERS);
+    LOG_I(TAG, "%s ch%u: PASSED (%u transfers)", who, channel, (unsigned)NUM_TRANSFERS);
     return true;
 }
 
@@ -426,7 +426,7 @@ bool test_qdma_channel_a(const uint8_t qch)
 
     if (!qdma.init())
     {
-        RTT_LOG_E(TAG, "%s ch%u: init failed", who, qch);
+        LOG_E(TAG, "%s ch%u: init failed", who, qch);
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, qch, true, "INIT_FAILED");
         return false;
     }
@@ -438,20 +438,20 @@ bool test_qdma_channel_a(const uint8_t qch)
 
     if (!qdma.configure(param))
     {
-        RTT_LOG_E(TAG, "%s ch%u field%u: configure failed", who, qch, static_cast<unsigned>(qdma.getTriggerField()));
+        LOG_E(TAG, "%s ch%u field%u: configure failed", who, qch, static_cast<unsigned>(qdma.getTriggerField()));
         return false;
     }
 
     //EDMA_Diagnostics::dumpQdmaProgrammingState(qch,"BEFORE TRIGGER");
     if (!qdma.trigger())
     {
-        RTT_LOG_E(TAG, "%s ch%u: TRIGGER FAILED", who, qch);
+        LOG_E(TAG, "%s ch%u: TRIGGER FAILED", who, qch);
         return false;
     }
 
     if (!qdma.wait_completion())
     {
-        RTT_LOG_E(TAG, "%s ch%u: %s", who, qch, qdma.has_error() ? "ERROR" : "TIMEOUT");
+        LOG_E(TAG, "%s ch%u: %s", who, qch, qdma.has_error() ? "ERROR" : "TIMEOUT");
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, qch, true,
                                                  qdma.has_error() ? "ERROR" : "TIMEOUT");
         return false;
@@ -479,7 +479,7 @@ bool test_qdma_channel_ab(const uint8_t qch)
 
     if (!qdma.init())
     {
-        RTT_LOG_E(TAG, "%s ch%u: init failed", who, qch);
+        LOG_E(TAG, "%s ch%u: init failed", who, qch);
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, qch, true, "INIT_FAILED");
         return false;
     }
@@ -495,19 +495,19 @@ bool test_qdma_channel_ab(const uint8_t qch)
 
     if (!qdma.configure(param))
     {
-        RTT_LOG_E(TAG, "%s ch%u field%u: configure failed", who, qch, static_cast<unsigned>(qdma.getTriggerField()));
+        LOG_E(TAG, "%s ch%u field%u: configure failed", who, qch, static_cast<unsigned>(qdma.getTriggerField()));
         return false;
     }
 
     if (!qdma.trigger())
     {
-        RTT_LOG_E(TAG, "%s ch%u: TRIGGER FAILED", who, qch);
+        LOG_E(TAG, "%s ch%u: TRIGGER FAILED", who, qch);
         return false;
     }
 
     if (!qdma.wait_completion())
     {
-        RTT_LOG_E(TAG, "%s ch%u: %s", who, qch, qdma.has_error() ? "ERROR" : "TIMEOUT");
+        LOG_E(TAG, "%s ch%u: %s", who, qch, qdma.has_error() ? "ERROR" : "TIMEOUT");
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, qch, true,
                                                  qdma.has_error() ? "ERROR" : "TIMEOUT");
         return false;
@@ -538,7 +538,7 @@ bool test_qdma_channel_chain(const uint8_t qch)
 
     if (!qdma.init())
     {
-        RTT_LOG_E(TAG, "%s ch%u: init failed", who, qch);
+        LOG_E(TAG, "%s ch%u: init failed", who, qch);
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, qch, true, "INIT_FAILED");
         return false;
     }
@@ -555,26 +555,26 @@ bool test_qdma_channel_chain(const uint8_t qch)
         param_last.OPT.b.TCINTEN == 0u ||
         param_last.OPT.b.STATIC == 0u)
     {
-        RTT_LOG_E(TAG, "%s ch%u: invalid QDMA link OPT", who, qch);
+        LOG_E(TAG, "%s ch%u: invalid QDMA link OPT", who, qch);
         return false;
     }
 
     if (!qdma.configure({{param0,param_first},
                                 {param1, param_last}}))
     {
-        RTT_LOG_E(TAG, "%s ch%u field%u: configure failed", who, qch, static_cast<unsigned>(qdma.getTriggerField()));
+        LOG_E(TAG, "%s ch%u field%u: configure failed", who, qch, static_cast<unsigned>(qdma.getTriggerField()));
         return false;
     }
 
     if (!qdma.trigger())
     {
-        RTT_LOG_E(TAG, "%s ch%u: TRIGGER FAILED", who, qch);
+        LOG_E(TAG, "%s ch%u: TRIGGER FAILED", who, qch);
         return false;
     }
 
     if (!qdma.wait_completion())
     {
-        RTT_LOG_E(TAG, "%s ch%u: %s", who, qch, qdma.has_error() ? "ERROR" : "TIMEOUT");
+        LOG_E(TAG, "%s ch%u: %s", who, qch, qdma.has_error() ? "ERROR" : "TIMEOUT");
         EDMA_Diagnostics::dump_full_diagnostics(snapshot, qch, true,
                                                  qdma.has_error() ? "ERROR" : "TIMEOUT");
         return false;
@@ -615,7 +615,7 @@ bool test_qdma_all_trigger_words(const uint8_t qdma_ch)
         QdmaChannel qdma(qdma_ch, tcc, trig_field, REGS::EDMA::EVENT_Q0);
         if (!qdma.init())
         {
-            RTT_LOG_E(TAG, "%s ch%u field%u: init failed", who, qdma_ch, static_cast<uint8_t>(trig_field));
+            LOG_E(TAG, "%s ch%u field%u: init failed", who, qdma_ch, static_cast<uint8_t>(trig_field));
             EDMA_Diagnostics::dump_full_diagnostics(snapshot, qdma_ch, true, "INIT_FAILED");
             return false;
         }
@@ -627,21 +627,21 @@ bool test_qdma_all_trigger_words(const uint8_t qdma_ch)
 
         if (!qdma.configure(param))
         {
-            RTT_LOG_E(TAG, "%s ch%u field%u: configure failed", who, qdma_ch, static_cast<unsigned>(qdma.getTriggerField()));
+            LOG_E(TAG, "%s ch%u field%u: configure failed", who, qdma_ch, static_cast<unsigned>(qdma.getTriggerField()));
             return false;
         }
 
-        RTT_LOG_I(TAG,"testing trigger field %u",static_cast<unsigned>(trig_field));
+        LOG_I(TAG,"testing trigger field %u",static_cast<unsigned>(trig_field));
 
         if (!qdma.trigger())
         {
-            RTT_LOG_E(TAG, "%s ch%u: TRIGGER FAILED", who, qdma_ch);
+            LOG_E(TAG, "%s ch%u: TRIGGER FAILED", who, qdma_ch);
             return false;
         }
 
         if (!qdma.wait_completion())
         {
-            RTT_LOG_E(TAG, "%s ch%u field%u: timeout/error", who, qdma_ch, static_cast<uint8_t>(trig_field));
+            LOG_E(TAG, "%s ch%u field%u: timeout/error", who, qdma_ch, static_cast<uint8_t>(trig_field));
             EDMA_Diagnostics::dump_full_diagnostics(snapshot, qdma_ch, true,
                                          qdma.has_error() ? "ERROR" : "TIMEOUT");
             return false;
@@ -649,12 +649,12 @@ bool test_qdma_all_trigger_words(const uint8_t qdma_ch)
 
         if (!verify_buffers(who, qdma_ch))
         {
-            RTT_LOG_E(TAG, "%s ch%u field%u: data mismatch", who, qdma_ch, static_cast<uint8_t>(trig_field));
+            LOG_E(TAG, "%s ch%u field%u: data mismatch", who, qdma_ch, static_cast<uint8_t>(trig_field));
             EDMA_Diagnostics::dump_full_diagnostics(snapshot, qdma_ch, true, "DATA_MISMATCH");
             return false;
         }
 
-        RTT_LOG_I(TAG, "%s ch%u field%u: PASSED", who, qdma_ch, static_cast<uint8_t>(trig_field));
+        LOG_I(TAG, "%s ch%u field%u: PASSED", who, qdma_ch, static_cast<uint8_t>(trig_field));
     }
 
     return true;
@@ -670,70 +670,70 @@ extern "C" void edma_test(void)
         src_buf[i] = static_cast<uint8_t>(i + 0xA5);
     }
 
-    RTT_LOG_I(TAG, "=== DMA channels A-transfer test (0..63) ===");
+    LOG_I(TAG, "=== DMA channels A-transfer test (0..63) ===");
     uint32_t dma_ok = 0;
     for (uint8_t ch = 0; ch < 64; ++ch) {
         if (test_dma_channel_a(ch)) {
             ++dma_ok;
         }
     }
-    RTT_LOG_I(TAG, "DMA: %u/64 PASSED", static_cast<unsigned>(dma_ok));
+    LOG_I(TAG, "DMA: %u/64 PASSED", static_cast<unsigned>(dma_ok));
 
-    RTT_LOG_I(TAG, "=== QDMA channels A-transfer test (0..7) ===");
+    LOG_I(TAG, "=== QDMA channels A-transfer test (0..7) ===");
     uint32_t qdma_ok = 0;
     for (uint8_t qch = 0; qch < 8; ++qch) {
         if (test_qdma_channel_a(qch)) {
             ++qdma_ok;
         }
     }
-    RTT_LOG_I(TAG, "QDMA: %u/8 PASSED", static_cast<unsigned>(qdma_ok));
+    LOG_I(TAG, "QDMA: %u/8 PASSED", static_cast<unsigned>(qdma_ok));
 
-    RTT_LOG_I(TAG, "=== DMA channels AB-transfer test (0..63) ===");
+    LOG_I(TAG, "=== DMA channels AB-transfer test (0..63) ===");
     dma_ok = 0;
     for (uint8_t ch = 0; ch < 64; ++ch) {
         if (test_dma_channel_ab(ch)) {
             ++dma_ok;
         }
     }
-    RTT_LOG_I(TAG, "DMA: %u/64 PASSED", static_cast<unsigned>(dma_ok));
+    LOG_I(TAG, "DMA: %u/64 PASSED", static_cast<unsigned>(dma_ok));
 
-    RTT_LOG_I(TAG, "=== QDMA channels AB-transfer test (0..7) ===");
+    LOG_I(TAG, "=== QDMA channels AB-transfer test (0..7) ===");
     qdma_ok = 0;
     for (uint8_t qch = 0; qch < 8; ++qch) {
         if (test_qdma_channel_ab(qch)) {
             ++qdma_ok;
         }
     }
-    RTT_LOG_I(TAG, "QDMA: %u/8 PASSED", static_cast<unsigned>(qdma_ok));
+    LOG_I(TAG, "QDMA: %u/8 PASSED", static_cast<unsigned>(qdma_ok));
 
-    RTT_LOG_I(TAG, "=== DMA channels Chain-transfer test (0..63) ===");
+    LOG_I(TAG, "=== DMA channels Chain-transfer test (0..63) ===");
     dma_ok = 0;
     for (uint8_t ch = 0; ch < 64; ++ch) {
         if (test_dma_channel_chain(ch)) {
             ++dma_ok;
         }
     }
-    RTT_LOG_I(TAG, "DMA: %u/64 PASSED", static_cast<unsigned>(dma_ok));
+    LOG_I(TAG, "DMA: %u/64 PASSED", static_cast<unsigned>(dma_ok));
 
-    RTT_LOG_I(TAG, "=== QDMA channels Chain-transfer test (0..7) ===");
+    LOG_I(TAG, "=== QDMA channels Chain-transfer test (0..7) ===");
     qdma_ok = 0;
     for (uint8_t qch = 0; qch < 8; ++qch) {
         if (test_qdma_channel_chain(qch)) {
             ++qdma_ok;
         }
     }
-    RTT_LOG_I(TAG, "QDMA: %u/8 PASSED", static_cast<unsigned>(qdma_ok));
+    LOG_I(TAG, "QDMA: %u/8 PASSED", static_cast<unsigned>(qdma_ok));
 
-    RTT_LOG_I(TAG, "=== DMA channels Ping-Pong test ===");
+    LOG_I(TAG, "=== DMA channels Ping-Pong test ===");
     test_dma_channel_pingpong(0,8);
     test_dma_channel_pingpong(1,9);
 
-    RTT_LOG_I(TAG, "=== DMA channels Selflink test ===");
+    LOG_I(TAG, "=== DMA channels Selflink test ===");
     test_dma_channel_selflink(0, 5);
     test_dma_channel_selflink(1, 10);
 
-    RTT_LOG_I(TAG, "=== QDMA channel all triggerfields test ===");
+    LOG_I(TAG, "=== QDMA channel all triggerfields test ===");
     test_qdma_all_trigger_words(3);
 
-    RTT_LOG_I(TAG, "=== EDMA test finished ===");
+    LOG_I(TAG, "=== EDMA test finished ===");
 }

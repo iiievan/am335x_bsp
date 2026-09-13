@@ -3,7 +3,7 @@
 #include "init.h"
 #include "hal/UART.hpp"
 #include "hal/boards/beaglebone_black.hpp"
-#include "rtt/rtt_log.h"
+#include "log/log.h"
 
 #define TAG "uart_dma"
 
@@ -20,14 +20,14 @@ int main()
 {
     if (!init_board())
     {
-        RTT_LOG_E(TAG, "Board initialization failed");
+        LOG_E(TAG, "Board initialization failed");
         while (true) __asm volatile("wfi");
     }
 
     auto& uart = Board::get_uart0();
     if (!uart.init_dma())
     {
-        RTT_LOG_E(TAG, "UART EDMA channel initialization failed");
+        LOG_E(TAG, "UART EDMA channel initialization failed");
         while (true) __asm volatile("wfi");
     }
 
@@ -42,7 +42,7 @@ int main()
 
     if (!uart.write(welcome, sizeof(welcome) - 1u))
     {
-        RTT_LOG_E(TAG, "UART EDMA welcome transfer failed");
+        LOG_E(TAG, "UART EDMA welcome transfer failed");
     }
     else
     {
@@ -56,19 +56,19 @@ int main()
                 !uart.write(rx_buffer, 8u) ||
                 !uart.write("\r\n", 2u))
             {
-                RTT_LOG_E(TAG, "UART EDMA transfer %lu failed", static_cast<unsigned long>(attempt + 1u));
+                LOG_E(TAG, "UART EDMA transfer %lu failed", static_cast<unsigned long>(attempt + 1u));
 
                 passed = false;
                 break;
             }
 
-            RTT_LOG_I(TAG, "UART EDMA transfer %lu passed", static_cast<unsigned long>(attempt + 1u));
+            LOG_I(TAG, "UART EDMA transfer %lu passed", static_cast<unsigned long>(attempt + 1u));
         }
 
         if (passed)
-            RTT_LOG_I(TAG, "Both UART EDMA echo tests passed");
+            LOG_I(TAG, "Both UART EDMA echo tests passed");
 
-        RTT_LOG_I(TAG, "Entering idle loop");
+        LOG_I(TAG, "Entering idle loop");
 
         while (true)
             __asm volatile("wfi");

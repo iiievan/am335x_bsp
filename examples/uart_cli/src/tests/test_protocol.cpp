@@ -3,7 +3,7 @@
 #include <cstdio>
 
 #include "hal/PERF.hpp"
-#include "rtt/rtt_log.h"
+#include "log/log.h"
 #include "uart_tests.hpp"
 
 #define TAG "uart_cli"
@@ -58,7 +58,7 @@ namespace
         const auto& uart = *REGS::UART::AM335X_UART_0;
         const auto* words = reinterpret_cast<const volatile uint32_t*>(&cc.paRAM(channel));
 
-        RTT_LOG_I("dma_auto",
+        LOG_I("dma_auto",
                   "%s ch=%u UART LSR=%08x SSR=%08x SCR=%08x RXFIFO=%u TXFIFO=%u",
                   phase, static_cast<unsigned>(channel),
                   static_cast<unsigned>(uart.LSR_UART.reg),
@@ -66,7 +66,7 @@ namespace
                   static_cast<unsigned>(uart.SCR.reg),
                   static_cast<unsigned>(uart.RXFIFO_LVL.b.RXFIFO_LVL),
                   static_cast<unsigned>(uart.TXFIFO_LVL.b.TXFIFO_LVL));
-        RTT_LOG_I("dma_auto",
+        LOG_I("dma_auto",
                   "%s ER=%08x EER=%08x SER=%08x IPR=%08x EMR=%08x CCERR=%08x DRAE=%08x",
                   phase,
                   static_cast<unsigned>(cc.S_ER(region).reg),
@@ -76,11 +76,11 @@ namespace
                   static_cast<unsigned>(cc.EMR.reg),
                   static_cast<unsigned>(cc.CCERR.reg),
                   static_cast<unsigned>(cc.DRAE(region).reg));
-        RTT_LOG_I("dma_auto", "%s PaRAM[%u] %08x %08x %08x %08x",
+        LOG_I("dma_auto", "%s PaRAM[%u] %08x %08x %08x %08x",
                   phase, static_cast<unsigned>(channel),
                   static_cast<unsigned>(words[0]), static_cast<unsigned>(words[1]),
                   static_cast<unsigned>(words[2]), static_cast<unsigned>(words[3]));
-        RTT_LOG_I("dma_auto", "%s PaRAM[%u] %08x %08x %08x %08x",
+        LOG_I("dma_auto", "%s PaRAM[%u] %08x %08x %08x %08x",
                   phase, static_cast<unsigned>(channel),
                   static_cast<unsigned>(words[4]), static_cast<unsigned>(words[5]),
                   static_cast<unsigned>(words[6]), static_cast<unsigned>(words[7]));
@@ -520,7 +520,7 @@ namespace
                       baud_index >= static_cast<uint32_t>(REGS::UART::KBPS_480_8)
                           ? 13u : 16u);
         uart.put_string(message);
-        RTT_LOG_I("dma_auto", "BAUD old=%u new=%u index=%u mode=%ux",
+        LOG_I("dma_auto", "BAUD old=%u new=%u index=%u mode=%ux",
                   static_cast<unsigned>(UART_BAUD_VALUES[old_index]),
                   static_cast<unsigned>(UART_BAUD_VALUES[baud_index]),
                   static_cast<unsigned>(baud_index),
@@ -549,7 +549,7 @@ namespace
         char message[192]{};
         build_tx_test_packet(transfer_size, seed);
 
-        RTT_LOG_I("dma_auto", "TXTAIL BEGIN seq=%u size=%u dma=%u tail=%u seed=%08x",
+        LOG_I("dma_auto", "TXTAIL BEGIN seq=%u size=%u dma=%u tail=%u seed=%08x",
                   static_cast<unsigned>(sequence),
                   static_cast<unsigned>(transfer_size),
                   static_cast<unsigned>(transfer_size - transfer_size % DMA_ALIGNMENT),
@@ -558,7 +558,7 @@ namespace
 
         if (!uart.init_dma())
         {
-            RTT_LOG_E("dma_auto", "TXTAIL UART DMA initialization failed");
+            LOG_E("dma_auto", "TXTAIL UART DMA initialization failed");
             uart.init_polling();
             uart.put_string("@RESULT mode=tx status=FAIL error=DMA_INIT\n");
             return;
@@ -590,7 +590,7 @@ namespace
                       tx_ok ? static_cast<unsigned>(transfer_size) : 0u,
                       tx_ok ? "PASS" : "FAIL");
         uart.put_string(message);
-        RTT_LOG_I("dma_auto", "TXTAIL END seq=%u status=%s cycles=%u",
+        LOG_I("dma_auto", "TXTAIL END seq=%u status=%s cycles=%u",
                   static_cast<unsigned>(sequence), tx_ok ? "PASS" : "FAIL",
                   static_cast<unsigned>(tx_cycles));
     }
@@ -605,7 +605,7 @@ namespace
         const std::size_t dma_size = transfer_size - transfer_size % DMA_ALIGNMENT;
         const std::size_t tail_size = transfer_size % DMA_ALIGNMENT;
 
-        RTT_LOG_I("dma_auto", "RXTAIL BEGIN seq=%u size=%u dma=%u tail=%u seed=%08x",
+        LOG_I("dma_auto", "RXTAIL BEGIN seq=%u size=%u dma=%u tail=%u seed=%08x",
                   static_cast<unsigned>(sequence),
                   static_cast<unsigned>(transfer_size),
                   static_cast<unsigned>(dma_size),
@@ -614,7 +614,7 @@ namespace
 
         if (!uart.init_dma())
         {
-            RTT_LOG_E("dma_auto", "RXTAIL UART DMA initialization failed");
+            LOG_E("dma_auto", "RXTAIL UART DMA initialization failed");
             uart.init_polling();
             uart.put_string("@RESULT mode=rx status=FAIL error=DMA_INIT\n");
             return;
@@ -629,7 +629,7 @@ namespace
         uart.put_string(message);
         uart.wait_tx_complete();
 
-        RTT_LOG_I("dma_auto", "RXTAIL READY sent; entering blocking RX");
+        LOG_I("dma_auto", "RXTAIL READY sent; entering blocking RX");
         const uint32_t rx_started = HAL::PERF::get_cycle_count();
         const bool rx_ok = uart.read(g_dma_frame, transfer_size,
                                      TEST_TIMEOUT_LOOPS,
@@ -663,7 +663,7 @@ namespace
             }
         }
 
-        RTT_LOG_I("dma_auto",
+        LOG_I("dma_auto",
                   "RXTAIL %s after %u PMU cycles; crc=%s data=%s received_crc=%04x calculated_crc=%04x",
                   rx_ok ? "completed" : "failed",
                   static_cast<unsigned>(rx_cycles),
@@ -687,7 +687,7 @@ namespace
                       data_ok ? "PASS" : "FAIL",
                       passed ? "PASS" : "FAIL");
         uart.put_string(message);
-        RTT_LOG_I("dma_auto", "RXTAIL END seq=%u status=%s",
+        LOG_I("dma_auto", "RXTAIL END seq=%u status=%s",
                   static_cast<unsigned>(sequence), passed ? "PASS" : "FAIL");
     }
 
@@ -761,7 +761,7 @@ namespace
                       static_cast<unsigned>(transfer_size),
                       static_cast<unsigned>(transfer_size));
         uart.put_string(message);
-        RTT_LOG_I("uart_auto", "TX mode=%s seq=%u size=%u cycles=%u status=PASS",
+        LOG_I("uart_auto", "TX mode=%s seq=%u size=%u cycles=%u status=PASS",
                   auto_mode_name(mode), static_cast<unsigned>(sequence),
                   static_cast<unsigned>(transfer_size),
                   static_cast<unsigned>(cycles));
@@ -825,7 +825,7 @@ namespace
                       crc_ok ? "PASS" : "FAIL", data_ok ? "PASS" : "FAIL",
                       passed ? "PASS" : "FAIL");
         uart.put_string(message);
-        RTT_LOG_I("uart_auto", "RX mode=%s seq=%u size=%u cycles=%u status=%s",
+        LOG_I("uart_auto", "RX mode=%s seq=%u size=%u cycles=%u status=%s",
                   auto_mode_name(mode), static_cast<unsigned>(sequence),
                   static_cast<unsigned>(transfer_size),
                   static_cast<unsigned>(cycles), passed ? "PASS" : "FAIL");
@@ -893,7 +893,7 @@ namespace
                       crc_ok ? "PASS" : "FAIL", data_ok ? "PASS" : "FAIL",
                       passed ? "PASS" : "FAIL");
         uart.put_string(message);
-        RTT_LOG_I("uart_auto", "LOOP mode=%s seq=%u frame=%u status=%s",
+        LOG_I("uart_auto", "LOOP mode=%s seq=%u frame=%u status=%s",
                   auto_mode_name(mode), static_cast<unsigned>(sequence),
                   static_cast<unsigned>(frame_size), passed ? "PASS" : "FAIL");
     }
@@ -907,7 +907,7 @@ namespace
         const std::size_t frame_size = dma_frame_size(payload_size);
         char message[192]{};
 
-        RTT_LOG_I("dma_auto", "BEGIN seq=%u payload=%u frame=%u seed=%08x",
+        LOG_I("dma_auto", "BEGIN seq=%u payload=%u frame=%u seed=%08x",
                   static_cast<unsigned>(sequence),
                   static_cast<unsigned>(payload_size),
                   static_cast<unsigned>(frame_size),
@@ -915,7 +915,7 @@ namespace
 
         if (!uart.init_dma())
         {
-            RTT_LOG_E("dma_auto", "UART DMA initialization failed");
+            LOG_E("dma_auto", "UART DMA initialization failed");
             uart.init_polling();
             uart.put_string("@RESULT mode=dma status=FAIL error=DMA_INIT\n");
             return;
@@ -929,14 +929,14 @@ namespace
         uart.put_string(message);
         uart.wait_tx_complete();
 
-        RTT_LOG_I("dma_auto", "READY sent; entering blocking RX");
+        LOG_I("dma_auto", "READY sent; entering blocking RX");
         const uint32_t rx_started = HAL::PERF::get_cycle_count();
 
         if (!uart.read(g_dma_frame, frame_size, TEST_TIMEOUT_LOOPS,
                        TEST_TIMEOUT_LOOPS, dma_timeout_epochs(uart)))
         {
             const uint32_t rx_cycles = HAL::PERF::get_cycle_count() - rx_started;
-            RTT_LOG_E("dma_auto", "RX failed after %u PMU cycles",
+            LOG_E("dma_auto", "RX failed after %u PMU cycles",
                       static_cast<unsigned>(rx_cycles));
             log_dma_hw_state("RX_FAIL", REGS::EDMA::CH_UART0_RX);
             uart.init_polling();
@@ -948,7 +948,7 @@ namespace
         }
 
         const uint32_t rx_cycles = HAL::PERF::get_cycle_count() - rx_started;
-        RTT_LOG_I("dma_auto", "RX completed after %u PMU cycles",
+        LOG_I("dma_auto", "RX completed after %u PMU cycles",
                   static_cast<unsigned>(rx_cycles));
         log_dma_hw_state("RX_DONE", REGS::EDMA::CH_UART0_RX);
 
@@ -968,7 +968,7 @@ namespace
         const bool crc_ok = received_crc == calculated_crc;
         const bool data_ok = header_ok && validate_dma_payload(*header);
 
-        RTT_LOG_I("dma_auto",
+        LOG_I("dma_auto",
                   "VALIDATE header=%s crc=%s data=%s received_crc=%04x calculated_crc=%04x",
                   header_ok ? "PASS" : "FAIL",
                   crc_ok ? "PASS" : "FAIL",
@@ -983,7 +983,7 @@ namespace
                                       TEST_TIMEOUT_LOOPS,
                                       dma_timeout_epochs(uart));
         const uint32_t tx_cycles = HAL::PERF::get_cycle_count() - tx_started;
-        RTT_LOG_I("dma_auto", "TX %s after %u PMU cycles",
+        LOG_I("dma_auto", "TX %s after %u PMU cycles",
                   tx_ok ? "completed" : "failed",
                   static_cast<unsigned>(tx_cycles));
         log_dma_hw_state(tx_ok ? "TX_DONE" : "TX_FAIL", REGS::EDMA::CH_UART0_TX);
@@ -998,7 +998,7 @@ namespace
                       data_ok ? "PASS" : "FAIL",
                       (tx_ok && crc_ok && data_ok) ? "PASS" : "FAIL");
         uart.put_string(message);
-        RTT_LOG_I("dma_auto", "END seq=%u status=%s",
+        LOG_I("dma_auto", "END seq=%u status=%s",
                   static_cast<unsigned>(sequence),
                   (tx_ok && crc_ok && data_ok) ? "PASS" : "FAIL");
     }
@@ -1075,7 +1075,7 @@ namespace
                       timed_out ? "PASS" : "FAIL",
                       timed_out ? "PASS" : "FAIL");
         uart.put_string(message);
-        RTT_LOG_I("uart_auto", "RECOVER mode=%s seq=%u timeout=%s",
+        LOG_I("uart_auto", "RECOVER mode=%s seq=%u timeout=%s",
                   auto_mode_name(mode), static_cast<unsigned>(sequence),
                   timed_out ? "PASS" : "FAIL");
     }
@@ -1189,7 +1189,7 @@ namespace
                       crc_ok ? "PASS" : "FAIL", data_ok ? "PASS" : "FAIL",
                       guard_ok ? "PASS" : "FAIL", passed ? "PASS" : "FAIL");
         uart.put_string(message);
-        RTT_LOG_I("uart_auto", "OFFSET mode=%s seq=%u frame=%u guard=%s status=%s",
+        LOG_I("uart_auto", "OFFSET mode=%s seq=%u frame=%u guard=%s status=%s",
                   auto_mode_name(mode), static_cast<unsigned>(sequence),
                   static_cast<unsigned>(frame_size),
                   guard_ok ? "PASS" : "FAIL", passed ? "PASS" : "FAIL");
@@ -1202,9 +1202,9 @@ namespace
         uart.put_string(passed ? ": PASS\n" : ": FAIL\n");
 
         if (passed)
-            RTT_LOG_I(TAG, "%s test passed", name);
+            LOG_I(TAG, "%s test passed", name);
         else
-            RTT_LOG_E(TAG, "%s test failed", name);
+            LOG_E(TAG, "%s test failed", name);
     }
 
     void print_help_impl(const Uart& uart) noexcept

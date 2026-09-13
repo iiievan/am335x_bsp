@@ -8,10 +8,42 @@
 *
 **********************************************************************
 */
+int OZONE_RTT_ENABLED;
+int OZONE_JLINK_LOG_ENABLED;
+int OZONE_CONSOLE_LOG_ENABLED;
+
+void SetRtt(int enabled)
+{
+  Edit.SysVar (VAR_RTT_ENABLED, 1);
+  if (OZONE_RTT_ENABLED != 0)
+  {
+  Project.SetRTT(enabled);
+  }
+}
+
 void OnProjectLoad (void) 
 {
+  // User options. Full J-Link logging is intentionally off during normal use.
+  OZONE_RTT_ENABLED = 1;
+  OZONE_JLINK_LOG_ENABLED = 0;
+  OZONE_CONSOLE_LOG_ENABLED = 0;
+
+  Edit.SysVar(VAR_RTT_ENABLED, OZONE_RTT_ENABLED);
+  if (OZONE_RTT_ENABLED != 0)
+  {
+    // AM335x requires stop-mode BMA emulation (available through Ozone 3.38g).
+    Edit.SysVar(VAR_ALLOW_BMA_EMULATION, 1);
+  }
+
   Project.SetJLinkScript("../../../tools/AM335x_DDR_Init.jlinkscript");
-  Project.SetRTT(0);
+  if (OZONE_JLINK_LOG_ENABLED != 0)
+  {
+    Project.SetJLinkLogFile("am335x_uart_dma_jlink.log");
+  }
+  if (OZONE_CONSOLE_LOG_ENABLED != 0)
+  {
+    Project.SetConsoleLogFile("am335x_uart_dma_console.log");
+  }
 
   // Вот эти две строки решают проблему неработающего Reset с открытой вкладкой Peripherals
   Edit.SysVar("PERIPHERAL_UPDATE_INTERVAL", 0);       // полностью отключает авто-обновление
@@ -26,15 +58,18 @@ void OnProjectLoad (void)
   Project.SetTargetIF ("JTAG");
   Project.SetTIFSpeed ("12 MHz");
 
-  Edit.SysVar (VAR_ALLOW_BMA_EMULATION, 1);
+  if (OZONE_RTT_ENABLED != 0)
+  {
+    Project.AddRTTSearchRange(0x40300000, 0x00010000);
+  }
 
   Project.AddSvdFile("Cortex-A8.svd");
   Project.AddSvdFile ("../../../tools/AM335x.svd");
 
   File.Open("../../../cmake-build-debug/examples/uart_dma/am335x_uart_dma.elf");
+  SetRtt(0);
 
-  // Используем числовое значение 1 для режима "Halt after reset"
-  Debug.SetResetMode(1);
+  Debug.SetResetMode(RM_RESET_HALT);
 }
 
 /*********************************************************************
@@ -52,7 +87,7 @@ void DisableWatchdog(void)
 
    // ВАЖНО: Отключаем RTT перед остановкой ядра
    // Это ключевое решение проблемы
-   Project.SetRTT(0);
+   SetRtt(0);
 
    // Небольшая пауза не нужна, SetRTT выполняется синхронно
 
@@ -60,8 +95,7 @@ void DisableWatchdog(void)
    Target.WriteU32(0x44E35048, 0x0000AAAA);
    Target.WriteU32(0x44E35048, 0x00005555);
 
-   // Включаем RTT обратно после записи
-   Project.SetRTT(1);
+   // RTT stays disabled during reset/download; OnStartupComplete enables it.
 }
 
 /*********************************************************************
@@ -76,14 +110,16 @@ void DisableWatchdog(void)
 void SetExecModeARM(void) 
 {
    unsigned int CPSR;
+   unsigned int thumb_bit;
    
    CPSR = Target.GetReg("CPSR");
    if (CPSR != 0xFFFFFFFF) 
    {
-      if ((CPSR & (1 << 5)) == (1 << 5))
+      thumb_bit = CPSR & 0x20;
+      if (thumb_bit != 0)
       {
          Util.Log("Setting Execution Mode to ARM.");
-         CPSR = CPSR & ~(1 << 5);
+         CPSR = CPSR & 0xFFFFFFDF;
          Target.SetReg("CPSR", CPSR);
       }
    }
@@ -103,13 +139,19 @@ void SetPCtoEntryPoint(void)
    unsigned int PC;
 
    PC = Elf.GetEntryPointPC();
-   if (PC == 0xFFFFFFFF || PC == 0)
+   if (PC == 0xFFFFFFFF)
    {
       Util.Log("WARNING: Failed to get entry point from ELF, using 0x80000000");
       PC = 0x80000000;  // fallback на начало DDR
    }
 
-   Util.Log("Setting PC to entry point: 0x80000000");
+   if (PC == 0)
+   {
+      Util.Log("WARNING: Zero ELF entry point, using 0x80000000");
+      PC = 0x80000000;
+   }
+
+   Util.LogHex("Setting PC to ELF entry point:", PC);
    Target.SetReg("PC", PC); 
 }
 
@@ -125,6 +167,7 @@ void SetPCtoEntryPoint(void)
 void TargetDownload (void)
 {
    int test;
+   SetRtt(0);
    Util.Log("TargetDownload: Loading application to DDR (0x80000000)");
 
    Target.WriteU32(0x80000000, 0xDEADBEEF);
@@ -136,8 +179,6 @@ void TargetDownload (void)
    } else {
        Util.Log("FAILED: DDR still not accessible");
    }
-
-   Edit.SysVar(VAR_RESET_MODE, RM_RESET_HALT);
 
    // Загружаем ELF (он сам разложит секции по нужным адресам, включая 0x80000000)
    Exec.Download("../../../cmake-build-debug/examples/uart_dma/am335x_uart_dma.elf");
@@ -161,8 +202,7 @@ void TargetReset(void)
    SetExecModeARM();
    SetPCtoEntryPoint();
 
-   // Используем числовое значение 1 для режима "Halt after reset"
-   Debug.SetResetMode(1);
+   Debug.SetResetMode(RM_RESET_HALT);
 }   
 
 /*********************************************************************
@@ -176,8 +216,10 @@ void TargetReset(void)
 */                                                                
 void AfterTargetReset(void) 
 {
-   Util.Log("AfterTargetReset: Target ready at 0x80000000");
-   
+   U32 PC;
+
+   PC = Target.GetReg("PC");
+   Util.LogHex("AfterTargetReset: PC:", PC);
 }
 
 /*********************************************************************
@@ -194,7 +236,8 @@ void AfterTargetDownload (void)
    U32 test_val;
    U32 PC;
 
-   Util.Log("AfterTargetDownload: Download complete");
+   SetRtt(0);
+   Util.Log("AfterTargetDownload: Download complete; RTT awaits startup");
    
    // Просто останавливаемся, пусть пользователь сам запускает
    test_val = Target.ReadU32(0x80000000);
@@ -231,8 +274,23 @@ void AfterTargetHalt (void)
    PC = Target.GetReg("PC");
    if (PC != 0xFFFFFFFF)
    {
-      Util.Log("Halted at PC = 0x80000000");
+      Util.LogHex("Halted at PC:", PC);
    }
 } 
+
+void BeforeTargetConnect(void)
+{
+   SetRtt(0);
+}
+
+void OnStartupComplete(void)
+{
+   SetRtt(1);
+}
+
+void BeforeTargetDisconnect(void)
+{
+   SetRtt(0);
+}
 
 /*** EOF ***/

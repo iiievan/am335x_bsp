@@ -8,15 +8,42 @@
 *
 **********************************************************************
 */
+int OZONE_RTT_ENABLED;
+int OZONE_JLINK_LOG_ENABLED;
+int OZONE_CONSOLE_LOG_ENABLED;
+
+void SetRtt(int enabled)
+{
+  Edit.SysVar (VAR_RTT_ENABLED, 1);
+  if (OZONE_RTT_ENABLED != 0)
+  {
+  Project.SetRTT(enabled);
+  }
+}
+
 void OnProjectLoad (void) 
 {
-  // Ozone 3.34: allow memory access through temporary CPU halts.
-  Edit.SysVar (VAR_ALLOW_BMA_EMULATION, 1);
+  // User options. Full J-Link logging is intentionally off during normal use.
+  OZONE_RTT_ENABLED = 1;
+  OZONE_JLINK_LOG_ENABLED = 0;
+  OZONE_CONSOLE_LOG_ENABLED = 0;
+
+  Edit.SysVar(VAR_RTT_ENABLED, OZONE_RTT_ENABLED);
+  if (OZONE_RTT_ENABLED != 0)
+  {
+    // AM335x requires stop-mode BMA emulation (available through Ozone 3.38g).
+    Edit.SysVar(VAR_ALLOW_BMA_EMULATION, 1);
+  }
+
   Project.SetJLinkScript("../../../tools/AM335x_DDR_Init.jlinkscript");
-  // Relative paths are resolved beside this .jdebug file.
-  Project.SetJLinkLogFile("am335x_rtt_v3_jlink.log");
-  Project.SetConsoleLogFile("am335x_rtt_v3_console.log");
-  Util.Log("RTT setup v3: project loaded");
+  if (OZONE_JLINK_LOG_ENABLED != 0)
+  {
+    Project.SetJLinkLogFile("am335x_uart_cli_jlink.log");
+  }
+  if (OZONE_CONSOLE_LOG_ENABLED != 0)
+  {
+    Project.SetConsoleLogFile("am335x_uart_cli_console.log");
+  }
 
   // Вот эти две строки решают проблему неработающего Reset с открытой вкладкой Peripherals
   Edit.SysVar("PERIPHERAL_UPDATE_INTERVAL", 0);       // полностью отключает авто-обновление
@@ -31,15 +58,17 @@ void OnProjectLoad (void)
   Project.SetTargetIF ("JTAG");
   Project.SetTIFSpeed ("12 MHz");
 
-  // RTT is in OCMC; BGMemAP selection is in the DDR script SetupTarget().
-  Project.AddRTTSearchRange(0x40300000, 0x00010000);
+  if (OZONE_RTT_ENABLED != 0)
+  {
+    Project.AddRTTSearchRange(0x40300000, 0x00010000);
+  }
 
   Project.AddSvdFile("Cortex-A8.svd");
   Project.AddSvdFile ("../../../tools/AM335x.svd");
 
   File.Open("../../../cmake-build-debug/examples/uart_cli/am335x_uart_cli.elf");
   // File.Open may auto-detect RTT. Keep capture off until startup completion.
-  Project.SetRTT(0);
+  SetRtt(0);
 
   // Use the named Reset & Halt mode; numeric 1 selects Break at Symbol.
   Debug.SetResetMode(RM_RESET_HALT);
@@ -60,7 +89,7 @@ void DisableWatchdog(void)
 
    // ВАЖНО: Отключаем RTT перед остановкой ядра
    // Это ключевое решение проблемы
-   Project.SetRTT(0);
+   SetRtt(0);
 
    // Небольшая пауза не нужна, SetRTT выполняется синхронно
 
@@ -140,7 +169,7 @@ void SetPCtoEntryPoint(void)
 void TargetDownload (void)
 {
    int test;
-   Project.SetRTT(0);
+   SetRtt(0);
    Util.Log("TargetDownload: Loading application to DDR (0x80000000)");
 
    Target.WriteU32(0x80000000, 0xDEADBEEF);
@@ -211,7 +240,7 @@ void AfterTargetDownload (void)
    U32 test_val;
    U32 PC;
 
-   Project.SetRTT(0);
+   SetRtt(0);
    Util.Log("AfterTargetDownload: Download complete; RTT awaits startup");
    
    // Просто останавливаемся, пусть пользователь сам запускает
@@ -259,71 +288,7 @@ void AfterTargetHalt (void)
 *********************************************************************/
 void BeforeTargetConnect(void)
 {
-   Project.SetRTT(0);
-}
-
-/*********************************************************************
-* AfterTargetConnect
-* The observed library rejects BGMemAP selection before creating its AP map.
-* Select AP[0] after device connection; retain AP[1] for core debugging.
-* This is a diagnostic attempt, not proof of working background access.
-*********************************************************************/
-void AfterTargetConnect(void)
-{
-   Util.Log("RTT setup v3: selecting background AP after target connect");
-
-   // Ozone returned zero even when the command text reported an error.
-   Util.Log("RTT setup v3: inspect command messages and J-Link log for result");
-}
-
-/*********************************************************************
-* DumpRttControlBlock
-* Diagnostic read while halted, including during the startup completion hook.
-* Ordinary reads while halted do not prove live AHB-AP access works.
-* Manual use after halting: Script.Exec("DumpRttControlBlock");
-*********************************************************************/
-void DumpRttControlBlock(void)
-{
-   U32 addr;
-   U32 offset;
-   U32 read_addr;
-   U32 value;
-   int valid;
-
-   addr = Elf.GetExprValue("&_SEGGER_RTT");
-   Util.LogHex("RTT setup v3: &_SEGGER_RTT:", addr);
-
-   // Keep conditions simple for the Ozone script interpreter.
-   // The range checks also reject 0 and the error value 0xFFFFFFFF.
-   valid = 1;
-   if (addr < 0x40300000)
-   {
-      valid = 0;
-   }
-   if (addr > 0x4030FFE8)
-   {
-      valid = 0;
-   }
-
-   if (valid == 1)
-   {
-      // 16-byte ID, then MaxNumUpBuffers and MaxNumDownBuffers.
-      // Expected ID starts with 0x47474553, 0x52205245, 0x00005454.
-      // Zero ID may mean SEGGER_RTT_Init has not run yet.
-      offset = 0;
-      while (offset < 24)
-      {
-         read_addr = addr + offset;
-         value = Target.ReadU32(read_addr);
-         Util.LogHex("RTT setup v3: control-block byte offset:", offset);
-         Util.LogHex("RTT setup v3: word:", value);
-         offset = offset + 4;
-      }
-   }
-   else
-   {
-      Util.Log("RTT setup v3: symbol unavailable or outside OCMC; dump skipped");
-   }
+   SetRtt(0);
 }
 
 /*********************************************************************
@@ -333,16 +298,12 @@ void DumpRttControlBlock(void)
 *********************************************************************/
 void OnStartupComplete(void)
 {
-   Util.Log("RTT setup v3: startup complete");
-   DumpRttControlBlock();
-   Project.SetRTT(1);
-   // The request's return code did not reflect the observed activation failure.
-   Util.Log("RTT setup v3: RTT requested; inspect Ozone activation messages");
+   SetRtt(1);
 }
 
 void BeforeTargetDisconnect(void)
 {
-   Project.SetRTT(0);
+   SetRtt(0);
 }
 
 /*** EOF ***/

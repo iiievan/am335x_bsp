@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "init.h"
-#include "rtt/rtt_log.h"
+#include "log/log.h"
 #include "edma_test.h"
 #include "hal/PERF.hpp"
 
@@ -11,7 +11,7 @@ int main ()
 {
     if (!init_board())
     {
-        RTT_LOG_E(TAG, "Board initialization failed");
+        LOG_E(TAG, "Board initialization failed");
 
         while (true)
         {
@@ -19,12 +19,12 @@ int main ()
         }
     }
 
-    RTT_LOG_I(TAG, "Board initialization done");
-    RTT_LOG_I(TAG, "Starting standalone EDMA test");
+    LOG_I(TAG, "Board initialization done");
+    LOG_I(TAG, "Starting standalone EDMA test");
 
     edma_test();
 
-    RTT_LOG_I(TAG, "EDMA test finished");
+    LOG_I(TAG, "EDMA test finished");
 
     while (true)
     {
