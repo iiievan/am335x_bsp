@@ -1393,6 +1393,14 @@ namespace REGS::MMCHS
         WIDTH_8BIT = 0x8
     };
 
+    //-> Voltage capability bits advertised through SD_CAPA[26:24]. <-//
+    enum e_CAPA_VOLT : uint32_t
+    {
+        CAPA_VOLT_3V3 = BIT(24),       // VS33 - the board can supply 3.3 V to the card
+        CAPA_VOLT_3V0 = BIT(25),       // VS30 - the board can supply 3.0 V to the card
+        CAPA_VOLT_1V8 = BIT(26)        // VS18 - the board can supply 1.8 V to the card
+    };
+
     //-> Software reset requests, SD_SYSCTL[26:24]. <-//
     enum e_LINE_RESET : uint32_t
     {

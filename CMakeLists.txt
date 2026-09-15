@@ -48,8 +48,10 @@ set(BSP_SOURCES  src/hal/INTC.cpp
                  src/hal/UART.cpp
                  src/hal/EDMA/periph/UartBackend.hpp
                  src/hal/EDMA/EDMA.cpp
-                 src/hal/MMCSD.hpp
-                 src/hal/MMCSD.cpp
+                 src/hal/MMCSD/MMCSD.hpp
+                 src/hal/MMCSD/MMCSD.cpp
+                 src/hal/MMCSD/Card.hpp
+                 src/hal/MMCSD/Card.cpp
                  src/hal/EDMA/EDMA.hpp
                  src/hal/EDMA/ParamBuilder.hpp
                  src/hal/EDMA/DmaChannel.hpp
