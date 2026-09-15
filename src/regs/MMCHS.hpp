@@ -1,585 +1,407 @@
-#ifndef __MMCHS_HPP
-#define __MMCHS_HPP
+#ifndef REGS_MMCHS_HPP
+#define REGS_MMCHS_HPP
 
 #include <stdint.h>
+#include <stddef.h>
 #include "REGS.hpp"
 
 namespace REGS::MMCHS
 {
-    /******************************************************************************************************************************************************************************/  
-    
-    /*************************************************************************** AM335x_MMCHS_Type Registers **********************************************************************/ 
-    
-    /******************************************************************************************************************************************************************************/      
-        
-    /* (offset = 0x110) [reset = 0x0] */
-    typedef union
-    {
-        struct
-        {
-                                                /* Register SD_SYSCONFIG */
-            uint32_t    AUTOIDLE      : 1;      // bit:0       (R/W) Internal Clock gating strategy 0h (R) = Clocks are free-running. 1h (W) = Automatic
-                                                //                  clock gating strategy is applied, based on the interconnect and MMC interface activity.
-                                                //                   [ 0x0 = Clocks free-running;
-                                                //                     0x1 = Automatic clock gating ]
-            uint32_t    SOFTRESET     : 1;      // bit:1       (R/W) Software reset. The bit is automatically reset by the hardware. During reset, it always
-                                                //                  returns 0.
-                                                //                   [ 0x0 = No effect;
-                                                //                     0x1 = Trigger module reset ]
-            uint32_t    ENAWAKEUP     : 1;      // bit:2       (R/W) Wake-up feature control
-                                                //                   [ 0x0 = Disabled;
-                                                //                     0x1 = Enabled ]
-            uint32_t    SIDLEMODE     : 2;      // bits:3..4   (R/W) Power management 0h = If an idle request is detected, the MMC/SD/SDIO host controller
-                                                //                  acknowledges it unconditionally and goes in Inactive mode. Interrupt and DMA requests
-                                                //                  are unconditionally deasserted. [see e_SIDLEMODE]
-            uint32_t                  : 3;      // bits:5..7   (R)   Reserved
-            uint32_t    CLOCKACTIVITY : 2;      // bits:8..9   (R/W) Clocks activity during wake up mode period. Bit 8 is the Interface clock. Bit 9 is the
-                                                //                  Functional clock. [see e_CLOCKACTIVITY]
-            uint32_t                  :22;      // bits:10..31 (R)   Reserved
-        } b;
-        uint32_t reg;
-    } SYSCONFIG_reg_t;
+    /*********************************************************************************************************************************/
 
+    /**************************************************** AM335x_MMCHS_Type Registers ************************************************/
+
+    /*********************************************************************************************************************************/
+    /*  CAUTION (TRM 18.5): the MMC/SD/SDIO registers are limited to 32-bit data accesses.
+     *                      16-bit and 8-bit accesses are not allowed and can corrupt the register content.
+     *                      Always go through the 'reg' member of the unions below, never through 'b' bitfields,
+     *                      if the compiler may split the access.
+     */
+
+    /*  @brief      Power management, wake-up and clock gating of the OCP interface.
+     *  @details    Controls the idle/standby behaviour of the module, the software reset and the
+     *              automatic clock gating strategy.
+    (offset = 0x110) [reset = 0x00000000] */
     enum e_SIDLEMODE : uint32_t
     {
-        /*  Controls how the module responds to idle requests
-         *  Determines power management behavior when peripheral is idle
+        /*  Controls how the module responds to idle requests.
+         *  Determines the power management behaviour when the peripheral is idle.
          */
-        SIDLE_FORCE    = 0x0,  // Unconditionally acknowledge idle request
-        SIDLE_NO       = 0x1,  // Ignore idle request
-        SIDLE_SMART    = 0x2,  // Smart idle based on internal activity
-        SIDLE_RESERVED = 0x3   // Reserved
+        SIDLE_FORCE    = 0x0,       // Idle request acknowledged unconditionally, module goes to Inactive mode
+        SIDLE_NO       = 0x1,       // Idle request is ignored, module keeps on behaving normally
+        SIDLE_SMART    = 0x2,       // Smart idle based on internal activity (needs ENAWAKEUP to use wake-up)
+        SIDLE_RESERVED = 0x3        // Reserved
     };
 
     enum e_CLOCKACTIVITY : uint32_t
     {
-        /*  Controls which clocks remain active during wake-up
-         *  Determines clock gating behavior during low-power states
+        /*  Controls which clocks remain active during the wake-up period.
+         *  Bit 0 of the field is the interface clock, bit 1 is the functional clock.
          */
-        CLKACT_BOTH_OFF   = 0x0,  // Interface and Functional clock may be switched off
-        CLKACT_INTF_ON    = 0x1,  // Interface clock maintained
-        CLKACT_FUNC_ON    = 0x2,  // Functional clock maintained
-        CLKACT_BOTH_ON    = 0x3   // Both clocks maintained
+        CLKACT_BOTH_OFF = 0x0,      // Interface and functional clock may be switched off
+        CLKACT_INTF_ON  = 0x1,      // Interface clock is maintained, functional clock may be switched off
+        CLKACT_FUNC_ON  = 0x2,      // Functional clock is maintained, interface clock may be switched off
+        CLKACT_BOTH_ON  = 0x3       // Interface and functional clocks are maintained
     };
 
-    /* (offset = 0x114) [reset state = 0x0] */
     typedef union
     {
         struct
         {
-                                        /* Register SD_SYSSTATUS */
-            uint32_t    RESETDONE : 1;  // bit:0      (R) Internal Reset Monitoring. Notethe debounce clock , the interface clock and the
-                                        //               functional clock shall be provided to the MMC/SD/SDIO host controller to allow the
-                                        //               internal reset monitoring.
-                                        //                 [ 0x0 = Reset ongoing;
-                                        //                   0x1 = Reset completed ]
-            uint32_t              :31;  // bits:1..31 (R) Reserved
-        } b;
-        uint32_t reg;
-    } SYSSTATUS_reg_t;;
+            uint32_t    AUTOIDLE      : 1;      // bit  0       (R/W) Internal clock gating strategy
+                                                //                    [ 0x0 (R) = Clocks are free-running;
+                                                //                      0x1 (W) = Automatic clock gating applied, based on the
+                                                //                                interconnect and MMC interface activity ]
+            uint32_t    SOFTRESET     : 1;      // bit  1       (R/W) Software reset. The bit is automatically reset by the hardware.
+                                                //                    During reset it always returns 0.
+                                                //                    [ 0x0 (W) = No effect; 0x0 (R) = Normal mode;
+                                                //                      0x1 (W) = Trigger a module reset; 0x1 (R) = The module is reset ]
+            uint32_t    ENAWAKEUP     : 1;      // bit  2       (R/W) Wake-up feature control
+                                                //                    [ 0x0 = Wake-up capability is disabled;
+                                                //                      0x1 = Wake-up capability is enabled ]
+            uint32_t    SIDLEMODE     : 2;      // bits 3,4     (R/W) Power management [see e_SIDLEMODE]
+            uint32_t                  : 3;      // bits 5..7    (R)   Reserved
+            uint32_t    CLOCKACTIVITY : 2;      // bits 8,9     (R/W) Clocks activity during the wake-up mode period [see e_CLOCKACTIVITY]
+            uint32_t                  :22;      // bits 10..31  (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
+    } SYSCONFIG_reg_t;
 
-    /* (offset = 0x124) [reset state = 0x0] */
+    /*  @brief      System Status Register
+     *  @details    Provides status information about the module, excluding the interrupt status information.
+    (offset = 0x114) [reset = 0x00000000] */
     typedef union
     {
         struct
         {
-            /* Register SD_CSRE */
-            uint32_t    CSRE :32; // bits:0..31 (R/W) Card status response error
-        } b;
-        uint32_t reg;
+            uint32_t    RESETDONE : 1;          // bit  0       (R)   Internal reset monitoring. Note: the debounce clock, the interface
+                                                //                    clock and the functional clock shall be provided to the MMC/SD/SDIO
+                                                //                    host controller to allow the internal reset monitoring.
+                                                //                    [ 0x0 = Internal module reset is on-going;
+                                                //                      0x1 = Reset completed ]
+            uint32_t              :31;          // bits 1..31   (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
+    } SYSSTATUS_reg_t;
+
+    /*  @brief      Card Status Response Error Register
+     *  @details    Enables the host controller to detect card status errors of response type R1, R1b for all cards
+     *              and of R5, R5b and R6 for SD or SDIO cards. When SD_CSRE[i] is set to 1 and the corresponding bit
+     *              of SD_RSP10 is set to 1, the host controller raises a card error (SD_STAT[28] CERR).
+    (offset = 0x124) [reset = 0x00000000] */
+    typedef union
+    {
+        struct
+        {
+            uint32_t    CSRE :32;               // bits 0..31   (R/W) Card status response error mask
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } CSRE_reg_t;
 
-    /* (offset = 0x128) [reset = 0x0] */
+    /*  @brief      System Test Register
+     *  @details    Controls the signals connected to the I/O pins when the module is configured in system test
+     *              (SYSTEST) mode for boundary connectivity verification. In SYSTEST mode a write into SD_CMD does
+     *              not start a transfer and the buffer behaves as a stack accessible only by the local host.
+    (offset = 0x128) [reset = 0x00000000] */
     typedef union
     {
         struct
         {
-                                    /* Register SD_SYSTEST */
-            uint32_t    MCKD : 1;   // bit:0       (R/W) MMC clock output signal data value.
-                                    //                  [ 0x0 (W) = The output clock is driven low. 0x0 (R) = Noaction. Returns 0.
-                                    //                    0x1 (W) = The output clock is driven high. 0x1 (R) = No action. Returns 1.]
-            uint32_t    CDIR : 1;   // bit:1       (R/W) Control of the CMD pin direction
-                                    //                  [ 0x0(W) = The CMD line is an output (host to card). 0x0(R) = No action. Returns 0.
-                                    //                    0x1 (W) = The CMD line is an input (card to host) . 0x1 (R) =  No action. Returns 1.]
-            uint32_t    CDAT : 1;   // bit:2       (R/W) CMD input/output signal data value
-                                    //                [0x0 (W) = If SD_SYSTEST[1] CDIR bit = 0 (output mode
-                                    //                            direction), the CMD line is driven low. If SD_SYSTEST[1] CDIR bit = 1 (input mode
-                                    //                            direction), no effect.
-                                    //                 0x0 (R) = If SD_SYSTEST[1] CDIR bit = 1 (input mode direction),
-                                    //                            returns the value on the CMD line (low). If SD_SYSTEST[1] CDIR bit = 0 (output mode
-                                    //                            direction), returns 0 .
-                                    //                 0x1 (W) = If SD_SYSTEST[1] CDIR bit = 0 (output mode direction), the CMD line is driven high.
-                                    //                            If SD_SYSTEST[1] CDIR bit = 1 (input mode direction), no effect.
-                                    //                 0x1 (R) = If SD_SYSTEST[1] CDIR bit = 1 (input mode direction), returns the value
-                                    //                            on the CMD line (high) If SD_SYSTEST[1] CDIR bit = 0 (output mode direction), returns 1.]
-            uint32_t    DDIR : 1;   // bit:3       (R/W) Control of the DAT [7:0] pins direction.
-                                    //                  [ 0x0 (W) = The DAT lines are outputs (host to card). 0x0 (R) = No action. Returns 0.
-                                    //                    0x1 (W) = The DAT lines are inputs (card to host). 0x1 (R) = No action. Returns 1.]
-            uint32_t    D0D  : 1;   // bit:4       (R/W) DAT0 input/output signal data value.
-                                    //                  [0x0 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), the DAT0 line is driven low.
-                                    //                              If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), no effect.
-                                    //                   0x0 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction),
-                                    //                              returns the value on the DAT0 line (low). If SD_SYSTEST[3] DDIR bit = 0 (output mode
-                                    //                              direction), returns 0.
-                                    //                   0x1 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), the DAT0 line is driven high.
-                                    //                            If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), no effect.
-                                    //                   0x1 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), returns the value
-                                    //                            on the DAT0 line (high) If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), returns 1.]
-            uint32_t    D1D  : 1;   // bit:5       (R/W) DAT1 input/output signal data value.
-                                    //                  [0x0 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), the DAT1 line is driven low. If SD_SYSTEST[3] DDIR bit = 1 (input mode
-                                    //                             direction), no effect.
-                                    //                   0x0 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction),
-                                    //                             returns the value on the DAT1 line (low). If SD_SYSTEST[3] DDIR bit = 0 (output mode
-                                    //                             direction), returns 0.
-                                    //                   0x1 (W) =   If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), the DAT1 line is driven high.
-                                    //                               If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), no effect.
-                                    //                   0x1 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction),
-                                    //                              returns the value on the DAT1 line (high) If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), returns 1.]
-            uint32_t    D2D  : 1;   // bit:6       (R/W) DAT2 input/output signal data value.
-                                    //                  [0x0 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), the DAT2 line is driven low. If SD_SYSTEST[3] DDIR bit = 1 (input mode
-                                    //                              direction), no effect.
-                                    //                   0x0 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction),
-                                    //                              returns the value on the DAT2 line (low). If SD_SYSTEST[3] DDIR bit = 0 (output mode
-                                    //                              direction), returns 0.
-                                    //                   0x1 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), the DAT2 line is driven high.
-                                    //                           If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), no effect.
-                                    //                   0x1 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction),
-                                    //                           returns the value on the DAT2 line (high) If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), returns 1.]
-            uint32_t    D3D  : 1;   // bit:7       (R/W) DAT3 input/output signal data value.
-                                    //                  [0x0 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), the DAT3 line is driven low.
-                                    //                              If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), no effect.
-                                    //                   0x0 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction),
-                                    //                              returns the value on the DAT3 line (low). If SD_SYSTEST[3] DDIR bit = 0 (output mode
-                                    //                              direction), returns 0.
-                                    //                   0x1 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction),
-                                    //                              the DAT3 line is driven high. If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), no
-                                    //                              effect.
-                                    //                   0x1 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), returns the value
-                                    //                              on the DAT3 line (high) If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), returns 1.]
-            uint32_t    D4D  : 1;   // bit:8       (R/W) DAT4 input/output signal data value.
-                                    //                  [0x0 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), the DAT4 line is driven low.
-                                    //                              If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), no effect.
-                                    //                   0x0 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction),
-                                    //                              returns the value on the DAT4 line (low). If SD_SYSTEST[3] DDIR bit = 0 (output mode
-                                    //                              direction), returns 0.
-                                    //                   0x1 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction),
-                                    //                              the DAT4 line is driven high. If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), no
-                                    //                              effect.
-                                    //                   0x1 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), returns the value
-                                    //                              on the DAT4 line (high) If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), returns 1.]
-            uint32_t    D5D  : 1;   // bit:9       (R/W) DAT5 input/output signal data value.
-                                    //                  [0x0 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode
-                                    //                             direction), the DAT5 line is driven low. If SD_SYSTEST[3] DDIR bit = 1 (input mode
-                                    //                             direction), no effect.
-                                    //                   0x0 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction),
-                                    //                             returns the value on the DAT5 line (low). If SD_SYSTEST[3] DDIR bit = 0 (output mode
-                                    //                             direction), returns 0.
-                                    //                   0x1 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction),
-                                    //                             the DAT5 line is driven high. If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), no
-                                    //                             effect.
-                                    //                   0x1 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), returns the value
-                                    //                             on the DAT5 line (high) If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), returns 1.]
-            uint32_t    D6D  : 1;   // bit:10      (R/W) DAT6 input/output signal data value.
-                                    //                  [0x0 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), the DAT6 line is driven low. If SD_SYSTEST[3] DDIR bit = 1 (input mode
-                                    //                             direction), no effect.
-                                    //                   0x0 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction),
-                                    //                             returns the value on the DAT6 line (low). If SD_SYSTEST[3] DDIR bit = 0 (output mode
-                                    //                             direction), returns 0.
-                                    //                   0x1 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction),
-                                    //                             the DAT6 line is driven high. If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), no
-                                    //                             effect.
-                                    //                   0x1 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), returns the value
-                                    //                             on the DAT6 line (high) If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), returns 1.]
-            uint32_t    D7D  : 1;   // bit:11      (R/W) DAT7 input/output signal data value.
-                                    //                  [0x0 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), the DAT7 line is driven low. If SD_SYSTEST[3] DDIR bit = 1 (input mode
-                                    //                             direction), no effect.
-                                    //                   0x0 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction),
-                                    //                             returns the value on the DAT7 line (low). If SD_SYSTEST[3] DDIR bit = 0 (output mode
-                                    //                             direction), returns 0.
-                                    //                   0x1 (W) = If SD_SYSTEST[3] DDIR bit = 0 (output mode direction),
-                                    //                             the DAT7 line is driven high. If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), no
-                                    //                             effect.
-                                    //                   0x1 (R) = If SD_SYSTEST[3] DDIR bit = 1 (input mode direction), returns the value
-                                    //                             on the DAT7 line (high) If SD_SYSTEST[3] DDIR bit = 0 (output mode direction), returns 1.]
-            uint32_t    SSB  : 1;   // bit:12      (R/W) Set status bit. This bit must be cleared prior attempting to clear a status bit of the
-                                    //                  interrupt status register (SD_STAT).
-                                    //                  [0x0 (W) = Clear this SSB bit field. Writing 0 does
-                                    //                             not clear already set status bits.
-                                    //                   0x0 (R) = No action. Returns 0.
-                                    //                   0x1 (W) = Force to 1 all status bits of the interrupt status register (SD_STAT) only if the corresponding bit
-                                    //                             field in the Interrupt signal enable register (SD_ISE) is set.
-                                    //                   0x1 (R) = No action. Returns 1.]
-            uint32_t    WAKD : 1;   // bit:13      (R/W) Wake request output signal data value.
-                                    //                  [0x0 (W) = The pin SWAKEUP is driven low.
-                                    //                   0x0 (R) = No action. Returns 0.
-                                    //                   0x1 (W) = The pin SWAKEUP is driven high.
-                                    //                   0x1 (R) = No action. Returns 1.
-            uint32_t    SDWP : 1;   // bit:14      (R/W) Write protect input signal (SDWP) data value
-                                    //                   [0x0 = The write protect pin SDWP is driven low.
-                                    //                    0x1 = The write protect pin SDWP is driven high.]
-            uint32_t    SDCD : 1;   // bit:15      (R/W) Card detect input signal (SDCD) data value
-                                    //                  [0x0 = The card detect pin is driven low.
-                                    //                   0x1 = The card detect pin is driven high.]
-            uint32_t    OBI  : 1;   // bit:16      (R/W) Out-of-band interrupt (OBI) data value.
-                                    //                   [0x0 = The out-of-band interrupt pin is driven low.
-                                    //                    0x1 = The out-of-band interrupt pin is driven high.]
-            uint32_t         :15;   // bits:17..31 (R)   Reserved
-        } b;
-        uint32_t reg;
+            uint32_t    MCKD : 1;               // bit  0       (R/W) MMC clock output signal data value
+                                                //                    [ 0x0 (W) = The output clock is driven low;  0x0 (R) = No action, returns 0;
+                                                //                      0x1 (W) = The output clock is driven high; 0x1 (R) = No action, returns 1 ]
+            uint32_t    CDIR : 1;               // bit  1       (R/W) Control of the CMD pin direction
+                                                //                    [ 0x0 (W) = The CMD line is an output (host to card);
+                                                //                      0x1 (W) = The CMD line is an input (card to host) ]
+            uint32_t    CDAT : 1;               // bit  2       (R/W) CMD input/output signal data value.
+                                                //                    In output mode (CDIR = 0) a write drives the CMD line;
+                                                //                    in input mode (CDIR = 1) a read returns the CMD line level.
+            uint32_t    DDIR : 1;               // bit  3       (R/W) Control of the DAT[7:0] pins direction
+                                                //                    [ 0x0 (W) = The DAT lines are outputs (host to card);
+                                                //                      0x1 (W) = The DAT lines are inputs (card to host) ]
+            uint32_t    D0D  : 1;               // bit  4       (R/W) DAT0 input/output signal data value.
+                                                //                    In output mode (DDIR = 0) a write drives the line;
+                                                //                    in input mode (DDIR = 1) a read returns the line level.
+            uint32_t    D1D  : 1;               // bit  5       (R/W) DAT1 input/output signal data value (see D0D)
+            uint32_t    D2D  : 1;               // bit  6       (R/W) DAT2 input/output signal data value (see D0D)
+            uint32_t    D3D  : 1;               // bit  7       (R/W) DAT3 input/output signal data value (see D0D)
+            uint32_t    D4D  : 1;               // bit  8       (R/W) DAT4 input/output signal data value (see D0D)
+            uint32_t    D5D  : 1;               // bit  9       (R/W) DAT5 input/output signal data value (see D0D)
+            uint32_t    D6D  : 1;               // bit  10      (R/W) DAT6 input/output signal data value (see D0D)
+            uint32_t    D7D  : 1;               // bit  11      (R/W) DAT7 input/output signal data value (see D0D)
+            uint32_t    SSB  : 1;               // bit  12      (R/W) Set status bit. This bit must be cleared before attempting to clear a
+                                                //                    status bit of the interrupt status register (SD_STAT).
+                                                //                    [ 0x0 (W) = Clear this SSB bit field. Writing 0 does not clear already
+                                                //                                set status bits;
+                                                //                      0x1 (W) = Force to 1 all status bits of SD_STAT, only if the
+                                                //                                corresponding bit field in SD_ISE is set ]
+            uint32_t    WAKD : 1;               // bit  13      (R/W) Wake request output signal data value
+                                                //                    [ 0x0 (W) = The pin SWAKEUP is driven low;
+                                                //                      0x1 (W) = The pin SWAKEUP is driven high ]
+            uint32_t    SDWP : 1;               // bit  14      (R/W) Write protect input signal (SDWP) data value
+                                                //                    [ 0x0 = The write protect pin SDWP is driven low;
+                                                //                      0x1 = The write protect pin SDWP is driven high ]
+            uint32_t    SDCD : 1;               // bit  15      (R/W) Card detect input signal (SDCD) data value
+                                                //                    [ 0x0 = The card detect pin is driven low;
+                                                //                      0x1 = The card detect pin is driven high ]
+            uint32_t    OBI  : 1;               // bit  16      (R/W) Out-of-band interrupt (OBI) data value
+                                                //                    [ 0x0 = The out-of-band interrupt pin is driven low;
+                                                //                      0x1 = The out-of-band interrupt pin is driven high ]
+            uint32_t         :15;               // bits 17..31  (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } SYSTEST_reg_t;
 
-    /* (offset = 0x12C) [reset = 0x0] */
-    typedef union
-    {
-        struct
-        {
-                                        /* Register SD_CON */
-            uint32_t    OD         : 1; // bit:0       (R/W) Card open drain mode (MMC cards only). This bit must be set to 1 for MMC card commands
-                                        //                  1, 2, 3 and 40, and if the MMC card bus is operating in open-drain mode during the
-                                        //                  response phase to the command sent. Typically, during card identification mode when the
-                                        //                  card is either in idle, ready or ident state. It is also necessary to set this bit to 1,
-                                        //                  for a broadcast host response (see Broadcast host response register SD_CON[2] HR bit).
-                                        //                  [ 0x0 = No open drain;
-                                        //                    0x1 = Open drain or broadcast host response]
-            uint32_t    INIT       : 1; // bit:1       (R/W) Send initialization stream (all cards). When this bit is set to 1, and the card is idle,
-                                        //                  an initialization sequence is sent to the card. An initialization sequence consists of
-                                        //                  setting the mmc_cmd line to 1 during 80 clock cycles. The initialization sequence is
-                                        //                  mandatory - but it is not required to do it through this bit - this bit makes it easier.
-                                        //                  Clock divider (SD_SYSCTL [15:6] CLKD bits) should be set to ensure that 80 clock periods
-                                        //                  are greater than 1ms. Ensure that the functional clock frequency of the module and the
-                                        //                  clock divider value conform to this requirement before using this bit for
-                                        //                  initialization. Note: In this mode, there is no command sent to the card and no response
-                                        //                  is expected. A command complete interrupt will be generated once the initialization
-                                        //                  sequence is completed. SD_STAT[0] CC bit can be polled.
-                                        //                  [0x0 = The host does not send an initialization sequence;
-                                        //                   0x1 = The host sends an initialization sequence]
-            uint32_t    HR         : 1; // bit:2       (R/W) Broadcast host response (MMC cards only). This register is used to force the host to
-                                        //                  generate a 48-bit response for bc command type. It can be used to terminate the
-                                        //                  interrupt mode by generating a CMD40 response by the core. In order to have the host
-                                        //                  response to be generated in open drain mode, the register SD_CON[OD] must be set to 1.
-                                        //                  When SD_CON[12] CEATA bit is set to 1 and SD_ARG cleared to 0, when writing 0000 0000h
-                                        //                  into SD_CMD register, the host controller performs a &apos;command completion signal
-                                        //                  disable&apos; token (i.e., mmc_cmd line held to 0 during 47 cycles followed by a 1).
-                                        //                  [0x0 = The host does not generate a 48-bit response instead of a command;
-                                        //                  [0x1 = The host generates a 48-bit response instead of a command or a command
-                                        //                         completion signal disabletoken.]
-            uint32_t    STR        : 1; // bit:3       (R/W) Stream command (MMC cards only). This bit must be set to 1 only for the stream data
-                                        //                  transfers (read or write) of the adtc commands. Stream read is a class 1 command
-                                        //                  (CMD11READ_DAT_UNTIL_STOP). Stream write is a class 3 command
-                                        //                  (CMD20WRITE_DAT_UNTIL_STOP).
-                                        //                  [0x0 = Block oriented data transfer;
-                                        //                   0x1 = Stream oriented data transfer]
-            uint32_t    MODE       : 1; // bit:4       (R/W) Mode select (all cards). This bit selects the functional mode.
-                                        //                   [0x0 = Functional mode. Transfers to the MMC/SD/SDIO cards follow the card protocol. The MMC clock is enabled.
-                                        //                          MMC/SD transfers are operated under the control of the SD_CMD register.
-                                        //                    0x1 = SYSTEST mode. SYSTEST mode. The signal pins are configured as general-purpose input/output and
-                                        //                          the 1024-byte buffer is configured as a stack memory accessible only by the local host
-                                        //                          or system DMA. The pins retain their default type (input, output or in- out). SYSTEST
-                                        //                          mode is operated under the control of the SYSTEST register.]
-            uint32_t    DW8        : 1; // bit:5       (R/W) 8-bit mode MMC select (MMC cards only). For SD/SDIO cards, this bit must be cleared to
-                                        //                  0. For MMC card, this bit must be set following a valid SWITCH command (CMD6) with the
-                                        //                  correct value and extend CSD index written in the argument. Prior to this command, the
-                                        //                  MMC card configuration register (CSD and EXT_CSD) must be verified for compliancy with
-                                        //                  MMC standard specification.
-                                        //                  [0x0 = 1-bit or 4-bit data width;
-                                        //                   0x1 = 8-bit data width]
-            uint32_t    MIT        : 1; // bit:6       (R/W) MMC interrupt command (MMC cards only). This bit must be set to 1, when the next write
-                                        //                  access to the command register (SD_CMD) is for writing a MMC interrupt command (CMD40)
-                                        //                  requiring the command timeout detection to be disabled for the command response.
-                                        //                  [0x0 = Command timeout enabled.
-                                        //                   0x1 = Command timeout disabled.]
-            uint32_t    CDP        : 1; // bit:7       (R/W) Card detect polarity (all cards). This bit selects the active level of the card detect
-                                        //                  input signal (SDCD). The usage of the card detect input signal (SDCD) is optional and
-                                        //                  depends on the system integration and the type of the connector housing that
-                                        //                  accommodates the card.
-                                        //                  [0x0 = Active high level;
-                                        //                   0x1 = Active low level]
-            uint32_t    WPP        : 1; // bit:8       (R/W) Write protect polarity (SD and SDIO cards only). This bit selects the active level of
-                                        //                  the write protect input signal (SDWP). The usage of the write protect input signal
-                                        //                  (SDWP) is optional and depends on the system integration and the type of the connector
-                                        //                  housing that accommodates the card.
-                                        //                  [0x0 = Active high level;
-                                        //                   0x1 = Active low level]
-            uint32_t    DVAL       : 2; // bits:9..10  (R/W) Debounce filter value (all cards). This register is used to define a debounce period to
-                                        //                  filter the card detect input signal (SDCD). The usage of the card detect input signal
-                                        //                  (SDCD) is optional and depends on the system integration and the type of the connector
-                                        //                  housing that accommodates the card. [see e_DVAL]
-            uint32_t    CTPL       : 1; // bit:11      (R/W) Control Power for mmc_dat[1] line (SD cards). By default, this bit is cleared to 0 and
-                                        //                  the host controller automatically disables all the input buffers outside of a
-                                        //                  transaction to minimize the leakage current. SDIO cards. When this bit is set to 1, the
-                                        //                  host controller automatically disables all the input buffers except the buffer of
-                                        //                  mmc_dat[1] outside of a transaction in order to detect asynchronous card interrupt on
-                                        //                  mmc_dat[1] line and minimize the leakage current of the buffers.
-                                        //                  [0x0 = Disable all the input buffers outside of a transaction.
-                                        //                   0x1 = Disable all the input buffers except the buffer of mmc_dat[1] outside of a transaction.]
-            uint32_t    CEATA      : 1; // bit:12      (R/W) CE-ATA control mode (MMC cards compliant with CE-ATA). This bit selects the active level
-                                        //                  of the out-of-band interrupt coming from MMC cards. The usage of the Out-of-Band signal
-                                        //                  (OBI) is not supported.
-                                        //                  [0x0 = Standard MMC/SD/SDIO mode.;
-                                        //                   0x1 = CE-ATA mode. Next commands are considered as CE-ATA commands.]
-            uint32_t               : 2; // bits:13..14 (R)   Reserved
-            uint32_t    PADEN      : 1; // bit:15      (R/W) Control power for MMC lines. This register is only useful when MMC PADs contain power
-                                        //                  saving mechanism to minimize its leakage power. It works as a GPIO that directly control
-                                        //                  the ACTIVE pin of PADs. Excepted for mmc_dat[1] , the signal is also combine outside the
-                                        //                  module with the dedicated power control SD_CON[11] CTPL bit.
-                                        //                  [0x0 = ADPIDLE module pin is not forced, it is automatically generated by the MMC fsms.
-                                        //                   0x1 = ADPIDLE module pin is forced to active state]
-            uint32_t    CLKEXTFREE : 1; // bit:16      (R/W) External clock free running. This register is used to maintain card clock out of
-                                        //                  transfer transaction to enable slave module (for example to generate a synchronous
-                                        //                  interrupt on mmc_dat[1] ). The Clock will be maintain only if SD_SYSCTL[2] CEN bit is
-                                        //                  set.
-                                        //                  [0x0 = External card clock is cut off outside active transaction period.;
-                                        //                   0x1 = External card clock is maintain even out of active transaction period only if
-                                        //                         SD_SYSCTL[2] CEN bit is set.]
-            uint32_t    BOOT_ACK   : 1; // bit:17      (R/W) Book acknowledge received. When this bit is set the controller should receive a boot
-                                        //                  status on DAT0 line after next command issued. If no status is received a data timeout
-                                        //                  will be generated.
-                                        //                  [0x0 = No acknowledge to be received.;
-                                        //                   0x1 = A boot status will be received on DAT0 line after issuing a command.]
-            uint32_t    BOOT_CF0   : 1; // bit:18      (R/W) Boot Status Supported. This register is set when the CMD line needs to be forced to 0
-                                        //                  for a boot sequence. CMD line is driven to 0 after writing in SD_CMD. The line is
-                                        //                  released when this bit field is de-asserted and aborts data transfer in case of a
-                                        //                  pending transaction.
-                                        //                  [0x0 (W) = CMD line forced to 0 is enabled.
-                                        //                   0x0 (R) = CMD line not forced.
-                                        //                   0x1 (W) = CMD line forced to 0 is enabled and will be active after writing into
-                                        //                             SD_CMD register.
-                                        //                  0x1 (R) = CMD line is released when it was previously forced to 0 by a
-                                        //                            boot sequence.]
-            uint32_t    DDR        : 1; // bit:19      (R/W) Dual Data Rate mode. When this register is set, the controller uses both clock edge to
-                                        //                  emit or receive data. Odd bytes are transmitted on falling edges and even bytes are
-                                        //                  transmitted on rise edges. It only applies on Data bytes and CRC, Start, end bits and
-                                        //                  CRC status are kept full cycle. This bit field is only meaningful and active for even
-                                        //                  clock divider ratio of SD_SYSCTL[CLKD], it is insensitive to SD_HCTL[HSPE] setting.
-                                        //                  Note: DDR mode is not supported on AM335x. Always set this bit to 0.
-                                        //                  [0x0 = Standard modeData are transmitted on a single edge.
-                                        //                   0x1 = Data Bytes and CRC are transmitted on both edges.]
-            uint32_t    DMA_MnS    : 1; // bit:20      (R/W) DMA Master or Slave selection. When this bit is set and the controller is configured to
-                                        //                  use the DMA, Ocp master interface is used to get datas from system using ADMA2 procedure
-                                        //                  (direct access to the memory). This option is only available if generic parameter
-                                        //                  MADMA_EN is asserted to 1.
-                                        //                  [0x0 = The controller is slave on data transfers with system.
-                                        //                   0x1 = Not available on this device.]
-            uint32_t    SDMA_LnE   : 1; // bit:21      (R/W) Slave DMA Level/Edge Request. The waveform of the DMA request can be configured either
-                                        //                  edge sensitive with early de-assertion on first access to SD_DATA register or late
-                                        //                  de-assertion, request remains active until last allowed data written into SD_DATA.
-                                        //                  [0x0 = Slave DMA edge sensitive.
-                                        //                   0x1 = Slave DMA level sensitive.]
-            uint32_t               :10; // bits:22..31 (R)   Reserved
-        } b;
-        uint32_t reg;
-    } CON_reg_t;
-
-    /* Enums for multi-value fields */
+    /*  @brief      Configuration Register
+     *  @details    Selects the functional mode for any card, sends an initialization sequence to any card and
+     *              enables the detection on the mmc_dat[1] signal of a card interrupt for SDIO cards only.
+     *              It also configures the parameters related to the card detect and write protect input signals.
+    (offset = 0x12C) [reset = 0x00000000] */
     enum e_DVAL : uint32_t
     {
-        /*  Selects debounce filter time for card detection
-         *  Determines how long signal must be stable before being recognized
+        /*  Selects the debounce filter time for the card detect input signal (SDCD).
+         *  Determines how long the signal must be stable before being recognized.
          */
-        DEBOUNCE_33US   = 0x0,  // 33 μs debounce time
-        DEBOUNCE_231US  = 0x1,  // 231 μs debounce time
-        DEBOUNCE_1MS    = 0x2,  // 1 ms debounce time
-        DEBOUNCE_8_4MS  = 0x3   // 8.4 ms debounce time
+        DEBOUNCE_33US  = 0x0,       // 33 us debounce period
+        DEBOUNCE_231US = 0x1,       // 231 us debounce period
+        DEBOUNCE_1MS   = 0x2,       // 1 ms debounce period
+        DEBOUNCE_8_4MS = 0x3        // 8.4 ms debounce period
     };
 
-    /*(offset = 0x130) [reset = 0x0] */
     typedef union
     {
         struct
         {
-                                     /* Register SD_PWCNT */
-            uint32_t    PWRCNT :16; // bits:0..15  (R/W) Power counter register. This register is used to introduce a delay between the PAD
-                                    //                  ACTIVE pin assertion and the command issued.
-                                    //                  [0x0 = No additional delay added;
-                                    //                   0x1 = TCF delay (card clock period)
-                                    //                   0x2 = TCF x 2 delay (card clock period)
-                                    //                   ...
-                                    //                   0xFFFE = TCF x 65534 delay (card clock period)
-                                    //                   0xFFFF = TCF x 65535 delay (card clock period)]
-            uint32_t           :16; // bits:16..31 (R)   Reserved
-        } b;
-        uint32_t reg;
+            uint32_t    OD         : 1;         // bit  0       (R/W) Card open drain mode (MMC cards only). Must be set to 1 for MMC card
+                                                //                    commands 1, 2, 3 and 40 and if the MMC card bus is operating in
+                                                //                    open-drain mode during the response phase of the command sent.
+                                                //                    Typically during card identification mode when the card is in idle,
+                                                //                    ready or ident state. It is also necessary for a broadcast host
+                                                //                    response (see SD_CON[2] HR bit).
+                                                //                    [ 0x0 = No open drain;
+                                                //                      0x1 = Open drain or broadcast host response ]
+            uint32_t    INIT       : 1;         // bit  1       (R/W) Send initialization stream (all cards). When set to 1 and the card is
+                                                //                    idle, an initialization sequence (mmc_cmd held to 1 during 80 clock
+                                                //                    cycles) is sent to the card. The clock divider (SD_SYSCTL[15:6] CLKD)
+                                                //                    must be set so that 80 clock periods are greater than 1 ms.
+                                                //                    Note: no command is sent and no response is expected; a command
+                                                //                    complete interrupt is generated once the sequence is completed and
+                                                //                    SD_STAT[0] CC can be polled.
+                                                //                    [ 0x0 = The host does not send an initialization sequence;
+                                                //                      0x1 = The host sends an initialization sequence ]
+            uint32_t    HR         : 1;         // bit  2       (R/W) Broadcast host response (MMC cards only). Forces the host to generate
+                                                //                    a 48-bit response for the bc command type. To have the response
+                                                //                    generated in open drain mode, SD_CON[0] OD must be set to 1.
+                                                //                    [ 0x0 = The host does not generate a 48-bit response instead of a command;
+                                                //                      0x1 = The host generates a 48-bit response instead of a command or
+                                                //                            a command completion signal disable token ]
+            uint32_t    STR        : 1;         // bit  3       (R/W) Stream command (MMC cards only). Must be set to 1 only for the stream
+                                                //                    data transfers (read or write) of the adtc commands.
+                                                //                    [ 0x0 = Block oriented data transfer;
+                                                //                      0x1 = Stream oriented data transfer ]
+            uint32_t    MODE       : 1;         // bit  4       (R/W) Mode select (all cards)
+                                                //                    [ 0x0 = Functional mode. Transfers follow the card protocol, the MMC
+                                                //                            clock is enabled, transfers are operated under the control of
+                                                //                            the SD_CMD register;
+                                                //                      0x1 = SYSTEST mode. The signal pins are configured as GPIO and the
+                                                //                            1024-byte buffer is configured as a stack memory ]
+            uint32_t    DW8        : 1;         // bit  5       (R/W) 8-bit mode MMC select (MMC cards only). For SD/SDIO cards this bit must
+                                                //                    be cleared to 0. For MMC cards it must be set following a valid SWITCH
+                                                //                    command (CMD6).
+                                                //                    [ 0x0 = 1-bit or 4-bit data width;
+                                                //                      0x1 = 8-bit data width ]
+            uint32_t    MIT        : 1;         // bit  6       (R/W) MMC interrupt command (MMC cards only). Must be set to 1 when the next
+                                                //                    write access to SD_CMD is an MMC interrupt command (CMD40) requiring
+                                                //                    the command timeout detection to be disabled.
+                                                //                    [ 0x0 = Command timeout enabled;
+                                                //                      0x1 = Command timeout disabled ]
+            uint32_t    CDP        : 1;         // bit  7       (R/W) Card detect polarity (all cards). Selects the active level of the card
+                                                //                    detect input signal (SDCD).
+                                                //                    [ 0x0 = Active high level;
+                                                //                      0x1 = Active low level ]
+            uint32_t    WPP        : 1;         // bit  8       (R/W) Write protect polarity (SD and SDIO cards only). Selects the active
+                                                //                    level of the write protect input signal (SDWP).
+                                                //                    [ 0x0 = Active high level;
+                                                //                      0x1 = Active low level ]
+            uint32_t    DVAL       : 2;         // bits 9,10    (R/W) Debounce filter value (all cards) [see e_DVAL]
+            uint32_t    CTPL       : 1;         // bit  11      (R/W) Control power for the mmc_dat[1] line. By default the host controller
+                                                //                    disables all the input buffers outside of a transaction to minimize the
+                                                //                    leakage current.
+                                                //                    [ 0x0 = Disable all the input buffers outside of a transaction;
+                                                //                      0x1 = Disable all the input buffers except the buffer of mmc_dat[1]
+                                                //                            outside of a transaction (asynchronous SDIO card interrupt) ]
+            uint32_t    CEATA      : 1;         // bit  12      (R/W) CE-ATA control mode (MMC cards compliant with CE-ATA). The usage of the
+                                                //                    Out-of-Band signal (OBI) is not supported.
+                                                //                    [ 0x0 = Standard MMC/SD/SDIO mode;
+                                                //                      0x1 = CE-ATA mode, next commands are considered as CE-ATA commands ]
+            uint32_t               : 2;         // bits 13,14   (R)   Reserved
+            uint32_t    PADEN      : 1;         // bit  15      (R/W) Control power for the MMC lines. Only useful when the MMC PADs contain a
+                                                //                    power saving mechanism. Works as a GPIO that directly controls the
+                                                //                    ACTIVE pin of the PADs.
+                                                //                    [ 0x0 = ADPIDLE module pin is not forced, it is automatically generated
+                                                //                            by the MMC FSMs;
+                                                //                      0x1 = ADPIDLE module pin is forced to the active state ]
+            uint32_t    CLKEXTFREE : 1;         // bit  16      (R/W) External clock free running. Maintains the card clock outside of a
+                                                //                    transfer transaction. The clock is maintained only if SD_SYSCTL[2] CEN
+                                                //                    is set.
+                                                //                    [ 0x0 = External card clock is cut off outside the active transaction period;
+                                                //                      0x1 = External card clock is maintained even outside the active
+                                                //                            transaction period, only if SD_SYSCTL[2] CEN is set ]
+            uint32_t    BOOT_ACK   : 1;         // bit  17      (R/W) Boot acknowledge received. When set, the controller expects a boot status
+                                                //                    on the DAT0 line after the next command issued; if no status is
+                                                //                    received a data timeout is generated.
+                                                //                    [ 0x0 = No acknowledge to be received;
+                                                //                      0x1 = A boot status will be received on the DAT0 line ]
+            uint32_t    BOOT_CF0   : 1;         // bit  18      (R/W) Boot status supported. Set when the CMD line needs to be forced to 0 for
+                                                //                    a boot sequence. The CMD line is driven to 0 after writing in SD_CMD and
+                                                //                    released when this bit field is de-asserted.
+                                                //                    [ 0x0 (R) = CMD line not forced;
+                                                //                      0x1 (W) = CMD line forced to 0, active after writing into SD_CMD ]
+            uint32_t    DDR        : 1;         // bit  19      (R/W) Dual data rate mode. Only meaningful for an even clock divider ratio of
+                                                //                    SD_SYSCTL[CLKD]; insensitive to SD_HCTL[HSPE].
+                                                //                    Note: DDR mode is NOT supported on AM335x - always set this bit to 0.
+                                                //                    [ 0x0 = Standard mode, data are transmitted on a single edge;
+                                                //                      0x1 = Data bytes and CRC are transmitted on both edges ]
+            uint32_t    DMA_MnS    : 1;         // bit  20      (R/W) DMA master or slave selection. Only available if the generic parameter
+                                                //                    MADMA_EN is asserted to 1.
+                                                //                    [ 0x0 = The controller is slave on data transfers with the system;
+                                                //                      0x1 = Not available on this device ]
+            uint32_t    SDMA_LnE   : 1;         // bit  21      (R/W) Slave DMA level/edge request
+                                                //                    [ 0x0 = Slave DMA edge sensitive (early de-assertion on the first
+                                                //                            access to SD_DATA);
+                                                //                      0x1 = Slave DMA level sensitive (late de-assertion, the request
+                                                //                            remains active until the last allowed data) ]
+            uint32_t               :10;         // bits 22..31  (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
+    } CON_reg_t;
+
+    /*  @brief      Power Counter Register
+     *  @details    Programs an MMC counter to delay the command transfers after activating the PAD power.
+     *              This value depends on the PAD characteristics and voltage.
+    (offset = 0x130) [reset = 0x00000000] */
+    typedef union
+    {
+        struct
+        {
+            uint32_t    PWRCNT :16;             // bits 0..15   (R/W) Power counter register. Introduces a delay between the PAD ACTIVE pin
+                                                //                    assertion and the command issued.
+                                                //                    [ 0x0    = No additional delay added;
+                                                //                      0x1    = TCF delay (card clock period);
+                                                //                      0x2    = TCF x 2 delay (card clock period);
+                                                //                      ...
+                                                //                      0xFFFF = TCF x 65535 delay (card clock period) ]
+            uint32_t           :16;             // bits 16..31  (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } PWCNT_reg_t;
 
-    /* (offset = 0x200) [reset = 0x0] */
+    /*  @brief      SDMA System Address Register
+     *  @details    Contains the system memory address for an SDMA transfer. When the host controller stops an SDMA
+     *              transfer this register points to the system address of the next contiguous data position.
+     *              It can be accessed only if no transaction is executing; reads during a transfer may return an
+     *              invalid value. ADMA does not use this register.
+     *  @note       The TRM 'Type' column marks this register as R, but the very same section states that the host
+     *              driver shall initialize it before starting an SDMA transaction and that writing its most upper
+     *              byte restarts the transfer. It is therefore mapped as read/write below.
+    (offset = 0x200) [reset = 0x00000000] */
     typedef union
     {
         struct
         {
-                                          /* Register SD_SDMASA */
-
-            uint32_t    SDMA_SYSADDR :32; // bits:0..31 (R) This register contains the system memory address for a SDMA transfer. When the Host
-                                          //               Controller stops a SDMA transfer, this register shall point to the system address of the
-                                          //               next contiguous data position. It can be accessed only if no transaction is executing
-                                          //               (i.e., after a transaction has stopped). Read operations during transfers may return an
-                                          //               invalid value. The Host Driver shall initialize this register before starting a SDMA
-                                          //               transaction. After SDMA has stopped, the next system address of the next contiguous data
-                                          //               position can be read from this register. The SDMA transfer waits at the every boundary
-                                          //               specified by the Host SDMA Buffer Boundary in the Block Size register. The Host
-                                          //               Controller generates DMA Interrupt to request the Host Driver to update this register.
-                                          //               The Host Driver sets the next system address of the next data position to this register.
-                                          //               When the most upper byte of this register (003h) is written, the Host Controller
-                                          //               restarts the SDMA transfer. When restarting SDMA by the Resume command or by setting
-                                          //               Continue Request in the Block Gap Control register, the Host Controller shall start at
-                                          //               the next contiguous address stored here in the SDMA System Address register. ADMA does
-                                          //               not use this register.
-        } b;
-        uint32_t reg;
+            uint32_t    SDMA_SYSADDR :32;       // bits 0..31   (R/W) System memory address of the next contiguous data position
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } SDMASA_reg_t;
 
-    /* (offset = 0x204) [reset = 0x0] */
+    /*  @brief      Transfer Length Configuration Register
+     *  @details    SD_BLK[BLEN] is the block size register, SD_BLK[NBLK] is the block count register.
+     *              This register can be accessed only if no transaction is executing; reads during a transfer may
+     *              return an invalid value and writes are ignored.
+    (offset = 0x204) [reset = 0x00000000] */
     typedef union
-    {                                          /* Block Register
-                                                 */
+    {
         struct
         {
-            uint32_t    BLEN         :12;      // bits 0..11  (R/W) Transfer block size
-                                               //                   Specifies block length in bytes for data transfer
-            uint32_t                 : 4;      // bits 12..15 (R)   Reserved
-            uint32_t    NBLK         :16;      // bits 16..31 (R/W) Number of blocks to transfer
-                                               //                   Specifies number of blocks in current transfer
-        } b;
-        uint32_t reg;
+            uint32_t    BLEN :12;               // bits 0..11   (R/W) Transfer block size in bytes
+                                                //                    [ 0x000 = No data transfer;
+                                                //                      0x001 = 1 byte block length;
+                                                //                      ...
+                                                //                      0x200 = 512 bytes block length;
+                                                //                      0x800 = 2048 bytes block length ]
+            uint32_t         : 4;               // bits 12..15  (R)   Reserved
+            uint32_t    NBLK :16;               // bits 16..31  (R/W) Blocks count for the current transfer. Enabled when SD_CMD[1] BCE is
+                                                //                    set to 1 and valid only for multiple block transfers. The host
+                                                //                    controller decrements the block count after each block transfer and
+                                                //                    stops when the count reaches zero.
+                                                //                    [ 0x0000 = Stop count;
+                                                //                      0x0001 = 1 block;
+                                                //                      ...
+                                                //                      0xFFFF = 65535 blocks ]
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } BLK_reg_t;
 
-    /* (offset = 0x208) [reset = 0x0] */
+    /*  @brief      Command Argument Register
+     *  @details    Contains the command argument specified as bits 39-8 of the command format. This register must be
+     *              initialized prior to sending the command itself to the card (write into SD_CMD).
+    (offset = 0x208) [reset = 0x00000000] */
     typedef union
     {
         struct
         {
-                                    /* Register SD_ARG */
-            uint32_t    ARG :32;    // bits:0..31 (R/W) Command argument bits [31:0] .
-        } b;
-        uint32_t reg;
+            uint32_t    ARG :32;                // bits 0..31   (R/W) Command argument bits [31:0]
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } ARG_reg_t;
 
-    /* (offset = 0x20C) [reset = 0x0] */
-    typedef union
-    {                                          /* Command Register */
-        struct
-        {
-            uint32_t    DE           : 1;       // bit  0      (R/W) DMA Enable.
-                                                //                   This bit is used to enable DMA mode for host data access.
-                                                //                   [ 0x0 = DMA mode disable;
-                                                //                     0x1 = DMA mode enable ]
-            uint32_t    BCE          : 1;       // bit  1      (R/W) Block Count Enable (Multiple block transfers only).
-                                                //                   This bit is used to enable the block count register (SD_BLK
-                                                //                   [31:16] NBLK bits).
-                                                //                   When Block Count is disabled (SD_CMD[1] BCE bit is cleared to 0)
-                                                //                   in Multiple block transfers (SD_CMD[5] MSBS bits is set to 1), the
-                                                //                   module can perform infinite transfer.
-                                                //                   [0x0 = Block count disabled for infinite transfer.
-                                                //                    0x1 = Block count enabled for multiple block transfer with known number of blocks]
-            uint32_t    ACEN         : 1;       // bit  2      (R/W) Auto CMD12 Enable (SD cards only).
-                                                //                  When this bit is set to 1, the host controller issues a CMD12
-                                                //                  automatically after the transfer completion of the last block.
-                                                //                  The Host Driver shall not set this bit to issue commands that do not
-                                                //                  require CMD12 to stop data transfer.
-                                                //                  In particular, secure commands do not require CMD12.
-                                                //                  For CE-ATA commands (SD_CON[12] CEATA bit set to 1), auto
-                                                //                  CMD12 is useless
-                                                //                  therefore when this bit is set the mechanism to detect command
-                                                //                  completion signal, named CCS, interrupt is activated.
-                                                //                  [0x0 = Auto CMD12 disable
-                                                //                   0x1 = Auto CMD12 enable or CCS detection enabled.]
-            uint32_t                 : 1;       // bit  3      (R)   Reserved
-            uint32_t    DDIR         : 1;       // bit  4      (R/W) Data transfer Direction.
-                                                //                   Select This bit defines either data transfer will be a read or a write.
-                                                //                   [0x0 = Data Write (host to card)
-                                                //                    0x1 = Data Read (card to host)]
-            uint32_t    MSBS         : 1;       // bit  5      (R/W) Multi/Single block select.
-                                                //                   This bit must be set to 1 for data transfer in case of multi block
-                                                //                   command.
-                                                //                   For any others command this bit shall be cleared to 0.
-                                                //                   [0x0 = Single block. If this bit is 0, it is not necessary to set the register
-                                                //                           SD_BLK[31:16] NBLK bits.
-                                                //                    0x1 = Multi block. When Block Count is disabled (SD_CMD[1] BCE bit
-                                                //                          is cleared to 0) in Multiple block transfers (SD_CMD[5] MSBS bit is
-                                                //                          set to 1), the module can perform infinite transfer.]
-            uint32_t                 :10;       // bits 6..15  (R)   Reserved
-            uint32_t    RSP_TYPE     : 2;       // bits 16,17  (R/W) Response type.
-                                                //                   This bits defines the response type of the command.[see e_RSP_TYPE]
-            uint32_t                 : 1;       // bit  18     (R)   Reserved
-            uint32_t    CCCE         : 1;       // bit  19     (R/W) Command CRC check enable.
-                                                //                   This bit must be set to 1 to enable CRC7 check on command
-                                                //                   response to protect the response against transmission errors on the
-                                                //                   bus.
-                                                //                   If an error is detected, it is reported as a command CRC error
-                                                //                   (SD_STAT[17] CCRC bit set to 1).
-                                                //                   NoteThe CCCE bit cannot be configured for an Auto CMD12, and
-                                                //                   then CRC check is automatically checked when this command is
-                                                //                   issued.
-                                                //                   [0x0 = CRC7 check disable
-                                                //                    0x1 = CRC7 check enable]
-            uint32_t    CICE         : 1;       // bit  20     (R/W) Command Index check enable.
-                                                //                    This bit must be set to 1 to enable index check on command
-                                                //                    response to compare the index field in the response against the
-                                                //                    index of the command.
-                                                //                    If the index is not the same in the response as in the command, it is
-                                                //                    reported as a command index error (SD_STAT[19] CIE bit set to1)
-                                                //                    NoteThe CICE bit cannot be configured for an Auto CMD12, then
-                                                //                    index check is automatically checked when this command is issued.
-                                                //                    [0x0 = Index check disable
-                                                //                     0x1 = Index check enable]
-            uint32_t    DP           : 1;       // bit  21     (R/W) Data present select.
-                                                //                   This register indicates that data is present and mmc_dat line shall be
-                                                //                   used.
-                                                //                   It must be cleared to 0 in the following conditions: Command using
-                                                //                   only mmc_cmd line.
-                                                //                   Command with no data transfer but using busy signal on mmc_dat0.
-                                                //                   Resume command.
-                                                //                   [0x0 = Command with no data transfer
-                                                //                    0x1 = Command with data transfer]
-            uint32_t    CMD_TYPE     : 2;       // bits 22,23  (R/W) Command type.
-                                                //                      This register specifies three types of special commands: Suspend,
-                                                //                      Resume and Abort.
-                                                //                      These bits shall be cleared to 0b00 for all other commands. [see e_CMD_TYPE]
-            uint32_t    INDX         : 6;       // bits 24..29 (R/W) Command index [see e_CMD_INDEX]
-            uint32_t                 : 2;       // bits 30,31  (R)   Reserved
-        } b;
-        uint32_t reg;
-    } CMD_reg_t;
-        
+    /*  @brief      Command and Transfer Mode Register
+     *  @details    SD_CMD[31:16] is the command register, SD_CMD[15:0] is the transfer mode. A write into the most
+     *              significant byte sends the command. A write into SD_CMD[15:0] during a data transfer has no
+     *              effect. In SYSTEST mode a write into SD_CMD does not start a transfer.
+    (offset = 0x20C) [reset = 0x00000000] */
     enum e_RSP_TYPE : uint32_t
     {
-        /*  Defines expected response format from card
-         *  Determines how controller interprets response from MMC/SD card
+        /*  Defines the expected response format from the card.
+         *  Determines how the controller interprets the response of the MMC/SD card.
          */
-        RSP_NONE       = 0x0,  // No response expected
-        RSP_136BIT     = 0x1,  // 136-bit response expected
-        RSP_48BIT      = 0x2,  // 48-bit response expected
-        RSP_48BIT_BUSY = 0x3   // 48-bit response witbusy signal
+        RSP_NONE       = 0x0,       // No response
+        RSP_136BIT     = 0x1,       // Response length 136 bits
+        RSP_48BIT      = 0x2,       // Response length 48 bits
+        RSP_48BIT_BUSY = 0x3        // Response length 48 bits with busy after response
     };
 
     enum e_CMD_TYPE : uint32_t
     {
-        /*  Defines command type for current operation
-         *  Determines special handling for different command categories
+        /*  Defines the command type for the current operation.
+         *  Determines the special handling for the Suspend / Resume / Abort command categories.
          */
-        CMD_NORMAL     = 0x0,  // Normal command (no special handling)
-        CMD_SUSPEND    = 0x1,  // Suspend command (pause current operation)
-        CMD_RESUME     = 0x2,  // Resume command (continue paused operation)
-        CMD_ABORT      = 0x3   // Abort command (terminate current operation)
+        CMD_NORMAL  = 0x0,          // Other commands (no special handling)
+        CMD_SUSPEND = 0x1,          // Upon CMD52 "Bus Suspend" operation
+        CMD_RESUME  = 0x2,          // Upon CMD52 "Function Select" operation
+        CMD_ABORT   = 0x3           // Upon CMD12 or CMD52 "I/O Abort" command
     };
 
     enum e_CMD_INDEX : uint32_t
     {
-        CMD0_ACMD0   = 0x0,
-        CMD1_ACMD1   = 0x1,
-        CMD2_ACMD2   = 0x2,
-        CMD3_ACMD3   = 0x3,
-        CMD4_ACMD4   = 0x4,
-        CMD5_ACMD5   = 0x5,
-        CMD6_ACMD6   = 0x6,
-        CMD7_ACMD7   = 0x7,
-        CMD8_ACMD8   = 0x8,
-        CMD9_ACMD9   = 0x9,
-        CMD10_ACMD10 = 0xA,
-        CMD11_ACMD11 = 0xB,
-        CMD12_ACMD12 = 0xC,
-        CMD13_ACMD13 = 0xD,
-        CMD14_ACMD14 = 0xE,
-        CMD15_ACMD15 = 0xF,
+        /*  Command index, binary encoded value from 0 to 63 specifying the command number sent to the card.
+         */
+        CMD0_ACMD0   = 0x00,
+        CMD1_ACMD1   = 0x01,
+        CMD2_ACMD2   = 0x02,
+        CMD3_ACMD3   = 0x03,
+        CMD4_ACMD4   = 0x04,
+        CMD5_ACMD5   = 0x05,
+        CMD6_ACMD6   = 0x06,
+        CMD7_ACMD7   = 0x07,
+        CMD8_ACMD8   = 0x08,
+        CMD9_ACMD9   = 0x09,
+        CMD10_ACMD10 = 0x0A,
+        CMD11_ACMD11 = 0x0B,
+        CMD12_ACMD12 = 0x0C,
+        CMD13_ACMD13 = 0x0D,
+        CMD14_ACMD14 = 0x0E,
+        CMD15_ACMD15 = 0x0F,
         CMD16_ACMD16 = 0x10,
         CMD17_ACMD17 = 0x11,
         CMD18_ACMD18 = 0x12,
@@ -614,1012 +436,1012 @@ namespace REGS::MMCHS
         CMD47_ACMD47 = 0x2F,
         CMD48_ACMD48 = 0x30,
         CMD49_ACMD49 = 0x31,
-        CMD50_ACMD5  = 0x32,
-        CMD51_ACMD5  = 0x33,
-        CMD52_ACMD5  = 0x34,
-        CMD53_ACMD5  = 0x35
+        CMD50_ACMD50 = 0x32,
+        CMD51_ACMD51 = 0x33,
+        CMD52_ACMD52 = 0x34,
+        CMD53_ACMD53 = 0x35,
+        CMD54_ACMD54 = 0x36,
+        CMD55_ACMD55 = 0x37,
+        CMD56_ACMD56 = 0x38,
+        CMD57_ACMD57 = 0x39,
+        CMD58_ACMD58 = 0x3A,
+        CMD59_ACMD59 = 0x3B,
+        CMD60_ACMD60 = 0x3C,
+        CMD61_ACMD61 = 0x3D,
+        CMD62_ACMD62 = 0x3E,
+        CMD63_ACMD63 = 0x3F
     };
 
-    /* (offset = 0x210) [reset = 0x0] */
     typedef union
-    {                                          /* Response Register 0-1 */
+    {
         struct
         {
-            uint32_t    RSP0         :16;      // bits 0..15  (R) Command Response bits [15:0]
-                                               //                 Contains first 16 bits of card response
-            uint32_t    RSP1         :16;      // bits 16..31 (R) Command Response bits [31:16]
-                                               //                 Contains next 16 bits of card response
-        } b;
-        uint32_t reg;
+            uint32_t    DE       : 1;           // bit  0       (R/W) DMA enable, enables the DMA mode for host data access
+                                                //                    [ 0x0 = DMA mode disable;
+                                                //                      0x1 = DMA mode enable ]
+            uint32_t    BCE      : 1;           // bit  1       (R/W) Block count enable (multiple block transfers only). Enables the block
+                                                //                    count register SD_BLK[31:16] NBLK. When block count is disabled in a
+                                                //                    multiple block transfer (MSBS = 1) the module performs an infinite
+                                                //                    transfer.
+                                                //                    [ 0x0 = Block count disabled for infinite transfer;
+                                                //                      0x1 = Block count enabled for multiple block transfer with a known
+                                                //                            number of blocks ]
+            uint32_t    ACEN     : 1;           // bit  2       (R/W) Auto CMD12 enable (SD cards only). The host controller issues a CMD12
+                                                //                    automatically after the transfer completion of the last block. For
+                                                //                    CE-ATA commands (SD_CON[12] CEATA = 1) auto CMD12 is useless and this
+                                                //                    bit instead activates the command completion signal (CCS) detection.
+                                                //                    [ 0x0 = Auto CMD12 disable;
+                                                //                      0x1 = Auto CMD12 enable or CCS detection enabled ]
+            uint32_t             : 1;           // bit  3       (R)   Reserved
+            uint32_t    DDIR     : 1;           // bit  4       (R/W) Data transfer direction
+                                                //                    [ 0x0 = Data write (host to card);
+                                                //                      0x1 = Data read (card to host) ]
+            uint32_t    MSBS     : 1;           // bit  5       (R/W) Multi/single block select. Must be set to 1 for a data transfer of a
+                                                //                    multi block command, cleared to 0 for any other command.
+                                                //                    [ 0x0 = Single block, SD_BLK[31:16] NBLK need not be set;
+                                                //                      0x1 = Multi block ]
+            uint32_t             :10;           // bits 6..15   (R)   Reserved
+            uint32_t    RSP_TYPE : 2;           // bits 16,17   (R/W) Response type of the command [see e_RSP_TYPE]
+            uint32_t             : 1;           // bit  18      (R)   Reserved
+            uint32_t    CCCE     : 1;           // bit  19      (R/W) Command CRC check enable. Enables the CRC7 check on the command
+                                                //                    response. On error SD_STAT[17] CCRC is set. The bit cannot be
+                                                //                    configured for an Auto CMD12, where the check is automatic.
+                                                //                    [ 0x0 = CRC7 check disable;
+                                                //                      0x1 = CRC7 check enable ]
+            uint32_t    CICE     : 1;           // bit  20      (R/W) Command index check enable. Compares the index field in the response
+                                                //                    against the index of the command. On mismatch SD_STAT[19] CIE is set.
+                                                //                    The bit cannot be configured for an Auto CMD12, where the check is
+                                                //                    automatic.
+                                                //                    [ 0x0 = Index check disable;
+                                                //                      0x1 = Index check enable ]
+            uint32_t    DP       : 1;           // bit  21      (R/W) Data present select. Must be cleared to 0 for a command using only the
+                                                //                    mmc_cmd line, a command with no data transfer but using the busy signal
+                                                //                    on mmc_dat0, and for a Resume command.
+                                                //                    [ 0x0 = Command with no data transfer;
+                                                //                      0x1 = Command with data transfer ]
+            uint32_t    CMD_TYPE : 2;           // bits 22,23   (R/W) Command type [see e_CMD_TYPE]
+            uint32_t    INDX     : 6;           // bits 24..29  (R/W) Command index [see e_CMD_INDEX]
+            uint32_t             : 2;           // bits 30,31   (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
+    } CMD_reg_t;
+
+    /*  @brief      Command Response 0 and 1
+     *  @details    Holds bit positions [31:0] of the command response type R1, R1b, R2, R3, R4, R5, R5b or R6.
+    (offset = 0x210) [reset = 0x00000000] */
+    typedef union
+    {
+        struct
+        {
+            uint32_t    RSP0 :16;               // bits 0..15   (R)   Command response [15:0]
+            uint32_t    RSP1 :16;               // bits 16..31  (R)   Command response [31:16]
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } RSP10_reg_t;
 
-    /* (offset = 0x214) [reset = 0x0] */
+    /*  @brief      Command Response 2 and 3
+     *  @details    Holds bit positions [63:32] of the command response type R2.
+    (offset = 0x214) [reset = 0x00000000] */
     typedef union
-    {                                          /* Response Register 2-3 */
+    {
         struct
         {
-            uint32_t    RSP2         :16;      // bits 0..15  (R) Command Response bits [47:32]
-                                               //                 Contains next 16 bits of card response
-            uint32_t    RSP3         :16;      // bits 16..31 (R) Command Response bits [63:48]
-                                               //                 Contains next 16 bits of card response
-        } b;
-        uint32_t reg;
+            uint32_t    RSP2 :16;               // bits 0..15   (R)   Command response [47:32]
+            uint32_t    RSP3 :16;               // bits 16..31  (R)   Command response [63:48]
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } RSP32_reg_t;
 
-    /* (offset = 0x218) [reset = 0x0] */
+    /*  @brief      Command Response 4 and 5
+     *  @details    Holds bit positions [95:64] of the command response type R2.
+    (offset = 0x218) [reset = 0x00000000] */
     typedef union
-    {                                          /* Response Register 4-5 */
+    {
         struct
         {
-            uint32_t    RSP4         :16;      // bits 0..15  (R) Command Response bits [79:64]
-                                               //                 Contains next 16 bits of card response
-            uint32_t    RSP5         :16;      // bits 16..31 (R) Command Response bits [95:80]
-                                               //                 Contains next 16 bits of card response
-        } b;
-        uint32_t reg;
+            uint32_t    RSP4 :16;               // bits 0..15   (R)   Command response [79:64]
+            uint32_t    RSP5 :16;               // bits 16..31  (R)   Command response [95:80]
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } RSP54_reg_t;
 
-    /* (offset = 0x21C) [reset = 0x0] */
+    /*  @brief      Command Response 6 and 7
+     *  @details    Holds bit positions [127:96] of the command response type R2.
+    (offset = 0x21C) [reset = 0x00000000] */
     typedef union
-    {                                          /* Response Register 6-7 */
+    {
         struct
         {
-            uint32_t    RSP6         :16;      // bits 0..15  (R) Command Response bits [111:96]
-                                               //                 Contains next 16 bits of card response
-            uint32_t    RSP7         :16;      // bits 16..31 (R) Command Response bits [127:112]
-                                               //                 Contains final 16 bits of card response
-        } b;
-        uint32_t reg;
+            uint32_t    RSP6 :16;               // bits 0..15   (R)   Command response [111:96]
+            uint32_t    RSP7 :16;               // bits 16..31  (R)   Command response [127:112]
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } RSP76_reg_t;
 
-    /* (offset = 0x220) [reset = 0x0] */
+    /*  @brief      Data Register
+     *  @details    32-bit entry point of the buffer for read or write data transfers. The buffer size is
+     *              32 bits x 256 (1024 bytes) and can be used as two 512-byte buffers. Bytes within a word are
+     *              stored and read in little endian format. Sequential and contiguous access is necessary to
+     *              increment the pointer correctly; random or skipped access is not allowed.
+    (offset = 0x220) [reset = 0x00000000] */
     typedef union
     {
         struct
         {
-                                    /* Register SD_DATA */
-
-            uint32_t    DATA :32;   // bits:0..31 (R/W) Data register [31:0]. In functional mode (SD_CON[4] MODE bit set to the default value
-                                    //                 0): A read access to this register is allowed only when the buffer read enable status is
-                                    //                 set to 1 (SD_PSTATE[11] BRE bit), otherwise a bad access (SD_STAT[29] BADA bit) is
-                                    //                 signaled. A write access to this register is allowed only when the buffer write enable
-                                    //                 status is set to 1 (SD_PSTATE[10] BWE bit), otherwise a bad access (SD_STAT[29] BADA
-                                    //                 bit) is signaled and the data is not written.
-        } b;
-        uint32_t reg;
+            uint32_t    DATA :32;               // bits 0..31   (R/W) Data register [31:0]. In functional mode (SD_CON[4] MODE = 0) a read
+                                                //                    is allowed only when SD_PSTATE[11] BRE is set to 1 and a write only
+                                                //                    when SD_PSTATE[10] BWE is set to 1, otherwise a bad access
+                                                //                    (SD_STAT[29] BADA) is signalled.
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } DATA_reg_t;
 
-    /* (offset = 0x224) [reset = 0x0] */
+    /*  @brief      Present State Register
+     *  @details    The host can get the status of the host controller from this 32-bit read only register.
+    (offset = 0x224) [reset = 0x00000000] */
     typedef union
     {
         struct
         {
-                                    /* Register SD_PSTATE */
-
-            uint32_t    CMDI : 1;   // bit:0       (R) Command inhibit(mmc_cmd). This status bit indicates that the mmc_cmd line is in use.
-                                    //                This bit is cleared to 0 when the most significant byte is written into the command
-                                    //                register. This bit is not set when Auto CMD12 is transmitted. This bit is cleared to 0
-                                    //                in either the following cases: After the end bit of the command response, excepted if
-                                    //                there is a command conflict error (SD_STAT[17] CCRC bit or SD_STAT[18] CEB bit set to 1)
-                                    //                or a Auto CMD12 is not executed (SD_AC12[0] ACNE bit). After the end bit of the command
-                                    //                without response (SD_CMD [17:16] RSP_TYPE bits set to '00'). In case of a
-                                    //                command data error is detected (SD_STAT[19] CTO bit set to 10, this register is not
-                                    //                automatically cleared.
-                                    //                [0x0 = Issuing of command using mmc_cmd line is allowed ;
-                                    //                 0x1 = Issuing of command using mmc_cmd line is not allowed
-            uint32_t    DATI : 1;   // bit:1       (R) Command inhibit (mmc_dat). This status bit is generated if either mmc_dat line is active
-                                    //                (SD_PSTATE[2] DLA bit) or Read transfer is active (SD_PSTATE[9] RTA bit) or when a
-                                    //                command with busy is issued. This bit prevents the local host to issue a command. A
-                                    //                change of this bit from 1 to 0 generates a transfer complete interrupt (SD_STAT[1] TC
-                                    //                bit).
-                                    //                [0x0 = Issuing of command using the mmc_dat lines is allowed;
-                                    //                 0x1 = Issuing of command  using mmc_dat lines is not allowed
-            uint32_t    DLA  : 1;   // bit:2       (R) mmc_dat line active. This status bit indicates whether one of the mmc_dat lines is in
-                                    //                use. In the case of read transactions (card to host)This bit is set to 1 after the end
-                                    //                bit of read command or by activating continue request SD_HCTL[17] CR bit. This bit is
-                                    //                cleared to 0 when the host controller received the end bit of the last data block or at
-                                    //                the beginning of the read wait mode. In the case of write transactions (host to
-                                    //                card)This bit is set to 1 after the end bit of write command or by activating continue
-                                    //                request SD_HCTL[17] CR bit. This bit is cleared to 0 on the end of busy event for the
-                                    //                last block. The host controller must wait 8 clock cycles with line not busy to really
-                                    //                consider not 'busy state' or after the busy block as a result of a stop at gap
-                                    //                request.
-                                    //                [0x0 = mmc_dat line inactive;
-                                    //                 0x1 = mmc_dat line active]
-            uint32_t         : 5;   // bits:3..7   (R) Reserved
-            uint32_t    WTA  : 1;   // bit:8       (R) Write transfer active. This status indicates a write transfer active. It is set to 1
-                                    //                after the end bit of write command or by activating a continue request (SD_HCTL[17] CR
-                                    //                bit) following a stop at block gap request. This bit is cleared to 0 when CRC status has
-                                    //                been received after last block or after a stop at block gap request.
-                                    //                [0x0 = No valid data on the mmc_dat lines.
-                                    //                 0x1 = Write data transfer on going.]
-            uint32_t    RTA  : 1;   // bit:9       (R) Read transfer active. This status is used for detecting completion of a read transfer.
-                                    //                It is set to 1 after the end bit of read command or by activating a continue request
-                                    //                (SD_HCTL[17] CR bit) following a stop at block gap request. This bit is cleared to 0
-                                    //                when all data have been read by the local host after last block or after a stop at block
-                                    //                gap request.
-                                    //                [0x0 = No valid data on the mmc_dat lines.
-                                    //                 0x1 = Read data transfer on going.]
-            uint32_t    BWE  : 1;   // bit:10      (R) Buffer Write enable. This status is used for non-DMA write transfers. It indicates if
-                                    //                space is available for write data.
-                                    //                [0x0 = There is no room left in the buffer to write BLEN bytes of data.
-                                    //                 0x1 = There is enough space in the buffer to write BLEN bytes of data.]
-            uint32_t    BRE  : 1;   // bit:11      (R) Buffer read enable. This bit is used for non-DMA read transfers. It indicates that a
-                                    //                complete block specified by SD_BLK [10:0] BLEN bits has been written in the buffer and
-                                    //                is ready to be read. It is cleared to 0 when the entire block is read from the buffer.
-                                    //                It is set to 1 when a block data is ready in the buffer and generates the Buffer read
-                                    //                ready status of interrupt (SD_STAT[5] BRR bit).
-                                    //                [0x0 = Read BLEN bytes disable;
-                                    //                 0x1 = Read BLEN bytes enable. Readable data exists in the buffer.]
-            uint32_t         : 4;   // bits:12..15 (R) Reserved
-            uint32_t    CINS : 1;   // bit:16      (R) Card inserted. This bit is the debounced value of the card detect input pin (SDCD). An
-                                    //                inactive to active transition of the card detect input pin (SDCD) will generate a card
-                                    //                insertion interrupt (SD_STAT[CINS]). A active to inactive transition of the card detect
-                                    //                input pin (SDCD) will generate a card removal interrupt (SD_STAT[REM]). This bit is not
-                                    //                affected by a software reset.
-                                    //                [0x0 = If SD_CON[CDP] is cleared to 0 (default), no card is detected.
-                                    //                      The card may have been removed from the card slot. If SD_CON[CDP] is set to 1,
-                                    //                      the card has been inserted.
-                                    //                 0x1 = If SD_CON[CDP] is cleared to 0 (default), the card has
-                                    //                      been inserted from the card slot. If SD_CON[CDP] is set to 1, no card is detected. The
-                                    //                      card may have been removed from the card slot.]
-            uint32_t    CSS  : 1;   // bit:17      (R) Card State Stable. This bit is used for testing. It is set to 1 only when Card Detect
-                                    //                Pin Level is stable (SD_PSTATE[18] CPDL). Debouncing is performed on the card detect
-                                    //                input pin (SDCD) to detect card stability. This bit is not affected by software reset.
-                                    //                [0x0 = Reset or Debouncing.
-                                    //                 0x1 = Reset or Debouncing.]
-            uint32_t    CDPL : 1;   // bit:18      (R) Card Detect Pin Level. MMC/SD/SDIO1 only. SDIO cards only. This bit reflects the inverse
-                                    //                value of the card detect input pin (SDCD). Debouncing is not performed on this bit and
-                                    //                is valid only when Card State is stable. (SD_PSTATE[17] is set to 1). This bit must be
-                                    //                debounced by software. The value of this register after reset depends on the card detect
-                                    //                input pin (SDCD) level at that time.
-                                    //                [0x0 = The value of the card detect input pin (SDCD) is 1.
-                                    //                 0x1 = The value of the card detect input pin (SDCD) is 0.]
-            uint32_t    WP   : 1;   // bit:19      (R) Write Protect. MMC/SD/SDIO1 only. SDIO cards only. This bit reflects the write protect
-                                    //                input pin (SDWP) level. The value of this register after reset depends one the protect
-                                    //                input pin (SDWP) level at that time.
-                                    //                [0x0 = If SD_CON[8] WPP is cleared to 0 (default),
-                                    //                        the card is write protected, otherwise the card is not write protected.;
-                                    //                 0x1 = If SD_CON[8] WPP is cleared to 0 (default), the card is not write protected, otherwise the
-                                    //                       card is write protected.]
-            uint32_t    DLEV : 4;   // bits:20..23 (R) mmc_dat [3:0]
-                                    //                  line signal level mmc_dat3 equal to or greater than bit 23.
-                                    //                  mmc_dat2 equal to or greater than bit 22.
-                                    //                  mmc_dat1 equal to or greater than bit 21.
-                                    //                  mmc_dat0 equal to or greater than bit 20.
-                                    //                This status is used to check mmc_dat line level to recover from
-                                    //                errors, and for debugging. This is especially useful in detecting the busy signal level
-                                    //                from mmc_dat0 . The value of these registers after reset depends on the mmc_dat lines
-                                    //                level at that time.
-            uint32_t    CLEV : 1;   // bit:24      (R) mmc_cmd line signal level. This status is used to check the mmc_cmd line level to
-                                    //                recover from errors, and for debugging. The value of this register after reset depends
-                                    //                on the mmc_cmd line level at that time.
-                                    //                [0x0 = The mmc_cmd line level is 0.
-                                    //                 0x1 = The mmc_cmd line level is 1.]
-            uint32_t         : 7;   // bits:25..31 (R) Reserved
-        } b;
-        uint32_t reg;
+            uint32_t    CMDI : 1;               // bit  0       (R)   Command inhibit (mmc_cmd). Indicates that the mmc_cmd line is in use.
+                                                //                    Cleared when the most significant byte is written into SD_CMD; not set
+                                                //                    when Auto CMD12 is transmitted.
+                                                //                    [ 0x0 = Issuing of a command using the mmc_cmd line is allowed;
+                                                //                      0x1 = Issuing of a command using the mmc_cmd line is not allowed ]
+            uint32_t    DATI : 1;               // bit  1       (R)   Command inhibit (mmc_dat). Generated if the mmc_dat line is active
+                                                //                    (DLA), or a read transfer is active (RTA), or a command with busy was
+                                                //                    issued. A change of this bit from 1 to 0 generates a transfer complete
+                                                //                    interrupt (SD_STAT[1] TC).
+                                                //                    [ 0x0 = Issuing of a command using the mmc_dat lines is allowed;
+                                                //                      0x1 = Issuing of a command using the mmc_dat lines is not allowed ]
+            uint32_t    DLA  : 1;               // bit  2       (R)   mmc_dat line active. Indicates whether one of the mmc_dat lines is in
+                                                //                    use. For reads it is set after the end bit of the read command and
+                                                //                    cleared on the end bit of the last data block; for writes it is set
+                                                //                    after the end bit of the write command and cleared on the end of the
+                                                //                    busy event for the last block.
+                                                //                    [ 0x0 = mmc_dat line inactive;
+                                                //                      0x1 = mmc_dat line active ]
+            uint32_t         : 5;               // bits 3..7    (R)   Reserved
+            uint32_t    WTA  : 1;               // bit  8       (R)   Write transfer active. Set after the end bit of the write command,
+                                                //                    cleared when the CRC status has been received after the last block.
+                                                //                    [ 0x0 = No valid data on the mmc_dat lines;
+                                                //                      0x1 = Write data transfer ongoing ]
+            uint32_t    RTA  : 1;               // bit  9       (R)   Read transfer active. Set after the end bit of the read command,
+                                                //                    cleared when all data have been read by the local host.
+                                                //                    [ 0x0 = No valid data on the mmc_dat lines;
+                                                //                      0x1 = Read data transfer ongoing ]
+            uint32_t    BWE  : 1;               // bit  10      (R)   Buffer write enable, used for non-DMA write transfers
+                                                //                    [ 0x0 = There is no room left in the buffer to write BLEN bytes of data;
+                                                //                      0x1 = There is enough space in the buffer to write BLEN bytes of data ]
+            uint32_t    BRE  : 1;               // bit  11      (R)   Buffer read enable, used for non-DMA read transfers. Indicates that a
+                                                //                    complete block specified by SD_BLK[11:0] BLEN has been written in the
+                                                //                    buffer and is ready to be read.
+                                                //                    [ 0x0 = Read BLEN bytes disable;
+                                                //                      0x1 = Read BLEN bytes enable, readable data exists in the buffer ]
+            uint32_t         : 4;               // bits 12..15  (R)   Reserved
+            uint32_t    CINS : 1;               // bit  16      (R)   Card inserted, the debounced value of the card detect input pin (SDCD).
+                                                //                    This bit is not affected by a software reset.
+                                                //                    [ 0x0 = If SD_CON[7] CDP is cleared to 0 (default) no card is detected,
+                                                //                            otherwise the card has been inserted;
+                                                //                      0x1 = If SD_CON[7] CDP is cleared to 0 (default) the card has been
+                                                //                            inserted, otherwise no card is detected ]
+            uint32_t    CSS  : 1;               // bit  17      (R)   Card state stable, used for testing. Set to 1 only when the card detect
+                                                //                    pin level (CDPL) is stable. Not affected by a software reset.
+                                                //                    [ 0x0 = Reset or debouncing;
+                                                //                      0x1 = Card detect pin level is stable ]
+            uint32_t    CDPL : 1;               // bit  18      (R)   Card detect pin level, reflects the inverse value of the card detect
+                                                //                    input pin (SDCD). Debouncing is not performed on this bit and it is
+                                                //                    valid only when CSS is set to 1; it must be debounced by software.
+                                                //                    [ 0x0 = The value of the card detect input pin (SDCD) is 1;
+                                                //                      0x1 = The value of the card detect input pin (SDCD) is 0 ]
+            uint32_t    WP   : 1;               // bit  19      (R)   Write protect, reflects the write protect input pin (SDWP) level
+                                                //                    [ 0x0 = If SD_CON[8] WPP is cleared to 0 (default) the card is write
+                                                //                            protected, otherwise it is not;
+                                                //                      0x1 = If SD_CON[8] WPP is cleared to 0 (default) the card is not write
+                                                //                            protected, otherwise it is ]
+            uint32_t    DLEV : 4;               // bits 20..23  (R)   mmc_dat[3:0] line signal level: bit 20 is mmc_dat0 ... bit 23 is
+                                                //                    mmc_dat3. Used to check the mmc_dat line level to recover from errors
+                                                //                    and for debugging, especially to detect the busy signal on mmc_dat0.
+            uint32_t    CLEV : 1;               // bit  24      (R)   mmc_cmd line signal level, used to recover from errors and for debugging
+                                                //                    [ 0x0 = The mmc_cmd line level is 0;
+                                                //                      0x1 = The mmc_cmd line level is 1 ]
+            uint32_t         : 7;               // bits 25..31  (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } PSTATE_reg_t;
 
-    /* (offset = 0x228) [reset = 0x0] */
-    typedef union
-    {
-        struct
-        {
-                                                     /* Register SD_HCTL */
-
-            uint32_t         : 1; // bit:0       (R)   Reserved
-            uint32_t    DTW  : 1; // bit:1       (R/W) Data transfer width. This bit must be set following a valid SET_BUS_WIDTH command
-                                  //                  (ACMD6) with the value written in bit 1 of the argument. Prior to this command, the SD
-                                  //                  card configuration register (SCR) must be verified for the supported bus width by the SD
-                                  //                  card.
-                                  //                  [0x0 = 1-bit Data width (mmc_dat0 used);
-                                  //                   0x1 = 4-bit Data width (mmc_dat[3:0] used)]
-            uint32_t    HSPE : 1; // bit:2       (R/W) High Speed Enable. Before setting this bit, the Host Driver shall check the High Speed
-                                  //                  Support in the Capabilities register. If this bit is cleared to 0 (default), the Host
-                                  //                  Controller outputs CMD line and DAT lines at the falling edge of the SD Clock. If this
-                                  //                  bit is set to 1, the Host Controller outputs CMD line and DAT lines at the rising edge
-                                  //                  of the SD Clock. This bit shall not be set when dual data rate mode is activated in
-                                  //                  SD_CON[DDR].
-                                  //                  [0x0 = Normal speed mode;
-                                  //                   0x1 = High speed mode]
-            uint32_t    DMAS : 2; // bits:3..4   (R/W) DMA Select. One of the supported DMA modes can be selected. The host driver shall check
-                                  //                  support of DMA modes by referencing the Capabilities register. Use of selected DMA is
-                                  //                  determined by DMA Enable of the Transfer Mode register. This register is only meaningful
-                                  //                  when MADMA_EN is set to 1. When MADMA_EN is cleared to 0 the bit field is read only and
-                                  //                  returned value is 0. [see e_DMAS]
-            uint32_t         : 1; // bit:5       (R)   Reserved
-            uint32_t    CDTL : 1; // bit:6       (R/W) Card Detect Test Level. This bit is enabled while the Card Detect Signal Selection is
-                                  //                  set to 1 and it indicates card inserted or not.
-                                  //                  [0x0 = No card;
-                                  //                   0x1 = Card inserted.]
-            uint32_t    CDSS : 1; // bit:7       (R/W) Card Detect Signal Selection. This bit selects source for the card detection. When the
-                                  //                  source for the card detection is switched, the interrupt should be disabled during the
-                                  //                  switching period by clearing the Interrupt Status/Signal Enable register in order to
-                                  //                  mask unexpected interrupt being caused by the glitch. The Interrupt Status/Signal Enable
-                                  //                  should be disabled during over the period of debouncing.
-                                  //                  [0x0 = SDCD# is selected (for normal use).
-                                  //                   0x1 = The Card Detect Test Level is selected (for test purposes)]
-            uint32_t    SDBP : 1; // bit:8       (R/W) SD bus power. Before setting this bit, the host driver shall select the SD bus voltage
-                                  //                  (SD_HCTL [11:9] SDVS bits). If the host controller detects the No card state, this bit
-                                  //                  is automatically cleared to 0. If the module is power off, a write in the command
-                                  //                  register (SD_CMD) will not start the transfer. A write to this bit has no effect if the
-                                  //                  selected SD bus voltage is not supported according to capability register
-                                  //                  (SD_CAPA[VS*]).
-                                  //                  [0x0 = Power off;
-                                  //                   0x1 = Power on]
-            uint32_t    SDVS : 3; // bits:9..11  (R/W) SD bus voltage select (All cards). The host driver should set these bits to select the
-                                  //                  voltage level for the card according to the voltage supported by the system (SD_CAPA[26]
-                                  //                  VS18 bit, SD_CAPA[25] VS30 bit, SD_CAPA[24] VS33 bit) before starting a transfer. If
-                                  //                  MMCHS 2: This field must be set to 5h. If MMCHS 3: This field must be set to 5h. [see e_SDVS]
-            uint32_t         : 4; // bits:12..15 (R)   Reserved
-            uint32_t    SBGR : 1; // bit:16      (R/W) Stop at block gap request. This bit is used to stop executing a transaction at the next
-                                  //                  block gap. The transfer can restart with a continue request (SD_HCTL[17] CR bit) or
-                                  //                  during a suspend/resume sequence. In case of read transfer, the card must support read
-                                  //                  wait control. In case of write transfer, the host driver shall set this bit after all
-                                  //                  block data written. Until the transfer completion (SD_STAT[1] TC bit set to 1), the host
-                                  //                  driver shall leave this bit set to 1.If this bit is set, the local host shall not write
-                                  //                  to the data register (SD_DATA).
-                                  //                  [0x0 = Transfer mode;
-                                  //                   0x1 = Stop at block gap]
-            uint32_t    CR   : 1; // bit:17      (R/W) Continue request. This bit is used to restart a transaction that was stopped by
-                                  //                  requesting a stop at block gap (SD_HCTL[16] SBGR bit). Set this bit to 1 restarts the
-                                  //                  transfer. The bit is automatically cleared to 0 by the host controller when transfer has
-                                  //                  restarted, that is, mmc_dat line is active (SD_PSTATE[2] DLA bit) or transferring data
-                                  //                  (SD_PSTATE[8] WTA bit). The Stop at block gap request must be disabled (SD_HCTL[16] SBGR
-                                  //                  bit =0) before setting this bit.
-                                  //                  [0x0 = No affect;
-                                  //                   0x1 = Transfer restart]
-            uint32_t    RWC  : 1; // bit:18      (R/W) Read wait control. The read wait function is optional only for SDIO cards. If the card
-                                  //                  supports read wait, this bit must be enabled, then requesting a stop at block gap
-                                  //                  (SD_HCTL[16] SBGR bit) generates a read wait period after the current end of block. Be
-                                  //                  careful, if read wait is not supported it may cause a conflict on mmc_dat line.
-                                  //                  [0x0 = Disable read wait control. Suspend/resume cannot be supported.
-                                  //                   0x1 = Enable read wait control]
-            uint32_t    IBG  : 1; // bit:19      (R/W) Interrupt block at gap. This bit is valid only in 4-bit mode of SDIO card to enable
-                                  //                  interrupt detection in the interrupt cycle at block gap for a multiple block transfer.
-                                  //                  For MMC cards and for SD card this bit should be cleared to 0.
-                                  //                  [0x0 = Disable interrupt detection at the block gap in 4-bit mode;
-                                  //                   0x1 = Enable interrupt detection at the block gap in 4-bit mode]
-            uint32_t         : 4; // bits:20..23 (R)   Reserved
-            uint32_t    IWE  : 1; // bit:24      (R/W) Wake-up event enable on SD card interrupt. This bit enables wake-up events for card
-                                  //                  interrupt assertion. Wake-up is generated if the wake-up feature is enabled
-                                  //                  (SD_SYSCONFIG[2] ENAWAKEUP bit) and enable status bit is set (SD_IE[8] CIRQ_ENABLE bit).
-                                  //                   [0x0 = Disable wake-up on card interrupt;
-                                  //                    0x1 = Enable wake-up on card interrupt]
-            uint32_t    INS  : 1; // bit:25      (R/W) Wake-up event enable on SD card insertion This bit enables wake- up events for card
-                                  //                  insertion assertion. Wake-up is generated if the wake-up feature is enabled
-                                  //                  (SD_SYSCONFIG[2] ENAWAKEUP bit).
-                                  //                  [0x0 = Disable wake-up on card insertion;
-                                  //                  0x1 = Enable wake-up on card insertion]
-            uint32_t    REM  : 1; // bit:26      (R/W) Wake-up event enable on SD card removal. This bit enables wake-up events for card
-                                  //                  removal assertion. Wake-up is generated if the wake-up feature is enabled
-                                  //                  (SD_SYSCONFIG[2] ENAWAKEUP bit).
-                                  //                  [0x0 = Disable wake-up on card removal;
-                                  //                  0x1 = Enable wake-up on card removal]
-            uint32_t    OBWE : 1; // bit:27      (R/W) Wake-up event enable for 'out-of-band' interrupt. This bit enables wake-up
-                                  //                  events for 'out-of-band' assertion. Wake-up is generated if the wake-up
-                                  //                  feature is enabled (SD_SYSCONFIG[2] ENAWAKEUP bit). The write to this register is
-                                  //                  ignored when SD_CON[14] OBIE bit is not set.
-                                  //                  [0x0 = Disable wake-up on 'out-of-band' Interrupt
-                                  //                   0x1 = Enable wake-up on 'out-of-band' Interrupt
-            uint32_t         : 4; // bits:28..31 (R)   Reserved
-        } b;
-        uint32_t reg;
-    } HCTL_reg_t;
-
+    /*  @brief      Host Control Register
+     *  @details    Defines the host controls to set power, wake-up and transfer parameters.
+     *              SD_HCTL[31:24] = wake-up control, SD_HCTL[23:16] = block gap control,
+     *              SD_HCTL[15:8]  = power control,   SD_HCTL[7:0]   = host control.
+    (offset = 0x228) [reset = 0x00000000] */
     enum e_DMAS : uint32_t
     {
-        /*  Selects DMA mode for data transfers
-         *  Determines which DMA engine is used for data movement
+        /*  Selects the DMA mode used for the data transfers.
+         *  Only meaningful when the generic parameter MADMA_EN is set to 1.
          */
-        DMA_RESERVED0  = 0x0,  // Reserved value 0
-        DMA_RESERVED1  = 0x1,  // Reserved value 1
-        DMA_ADMA2_32   = 0x2,  // 32-bit Address ADMA2
-        DMA_RESERVED3  = 0x3   // Reserved value 3
+        DMA_RESERVED0 = 0x0,        // Reserved
+        DMA_RESERVED1 = 0x1,        // Reserved
+        DMA_ADMA2_32  = 0x2,        // 32-bit address ADMA2 is selected
+        DMA_RESERVED3 = 0x3         // Reserved
     };
 
     enum e_SDVS : uint32_t
     {
-        /*  Selects operating voltage for SD bus
-         *  Must match card's supported voltage range
+        /*  Selects the operating voltage of the SD bus.
+         *  Must match the voltage supported by the system (see SD_CAPA[26:24] VS18/VS30/VS33).
          */
-        VS_1_8V        = 0x5,  // 1.8V (Typical)
-        VS_3_0V        = 0x6,  // 3.0V (Typical)
-        VS_3_3V        = 0x7   // 3.3V (Typical)
+        VS_1_8V = 0x5,              // 1.8 V (typical)
+        VS_3_0V = 0x6,              // 3.0 V (typical)
+        VS_3_3V = 0x7               // 3.3 V (typical)
     };
 
-    /* (offset = 0x22C) [reset = 0x0] */
     typedef union
     {
         struct
         {
-                                                    /* Register SD_SYSCTL */
+            uint32_t         : 1;               // bit  0       (R)   Reserved
+            uint32_t    DTW  : 1;               // bit  1       (R/W) Data transfer width. Must be set following a valid SET_BUS_WIDTH
+                                                //                    command (ACMD6) with the value written in bit 1 of the argument. Prior
+                                                //                    to this command the SD card configuration register (SCR) must be
+                                                //                    verified for the bus width supported by the card.
+                                                //                    [ 0x0 = 1-bit data width (mmc_dat0 used);
+                                                //                      0x1 = 4-bit data width (mmc_dat[3:0] used) ]
+            uint32_t    HSPE : 1;               // bit  2       (R/W) High speed enable. Before setting this bit the host driver shall check
+                                                //                    the high speed support in SD_CAPA. Shall not be set when the dual data
+                                                //                    rate mode is activated in SD_CON[19] DDR.
+                                                //                    [ 0x0 = Normal speed mode, CMD/DAT lines are output at the falling edge
+                                                //                            of the SD clock;
+                                                //                      0x1 = High speed mode, CMD/DAT lines are output at the rising edge of
+                                                //                            the SD clock ]
+            uint32_t    DMAS : 2;               // bits 3,4     (R/W) DMA select [see e_DMAS]
+            uint32_t         : 1;               // bit  5       (R)   Reserved
+            uint32_t    CDTL : 1;               // bit  6       (R/W) Card detect test level. Enabled while CDSS is set to 1.
+                                                //                    [ 0x0 = No card;
+                                                //                      0x1 = Card inserted ]
+            uint32_t    CDSS : 1;               // bit  7       (R/W) Card detect signal selection. When the source for the card detection is
+                                                //                    switched, the interrupt should be disabled during the switching period
+                                                //                    by clearing SD_IE / SD_ISE to mask a glitch-induced interrupt.
+                                                //                    [ 0x0 = SDCD# is selected (for normal use);
+                                                //                      0x1 = The card detect test level (CDTL) is selected (for test purposes) ]
+            uint32_t    SDBP : 1;               // bit  8       (R/W) SD bus power. Before setting this bit the host driver shall select the
+                                                //                    SD bus voltage (SDVS). If the host controller detects the No card state
+                                                //                    this bit is automatically cleared to 0. A write has no effect if the
+                                                //                    selected SD bus voltage is not supported according to SD_CAPA[VS*].
+                                                //                    [ 0x0 = Power off;
+                                                //                      0x1 = Power on ]
+            uint32_t    SDVS : 3;               // bits 9..11   (R/W) SD bus voltage select (all cards) [see e_SDVS]
+            uint32_t         : 4;               // bits 12..15  (R)   Reserved
+            uint32_t    SBGR : 1;               // bit  16      (R/W) Stop at block gap request. Stops executing a transaction at the next
+                                                //                    block gap; the transfer can restart with a continue request (CR). For a
+                                                //                    read transfer the card must support read wait control; for a write
+                                                //                    transfer the host driver shall set this bit after all block data is
+                                                //                    written. If this bit is set the local host shall not write to SD_DATA.
+                                                //                    [ 0x0 = Transfer mode;
+                                                //                      0x1 = Stop at block gap ]
+            uint32_t    CR   : 1;               // bit  17      (R/W) Continue request. Restarts a transaction that was stopped by a stop at
+                                                //                    block gap request. Automatically cleared by the host controller when
+                                                //                    the transfer has restarted. SBGR must be cleared before setting it.
+                                                //                    [ 0x0 = No effect;
+                                                //                      0x1 = Transfer restart ]
+            uint32_t    RWC  : 1;               // bit  18      (R/W) Read wait control, optional and only for SDIO cards. If the card does
+                                                //                    not support read wait, enabling it may cause a conflict on the mmc_dat
+                                                //                    line.
+                                                //                    [ 0x0 = Disable read wait control, suspend/resume cannot be supported;
+                                                //                      0x1 = Enable read wait control ]
+            uint32_t    IBG  : 1;               // bit  19      (R/W) Interrupt block at gap. Valid only in 4-bit mode of an SDIO card. For
+                                                //                    MMC and SD cards this bit should be cleared to 0.
+                                                //                    [ 0x0 = Disable interrupt detection at the block gap in 4-bit mode;
+                                                //                      0x1 = Enable interrupt detection at the block gap in 4-bit mode ]
+            uint32_t         : 4;               // bits 20..23  (R)   Reserved
+            uint32_t    IWE  : 1;               // bit  24      (R/W) Wake-up event enable on SD card interrupt. Wake-up is generated if the
+                                                //                    wake-up feature is enabled (SD_SYSCONFIG[2] ENAWAKEUP) and the enable
+                                                //                    status bit is set (SD_IE[8] CIRQ_ENABLE).
+                                                //                    [ 0x0 = Disable wake-up on card interrupt;
+                                                //                      0x1 = Enable wake-up on card interrupt ]
+            uint32_t    INS  : 1;               // bit  25      (R/W) Wake-up event enable on SD card insertion. Wake-up is generated if the
+                                                //                    wake-up feature is enabled (SD_SYSCONFIG[2] ENAWAKEUP).
+                                                //                    [ 0x0 = Disable wake-up on card insertion;
+                                                //                      0x1 = Enable wake-up on card insertion ]
+            uint32_t    REM  : 1;               // bit  26      (R/W) Wake-up event enable on SD card removal. Wake-up is generated if the
+                                                //                    wake-up feature is enabled (SD_SYSCONFIG[2] ENAWAKEUP).
+                                                //                    [ 0x0 = Disable wake-up on card removal;
+                                                //                      0x1 = Enable wake-up on card removal ]
+            uint32_t    OBWE : 1;               // bit  27      (R/W) Wake-up event enable for the 'out-of-band' interrupt. The write to this
+                                                //                    register is ignored when SD_CON[14] OBIE is not set.
+                                                //                    [ 0x0 = Disable wake-up on 'out-of-band' interrupt;
+                                                //                      0x1 = Enable wake-up on 'out-of-band' interrupt ]
+            uint32_t         : 4;               // bits 28..31  (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
+    } HCTL_reg_t;
 
-            uint32_t    ICE  : 1;   // bit:0       (R/W) Internal clock enable. This register controls the internal clock activity. In very low
-                                    //                  power state, the internal clock is stopped. NoteThe activity of the debounce clock (used
-                                    //                  for wake-up events) and the interface clock (used for reads and writes to the module
-                                    //                  register map) are not affected by this register.
-                                    //                  [0x0 = The internal clock is stopped (very low power state).
-                                    //                   0x1 = The internal clock oscillates and can be automatically
-                                    //                         gated when SD_SYSCONFIG[0] AUTOIDLE bit is set to 1 (default value)]
-            uint32_t    ICS  : 1;   // bit:1       (R)   Internal clock stable (status)This bit indicates either the internal clock is stable or
-                                    //                  not.
-                                    //                  [0x0 = The internal clock is not stable;
-                                    //                   0x1 = The internal clock is stable after enabling the clock (SD_SYSCTL[0] ICE bit) or after changing the clock ratio
-                                    //                  (SD_SYSCTL[15:6] CLKD bits)]
-            uint32_t    CEN  : 1;   // bit:2       (R/W) Clock enable. This bit controls if the clock is provided to the card or not.
-                                    //                  [0x0 = The clock is not provided to the card . Clock frequency can be changed .
-                                    //                   0x1 = The clock is provided to the card and can be automatically gated when SD_SYSCONFIG[0] AUTOIDLE bit is
-                                    //                  set to 1 (default value). The host driver shall wait to set this bit to 1 until the
-                                    //                  Internal clock is stable (SD_SYSCTL[1] ICS bit)]
-            uint32_t         : 3;   // bits:3..5   (R)   Reserved
-            uint32_t    CLKD :10;   // bits:6..15  (R/W) Clock frequency select. These bits define the ratio between a reference clock frequency
-                                    //                  (system dependant) and the output clock frequency on the mmc_clk pin of either the
-                                    //                  memory card (MMC, SD, or SDIO).
-                                    //                  [0x0 = Clock Ref bypass;
-                                    //                   0x1 = Clock Ref bypass
-                                    //                   0x2 = Clock Ref/2;
-                                    //                   0x3 = Clock Ref/3;
-                                    //                   ....
-                                    //                   0x3FF = Clock Ref / 1023]
-            uint32_t    DTO  : 4;   // bits:16..19 (R/W) Data timeout counter value and busy timeout. This value determines the interval by which
-                                    //                  mmc_dat lines timeouts are detected. The host driver needs to set this bit field based
-                                    //                  on: The maximum read access time (NAC) (Refer to the SD Specification Part1 Physical
-                                    //                  Layer). The data read access time values (TAAC and NSAC) in the card specific data
-                                    //                  register (CSD) of the card. The timeout clock base frequency (SD_CAPA [5:0] TCF bits).
-                                    //                  If the card does not respond within the specified number of cycles, a data timeout error
-                                    //                  occurs (SD_STAT[20] DTO bit). The SD_SYSCTL[19,16] DTO bit field is also used to check
-                                    //                  busy duration, to generate busy timeout for commands with busy response or for busy
-                                    //                  programming during a write command. Timeout on CRC status is generated if no CRC token
-                                    //                  is present after a block write. [see e_DTO]
-            uint32_t         : 4;   // bits:20..23 (R)   Reserved
-            uint32_t    SRA  : 1;   // bit:24      (R/W) Software reset for all. This bit is set to 1 for reset , and released to 0 when
-                                    //                  completed. This reset affects the entire host controller except for the card detection
-                                    //                  circuit and capabilities registers.
-                                    //                  [0x0 = Reset completed;
-                                    //                   0x1 = Software reset for all the design;
-            uint32_t    SRC  : 1;   // bit:25      (R/W) Software reset for mmc_cmd line. This bit is set to 1 for reset and released to 0 when
-                                    //                  completed. Due to additional implementation logic, the reset does not immediately start
-                                    //                  when asserted. The proper procedure is: (a) Set to 1 to start reset, (b) Poll for 1 to
-                                    //                  identify start of reset, and (c) Poll for 0 to identify reset is complete. mmc_cmd
-                                    //                  finite state machine in both clock domain are also reset. These registers are cleared by
-                                    //                  the SD_SYSCTL[25] SRC bit: SD_PSTATECMDI. SD_STATCC Interconnect and MMC command status
-                                    //                  management is reinitialized. Note: If a soft reset is issued when an interrupt is
-                                    //                  asserted, data may be lost.
-                                    //                  [0x0 = Reset completed;
-                                    //                   0x1 = Software reset for mmc_cmd line]
-            uint32_t    SRD  : 1;   // bit:26      (R/W) Software reset for mmc_dat line. This bit is set to 1 for reset and released to 0 when
-                                    //                  completed. Due to additional implementation logic, the reset does not immediately start
-                                    //                  when asserted. The proper procedure is: (a) Set to 1 to start reset, (b) Poll for 1 to
-                                    //                  identify start of reset, and (c) Poll for 0 to identify reset is complete. mmc_dat
-                                    //                  finite state machine in both clock domain are also reset. These registers are cleared by
-                                    //                  the SD_SYSCTL[26] SRD bit: SD_DATA. SD_PSTATEBRE, BWE, RTA, WTA, DLA and DATI.
-                                    //                  SD_HCTLSBGR and CR. SD_STATBRR, BWR, BGE and TC Interconnect and MMC buffer data
-                                    //                  management is reinitialized. Note: If a soft reset is issued when an interrupt is
-                                    //                  asserted, data may be lost.
-                                    //                  [0x0 = Reset completed;
-                                    //                   0x1 = Software reset for mmc_dat line]
-            uint32_t         : 5;   // bits:27..31 (R)   Reserved
-        } b;
-        uint32_t reg;
-    } SYSCTL_reg_t;
-
+    /*  @brief      SD System Control Register
+     *  @details    Defines the system controls to set the software resets, the clock frequency management and the
+     *              data timeout. SD_SYSCTL[31:24] = software resets, SD_SYSCTL[23:16] = timeout control,
+     *              SD_SYSCTL[15:0] = clock control.
+    (offset = 0x22C) [reset = 0x00000000] */
     enum e_DTO : uint32_t
     {
-        /*  Selects data timeout period
-         *  Determines how long controller waits for response before timing out
+        /*  Selects the data timeout period as a multiple of the timeout clock frequency (TCF).
+         *  Determines how long the controller waits for the card before raising SD_STAT[20] DTO.
          */
-        DTO_2_13       = 0x0,  // TCF x 2^13 (8.192 ms at 100 kHz)
-        DTO_2_14       = 0x1,  // TCF x 2^14 (16.384 ms at 100 kHz)
-        DTO_2_15       = 0x2,  // TCF x 2^15 (32.768 ms at 100 kHz)
-        DTO_2_16       = 0x3,  // TCF x 2^16 (65.536 ms at 100 kHz)
-        DTO_2_17       = 0x4,  // TCF x 2^17 (131.072 ms at 100 kHz)
-        DTO_2_18       = 0x5,  // TCF x 2^18 (262.144 ms at 100 kHz)
-        DTO_2_19       = 0x6,  // TCF x 2^19 (524.288 ms at 100 kHz)
-        DTO_2_20       = 0x7,  // TCF x 2^20 (1.048576 s at 100 kHz)
-        DTO_2_21       = 0x8,  // TCF x 2^21 (2.097152 s at 100 kHz)
-        DTO_2_22       = 0x9,  // TCF x 2^22 (4.194304 s at 100 kHz)
-        DTO_2_23       = 0xA,  // TCF x 2^23 (8.388608 s at 100 kHz)
-        DTO_2_24       = 0xB,  // TCF x 2^24 (16.777216 s at 100 kHz)
-        DTO_2_25       = 0xC,  // TCF x 2^25 (33.554432 s at 100 kHz)
-        DTO_2_26       = 0xD,  // TCF x 2^26 (67.108864 s at 100 kHz)
-        DTO_2_27       = 0xE   // TCF x 2^27 (134.217728 s at 100 kHz)
+        DTO_TCF_2_13 = 0x0,         // TCF x 2^13
+        DTO_TCF_2_14 = 0x1,         // TCF x 2^14
+        DTO_TCF_2_15 = 0x2,         // TCF x 2^15
+        DTO_TCF_2_16 = 0x3,         // TCF x 2^16
+        DTO_TCF_2_17 = 0x4,         // TCF x 2^17
+        DTO_TCF_2_18 = 0x5,         // TCF x 2^18
+        DTO_TCF_2_19 = 0x6,         // TCF x 2^19
+        DTO_TCF_2_20 = 0x7,         // TCF x 2^20
+        DTO_TCF_2_21 = 0x8,         // TCF x 2^21
+        DTO_TCF_2_22 = 0x9,         // TCF x 2^22
+        DTO_TCF_2_23 = 0xA,         // TCF x 2^23
+        DTO_TCF_2_24 = 0xB,         // TCF x 2^24
+        DTO_TCF_2_25 = 0xC,         // TCF x 2^25
+        DTO_TCF_2_26 = 0xD,         // TCF x 2^26
+        DTO_TCF_2_27 = 0xE,         // TCF x 2^27
+        DTO_RESERVED = 0xF          // Reserved
     };
 
-    /* (offset = 0x230) [reset = 0x0] */
     typedef union
     {
         struct
         {
-            uint32_t    CC    :1;   // bit  0      (R/W) Command complete.
-                                    //                   This bit is set when a
-                                    //                   1-to-0 transition occurs in the register command inhibit
-                                    //                   (SD_PSTATE[0] CMDI bit)
-                                    //                   [0x0 (W) = Status bit unchanged;
-                                    //                    0x0 (R) = No command complete;
-                                    //                    0x1 (W) = Status is cleared;
-                                    //                    0x1 (R) = Command complete;]
-            uint32_t    TC    :1;   // bit  1      (R/W) Transfer completed.
-                                    //                    This bit is always set when a read/write transfer is completed or
-                                    //                    between two blocks when the transfer is stopped due to a stop at
-                                    //                    block gap request (SD_HCTL[16] SBGR bit).
-                                    //                    [0x0 (W) = Status bit unchanged
-                                    //                     0x0 (R) = No transfer complete
-                                    //                     0x1 (W) = Status is cleared
-                                    //                     0x1 (R) = Data transfer complete]
-            uint32_t    BGE   :1;   // bit  2      (R/W) Block gap event.
-                                    //                   When a stop at block gap is requested (SD_HCTL[16] SBGR bit),
-                                    //                   this bit is automatically set when transaction is stopped at the block
-                                    //                   gap during a read or write operation.
-                                    //                   [0x0 (W) = Status bit unchanged;
-                                    //                    0x0 (R) = No block gap event;
-                                    //                    0x1 (W) = Status is cleared;
-                                    //                    0x1 (R) = Transaction stopped at block gap]
-            uint32_t    DMA   :1;   // bit  3      (R/W) DMA Interrupt.
-                                    //                   This status is set when an interrupt is required in the ADMA
-                                    //                   instruction and after the data transfer completion.
-                                    //                   [0x0 (W) = Status bit unchanged;
-                                    //                    0x0 (R) = DMA Interrupt detected;
-                                    //                    0x1 (W) = Status is cleared;
-                                    //                    0x1 (R) = No DMA Interrupt]
-            uint32_t    BWR   :1;   // bit  4      (R/W) Buffer write ready.
-                                    //                   This bit is set automatically during a write operation to the card (see
-                                    //                   class
-                                    //                   4 - block oriented write command) when the host can write a
-                                    //                   complete block as specified by SD_BLK
-                                    //                   [10:0] BLEN.
-                                    //                   It indicates that the memory card has emptied one block from the
-                                    //                   buffer and that the local host is able to write one block of data into
-                                    //                   the buffer.
-                                    //                   Note: If the DMA transmit mode is enabled, this bit is never set
-                                    //                   instead, a DMA transmit request to the main DMA controller of the
-                                    //                   system is generated.
-                                    //                   [0x0 (W) = Status bit unchanged;
-                                    //                    0x0 (R) = Not ready to write buffer;
-                                    //                    0x1 (W) = Status is cleared;
-                                    //                    0x1 (R) = Ready to write buffer]
-            uint32_t    BRR   : 1;  // bit:5       (R/W) Buffer read ready. This bit is set automatically during a read operation to the card
-                                    //                  (see class 2 - block oriented read commands) when one block specified by the SD_BLK
-                                    //                  [10:0] BLEN bit field is completely written in the buffer. It indicates that the memory
-                                    //                  card has filled out the buffer and that the local host needs to empty the buffer by
-                                    //                  reading it. Note: If the DMA receive-mode is enabled, this bit is never set instead a
-                                    //                  DMA receive request to the main DMA controller of the system is generated.
-                                    //                  [0x0 (W) = Status bit unchanged
-                                    //                   0x0 (R) = Not ready to read buffer
-                                    //                   0x1 (W) = Status is cleared.
-                                    //                   0x1 (R) = Ready to read buffer]
-            uint32_t    CINS  : 1;  // bit:6       (R/W) Card Insertion. This bit is set automatically when SD_PSTATE[CINS] changes from 0 to 1.
-                                    //                  A clear of this bit doesn&apos;t affect Card inserted present state (SD_PSTATE[CINS]).
-                                    //                  [0x0 (W) = Status bit unchanged
-                                    //                   0x0 (R) = Card State stable or debouncing
-                                    //                   0x1 (W) = Status is cleared.
-                                    //                   0x1 (R) = Card inserted]
-            uint32_t    CREM  : 1;  // bit:7       (R/W) Card Removal. This bit is set automatically when SD_PSTATE[CINS] changes from 1 to 0. A
-                                    //                  clear of this bit doesn&apos;t affect Card inserted present state (SD_PSTATE[CINS]).
-                                    //                  [0x0 (W) = Status bit unchanged
-                                    //                   0x0 (R) = Card State stable or debouncing
-                                    //                   0x1 (W) = Status is cleared
-                                    //                   0x1 (R) = Card Removed]
-            uint32_t    CIRQ  : 1;  // bit:8       (R)   Card interrupt. This bit is only used for SD and SDIO cards. In 1-bit mode, interrupt
-                                    //                  source is asynchronous (can be a source of asynchronous wake-up). In 4-bit mode,
-                                    //                  interrupt source is sampled during the interrupt cycle. In CE-ATA mode, interrupt source
-                                    //                  is detected when the card drives mmc_cmd line to zero during one cycle after data
-                                    //                  transmission end. All modes above are fully exclusive. The controller interrupt must be
-                                    //                  clear by setting SD_IE[8] CIRQ_ENABLE to 0, then the host driver must start the
-                                    //                  interrupt service with card (clearing card interrupt status) to remove card interrupt
-                                    //                  source. Otherwise the Controller interrupt will be reasserted as soon as SD_IE[8]
-                                    //                  CIRQ_ENABLE is set to 1. Writes to this bit are ignored.
-                                    //                  [0x0 (R) = No card interrupt;
-                                    //                   0x1 (R) = Generate card interrupt]
-            uint32_t    OBI   : 1;  // bit:9       (R)   Out-of-band interrupt (This interrupt is only useful for MMC card). This bit is set
-                                    //                  automatically when SD_CON[14] OBIE bit is set and an out-of-band interrupt occurs on OBI
-                                    //                  pin. The interrupt detection depends on polarity controlled by SD_CON[13] OBIP bit. The
-                                    //                  out-of-band interrupt signal is a system specific feature for future use, this signal is
-                                    //                  not required for existing specification implementation.
-                                    //                  [0x0 (W) = Status bit unchanged
-                                    //                   0x0 (R) = No out-of-band interrupt
-                                    //                   0x1 (W) = Status is cleared.
-                                    //                   0x1 (R) = Interrupt out-of-band occurs]
-            uint32_t    BSR   : 1;  // bit:10      (R/W) Boot Status Received Interrupt. This bit is set automatically when SD_CON[BOOT] is set 1
-                                    //                  or 2 and a boot status is received on DAT[0] line. This interrupt is only useful for MMC
-                                    //                  card.
-                                    //                  [0x0 (W) = Status bit unchanged;
-                                    //                   0x0 (R) = No interrupt;
-                                    //                   0x1 (W) = Status is cleared.
-                                    //                   0x1 (R) = Boot Status Received Interrupt occurred.]
-            uint32_t          : 4;  // bits:11..14 (R)   Reserved
-            uint32_t    ERRI  : 1;  // bit:15      (R)   Error interrupt. If any of the bits in the Error Interrupt Status register (SD_STAT
-                                    //                  [31:16]) are set, then this bit is set to 1. Therefore the host driver can efficiently
-                                    //                  test for an error by checking this bit first. Writes to this bit are ignored.
-                                    //                  [0x0 (R) = No interrupt;
-                                    //                   0x1 (R) = Error interrupt event(s) occurred]
-            uint32_t    CTO   : 1;  // bit:16      (R/W) Command timeout error. This bit is set automatically when no response is received within
-                                    //                  64 clock cycles from the end bit of the command. For commands that reply within 5 clock
-                                    //                  cycles - the timeout is still detected at 64 clock cycles.
-                                    //                  [0x0 (W) = Status bit unchanged
-                                    //                   0x0 (R) = No error
-                                    //                   0x1 (W) = Status is cleared.
-                                    //                   0x1 (R) = Time Out]
-            uint32_t    CCRC  : 1;  // bit:17      (R/W) Command CRC error. This bit is set automatically when there is a CRC7 error in the
-                                    //                  command response depending on the enable bit (SD_CMD[19] CCCE).
-                                    //                  [0x0 (W) = Status bit unchanged
-                                    //                   0x0 (R) = No error
-                                    //                   0x1 (W) = Status is cleared.
-                                    //                   0x1 (R) = Command CRC error]
-            uint32_t    CEB   : 1;  // bit:18      (R/W) Command end bit error. This bit is set automatically when detecting a 0 at the end bit
-                                    //                  position of a command response.
-                                    //                  [0x0 (W) = Status bit unchanged;
-                                    //                   0x0 (R) = No error;
-                                    //                   0x1 (W) = Status is cleared;
-                                    //                   0x1 (R) = Command end bit error]
-            uint32_t    CIE   : 1;  // bit:19      (R/W) Command index error. This bit is set automatically when response index differs from
-                                    //                  corresponding command index previously emitted. It depends on the enable bit (SD_CMD[20]
-                                    //                  CICE).
-                                    //                  [0x0 (W) = Status bit unchanged;
-                                    //                   0x0 (R) = No error;
-                                    //                   0x1 (W) = Status is cleared;
-                                    //                   0x1 (R) = Command index error]
-            uint32_t    DTO   : 1;  // bit:20      (R/W) Data timeout error. This bit is set automatically according to the following conditions:
-                                    //                  Busy timeout for R1b, R5b response type. Busy timeout after write CRC status. Write CRC
-                                    //                  status timeout. Read data timeout.
-                                    //                  [0x0 (W) = Status bit unchanged;
-                                    //                   0x0 (R) = No error;
-                                    //                   0x1 (W) = Status is cleared;
-                                    //                   0x1 (R) = Time out]
-            uint32_t    DCRC  : 1;  // bit:21      (R/W) Data CRC Error. This bit is set automatically when there is a CRC16 error in the data
-                                    //                  phase response following a block read command or if there is a 3-bit CRC status
-                                    //                  different of a position '010' token during a block write command.
-                                    //                  [0x0 (W) = Status bit unchanged;
-                                    //                   0x0 (R) = No error;
-                                    //                   0x1 (W) = Status is cleared;
-                                    //                   0x1 (R) = Data CRC error]
-            uint32_t    DEB   : 1;  // bit:22      (R/W) Data End Bit error. This bit is set automatically when detecting a 0 at the end bit
-                                    //                  position of read data on mmc_dat line or at the end position of the CRC status in write
-                                    //                  mode.
-                                    //                  [0x0 (W) = Status bit unchanged;
-                                    //                   0x0 (R) = No error;
-                                    //                   0x1 (W) = Status is cleared;
-                                    //                   0x1 (R) = Data end bit error]
-            uint32_t          : 1;  // bit:23      (R)   Reserved
-            uint32_t    ACE   : 1;  // bit:24      (R/W) Auto CMD12 error. This bit is set automatically when one of the bits in Auto CMD12 Error
-                                    //                  status register has changed from 0 to 1.
-                                    //                  [0x0 (W) = Status bit unchanged;
-                                    //                   0x0 (R) = No error;
-                                    //                   0x1 (W) = Status is cleared;
-                                    //                   0x1 (R) = AutoCMD12 error]
-            uint32_t    ADMAE : 1;  // bit:25      (R/W) ADMA Error. This bit is set when the Host Controller detects errors during ADMA based
-                                    //                  data transfer. The state of the ADMA at an error occurrence is saved in the ADMA Error
-                                    //                  Status Register. In addition, the Host Controller generates this interrupt when it
-                                    //                  detects invalid descriptor data (Valid=0) at the ST_FDS state. ADMA Error State in the
-                                    //                  ADMA Error Status indicates that an error occurs in ST_FDS state. The Host Driver may
-                                    //                  find that Valid bit is not set at the error descriptor.
-                                    //                  [0x0 (W) = Status bit unchanged;
-                                    //                   0x0 (R) = No interrupt;
-                                    //                   0x1 (W) = Status is cleared;
-                                    //                   0x1 (R) = ADMA error]
-            uint32_t          : 2;  // bits:26..27 (R)   Reserved
-            uint32_t    CERR  : 1;  // bit:28      (R/W) Card error. This bit is set automatically when there is at least one error in a response
-                                    //                  of type R1, R1b, R6, R5 or R5b. Only bits referenced as type E (error) in status field
-                                    //                  in the response can set a card status error. An error bit in the response is flagged
-                                    //                  only if corresponding bit in card status response error SD_CSRE in set. There is no card
-                                    //                  error detection for autoCMD12 command. The host driver shall read SD_RSP76 register to
-                                    //                  detect error bits in the command response.
-                                    //                  [0x0 (W) = Status bit unchanged;
-                                    //                   0x0 (R) = No error;
-                                    //                   0x1 (W) = Status is cleared;
-                                    //                   0x1 (R) = Card error]
-            uint32_t    BADA  : 1;  // bit:29      (R/W) Bad access to data space. This bit is set automatically to indicate a bad access to
-                                    //                  buffer when not allowed: During a read access to the data register (SD_DATA) while
-                                    //                  buffer reads are not allowed (SD_PSTATE[11] BRE bit =0). During a write access to the
-                                    //                  data register (SD_DATA) while buffer writes are not allowed (SD_PSTATE[10] BWE bit=0).
-                                    //                  [0x0 (W) = Status bit unchanged;
-                                    //                   0x0 (R) = No interrupt;
-                                    //                   0x1 (W) = Status is cleared;
-                                    //                   0x1 (R) = Bad access]
-            uint32_t          : 2;  // bits:30..31 (R)   Reserved
-        } b;
-        uint32_t reg;
-    } STAT_reg_t;
-        
-    /* (offset = 0x234) [reset = 0x0] */
-    typedef union
-    {
-        struct
-        {
-                                            /* Register SD_IE */
+            uint32_t    ICE  : 1;               // bit  0       (R/W) Internal clock enable. The activity of the debounce clock (used for
+                                                //                    wake-up events) and of the interface clock (used for reads and writes
+                                                //                    to the register map) is not affected by this register.
+                                                //                    [ 0x0 = The internal clock is stopped (very low power state);
+                                                //                      0x1 = The internal clock oscillates and can be automatically gated
+                                                //                            when SD_SYSCONFIG[0] AUTOIDLE is set to 1 ]
+            uint32_t    ICS  : 1;               // bit  1       (R)   Internal clock stable (status)
+                                                //                    [ 0x0 = The internal clock is not stable;
+                                                //                      0x1 = The internal clock is stable after enabling the clock (ICE) or
+                                                //                            after changing the clock ratio (CLKD) ]
+            uint32_t    CEN  : 1;               // bit  2       (R/W) Clock enable, controls whether the clock is provided to the card
+                                                //                    [ 0x0 = The clock is not provided to the card, the clock frequency can
+                                                //                            be changed;
+                                                //                      0x1 = The clock is provided to the card. The host driver shall wait
+                                                //                            until the internal clock is stable (ICS) before setting it ]
+            uint32_t         : 3;               // bits 3..5    (R)   Reserved
+            uint32_t    CLKD :10;               // bits 6..15   (R/W) Clock frequency select, ratio between the reference clock frequency and
+                                                //                    the output clock frequency on the mmc_clk pin
+                                                //                    [ 0x000 = Clock Ref bypass;
+                                                //                      0x001 = Clock Ref bypass;
+                                                //                      0x002 = Clock Ref / 2;
+                                                //                      ...
+                                                //                      0x3FF = Clock Ref / 1023 ]
+            uint32_t    DTO  : 4;               // bits 16..19  (R/W) Data timeout counter value and busy timeout [see e_DTO]
+            uint32_t         : 4;               // bits 20..23  (R)   Reserved
+            uint32_t    SRA  : 1;               // bit  24      (R/W) Software reset for all. Set to 1 to reset, released to 0 when completed.
+                                                //                    Affects the entire host controller except the card detection circuit
+                                                //                    and the capabilities registers.
+                                                //                    [ 0x0 = Reset completed;
+                                                //                      0x1 = Software reset for all the design ]
+            uint32_t    SRC  : 1;               // bit  25      (R/W) Software reset for the mmc_cmd line. Set to 1 to reset, released to 0
+                                                //                    when completed. Due to additional implementation logic the reset does
+                                                //                    not start immediately: the proper procedure is (a) set to 1 to start
+                                                //                    the reset, (b) poll for 1 to identify the start of the reset,
+                                                //                    (c) poll for 0 to identify that the reset is complete.
+                                                //                    Clears SD_PSTATE[CMDI] and SD_STAT[CC].
+                                                //                    [ 0x0 = Reset completed;
+                                                //                      0x1 = Software reset for the mmc_cmd line ]
+            uint32_t    SRD  : 1;               // bit  26      (R/W) Software reset for the mmc_dat line. Same (a)(b)(c) procedure as SRC.
+                                                //                    Clears SD_DATA, SD_PSTATE[BRE, BWE, RTA, WTA, DLA, DATI],
+                                                //                    SD_HCTL[SBGR, CR] and SD_STAT[BRR, BWR, BGE, TC].
+                                                //                    [ 0x0 = Reset completed;
+                                                //                      0x1 = Software reset for the mmc_dat line ]
+            uint32_t         : 5;               // bits 27..31  (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
+    } SYSCTL_reg_t;
 
-            uint32_t    CC_ENABLE   : 1;    // bit:0       (R/W) Command completed interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    TC_ENABLE   : 1;    // bit:1       (R/W) Transfer completed interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    BGE_ENABLE  : 1;    // bit:2       (R/W) Block gap event interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    DMA_ENABLE  : 1;    // bit:3       (R/W) DMA interrupt enable [0x0 = Masked; 0x1 = Enable]
-            uint32_t    BWR_ENABLE  : 1;    // bit:4       (R/W) Buffer write ready interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    BRR_ENABLE  : 1;    // bit:5       (R/W) Buffer read ready interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    CINS_ENABLE : 1;    // bit:6       (R/W) Card Insertion interrupt Enable This bit must be set to 1 when entering in smart idle
-                                            //                  mode to enable system to identity wake-up event and to allow controller to clear
-                                            //                  internal wake-up source. [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    CREM_ENABLE : 1;    // bit:7       (R/W) Card Removal interrupt Enable This bit must be set to 1 when entering in smart idle mode
-                                            //                  to enable system to identity wake-up event and to allow controller to clear internal
-                                            //                  wake-up source.[0x0 = Masked; 0x1 = Enabled]
-            uint32_t    CIRQ_ENABLE : 1;    // bit:8       (R/W) Card interrupt enable. A clear of this bit also clears the corresponding status bit.
-                                            //                  During 1-bit mode, if the interrupt routine does not remove the source of a card
-                                            //                  interrupt in the SDIO card, the status bit is reasserted when this bit is set to 1. This
-                                            //                  bit must be set to 1 when entering in smart idle mode to enable system to identity
-                                            //                  wake-up event and to allow controller to clear internal wake-up source.
-                                            //                  [0x0 = Masked 0x1 = Enabled]
-            uint32_t    OBI_ENABLE  : 1;    // bit:9       (R/W) Out-of-band interrupt enable A write to this register when SD_CON[14] OBIE is cleared to
-                                            //                  0 is ignored. [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    BSR_ENABLE  : 1;    // bit:10      (R/W) Boot Status Interrupt Enable A write to this register when SD_CON[BOOT] is cleared to 0
-                                            //                  is ignored. [0x0 = Masked; 0x1 = Enabled]
-            uint32_t                : 4;    // bits:11..14 (R)   Reserved
-            uint32_t    NULL_        : 1;    // bit:15      (R)   Fixed to 0. The host driver shall control error interrupts using the Error Interrupt
-                                            //                  Signal Enable register. Writes to this bit are ignored.
-            uint32_t    CTO_ENABLE  : 1;    // bit:16      (R/W) Command timeout error interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    CCRC_ENABLE : 1;    // bit:17      (R/W) Command CRC error interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    CEB_ENABLE  : 1;    // bit:18      (R/W) Command end bit error interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    CIE_ENABLE  : 1;    // bit:19      (R/W) Command index error interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    DTO_ENABLE  : 1;    // bit:20      (R/W) Data timeout error interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    DCRC_ENABLE : 1;    // bit:21      (R/W) Data CRC error interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    DEB_ENABLE  : 1;    // bit:22      (R/W) Data end bit error interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t                : 1;    // bit:23      (R)   Reserved
-            uint32_t    ACE_ENABLE  : 1;    // bit:24      (R/W) Auto CMD12 error interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    ADMA_ENABLE : 1;    // bit:25      (R/W) ADMA error Interrupt Enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t                : 2;    // bits:26..27 (R)   Reserved
-            uint32_t    CERR_ENABLE : 1;    // bit:28      (R/W) Card error interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    BADA_ENABLE : 1;    // bit:29      (R/W) Bad access to data space interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t                : 2;    // bits:30..31 (R)   Reserved
-        } b;
-        uint32_t reg;
+    /*  @brief      SD Interrupt Status Register
+     *  @details    Regroups all the status of the module internal events that can generate an interrupt.
+     *              SD_STAT[31:16] = error interrupt status, SD_STAT[15:0] = normal interrupt status.
+     *              All bits are cleared by writing a 1 to them, except bits 15 and 8: ERRI is automatically cleared
+     *              when the error causing it is handled (that is, when bits 31:16 are cleared), CIRQ is cleared by
+     *              writing a 0 to SD_IE[8] and servicing the interrupt.
+    (offset = 0x230) [reset = 0x00000000] */
+    typedef union
+    {
+        struct
+        {
+            uint32_t    CC    : 1;              // bit  0       (R/W) Command complete, set when a 1-to-0 transition occurs in SD_PSTATE[0] CMDI
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Command complete ]
+            uint32_t    TC    : 1;              // bit  1       (R/W) Transfer completed, always set when a read/write transfer is completed or
+                                                //                    between two blocks when the transfer is stopped by a stop at block gap
+                                                //                    request (SD_HCTL[16] SBGR)
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Data transfer complete ]
+            uint32_t    BGE   : 1;              // bit  2       (R/W) Block gap event, set when the transaction is stopped at the block gap
+                                                //                    during a read or write operation after a stop at block gap request
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Transaction stopped at block gap ]
+            uint32_t    DMA   : 1;              // bit  3       (R/W) DMA interrupt, set when an interrupt is required in the ADMA instruction
+                                                //                    and after the data transfer completion
+                                                //                    [ 0x1 (W) = Status is cleared ]
+            uint32_t    BWR   : 1;              // bit  4       (R/W) Buffer write ready, set during a write operation when the host can write
+                                                //                    a complete block as specified by SD_BLK[11:0] BLEN.
+                                                //                    Note: if the DMA transmit mode is enabled this bit is never set, a DMA
+                                                //                    transmit request is generated instead.
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Ready to write buffer ]
+            uint32_t    BRR   : 1;              // bit  5       (R/W) Buffer read ready, set during a read operation when one block specified
+                                                //                    by SD_BLK[11:0] BLEN is completely written in the buffer.
+                                                //                    Note: if the DMA receive mode is enabled this bit is never set, a DMA
+                                                //                    receive request is generated instead.
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Ready to read buffer ]
+            uint32_t    CINS  : 1;              // bit  6       (R/W) Card insertion, set when SD_PSTATE[CINS] changes from 0 to 1. Clearing
+                                                //                    this bit does not affect SD_PSTATE[CINS].
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Card inserted ]
+            uint32_t    CREM  : 1;              // bit  7       (R/W) Card removal, set when SD_PSTATE[CINS] changes from 1 to 0. Clearing
+                                                //                    this bit does not affect SD_PSTATE[CINS].
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Card removed ]
+            uint32_t    CIRQ  : 1;              // bit  8       (R)   Card interrupt, only used for SD and SDIO cards. Must be cleared by
+                                                //                    setting SD_IE[8] CIRQ_ENABLE to 0, then the host driver must service
+                                                //                    the card interrupt to remove the source. Writes to this bit are ignored.
+                                                //                    [ 0x0 (R) = No card interrupt; 0x1 (R) = Generate card interrupt ]
+            uint32_t    OBI   : 1;              // bit  9       (R)   Out-of-band interrupt (only useful for MMC cards), set when SD_CON[14]
+                                                //                    OBIE is set and an out-of-band interrupt occurs on the OBI pin
+                                                //                    [ 0x1 (R) = Interrupt out-of-band occurs ]
+            uint32_t    BSR   : 1;              // bit  10      (R/W) Boot status received interrupt (only useful for MMC cards), set when
+                                                //                    SD_CON[BOOT] is set to 1 or 2 and a boot status is received on DAT[0]
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Boot status received ]
+            uint32_t          : 4;              // bits 11..14  (R)   Reserved
+            uint32_t    ERRI  : 1;              // bit  15      (R)   Error interrupt, set to 1 if any of the bits in SD_STAT[31:16] is set,
+                                                //                    so that the host driver can efficiently test for an error by checking
+                                                //                    this bit first. Writes to this bit are ignored.
+                                                //                    [ 0x0 (R) = No interrupt; 0x1 (R) = Error interrupt event(s) occurred ]
+            uint32_t    CTO   : 1;              // bit  16      (R/W) Command timeout error, set when no response is received within 64 clock
+                                                //                    cycles from the end bit of the command
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Time out ]
+            uint32_t    CCRC  : 1;              // bit  17      (R/W) Command CRC error, set when there is a CRC7 error in the command
+                                                //                    response, depending on the enable bit SD_CMD[19] CCCE
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Command CRC error ]
+            uint32_t    CEB   : 1;              // bit  18      (R/W) Command end bit error, set when detecting a 0 at the end bit position of
+                                                //                    a command response
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Command end bit error ]
+            uint32_t    CIE   : 1;              // bit  19      (R/W) Command index error, set when the response index differs from the
+                                                //                    corresponding command index, depending on SD_CMD[20] CICE
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Command index error ]
+            uint32_t    DTO   : 1;              // bit  20      (R/W) Data timeout error: busy timeout for the R1b/R5b response types, busy
+                                                //                    timeout after the write CRC status, write CRC status timeout or read
+                                                //                    data timeout
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Time out ]
+            uint32_t    DCRC  : 1;              // bit  21      (R/W) Data CRC error, set when there is a CRC16 error in the data phase
+                                                //                    response following a block read command, or when the 3-bit CRC status
+                                                //                    differs from the "010" token during a block write command
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Data CRC error ]
+            uint32_t    DEB   : 1;              // bit  22      (R/W) Data end bit error, set when detecting a 0 at the end bit position of the
+                                                //                    read data on the mmc_dat line, or at the end position of the CRC status
+                                                //                    in write mode
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Data end bit error ]
+            uint32_t          : 1;              // bit  23      (R)   Reserved
+            uint32_t    ACE   : 1;              // bit  24      (R/W) Auto CMD12 error, set when one of the bits of SD_AC12 changed from 0 to 1
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Auto CMD12 error ]
+            uint32_t    ADMAE : 1;              // bit  25      (R/W) ADMA error, set when the host controller detects errors during an ADMA
+                                                //                    based data transfer. The state of the ADMA at the error occurrence is
+                                                //                    saved in SD_ADMAES.
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = ADMA error ]
+            uint32_t          : 2;              // bits 26,27   (R)   Reserved
+            uint32_t    CERR  : 1;              // bit  28      (R/W) Card error, set when there is at least one error in a response of type
+                                                //                    R1, R1b, R6, R5 or R5b. An error bit in the response is flagged only if
+                                                //                    the corresponding bit in SD_CSRE is set.
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Card error ]
+            uint32_t    BADA  : 1;              // bit  29      (R/W) Bad access to data space: read access to SD_DATA while SD_PSTATE[11] BRE
+                                                //                    is 0, or write access to SD_DATA while SD_PSTATE[10] BWE is 0
+                                                //                    [ 0x1 (W) = Status is cleared; 0x1 (R) = Bad access ]
+            uint32_t          : 2;              // bits 30,31   (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
+    } STAT_reg_t;
+
+    /*  @brief      SD Interrupt Enable Register
+     *  @details    Enables/disables the module to set the status bits of SD_STAT, on an event-by-event basis.
+     *              SD_IE[31:16] = error interrupt status enable, SD_IE[15:0] = normal interrupt status enable.
+     *  @note       This register only enables the reflection of the events in SD_STAT. To let an event generate a
+     *              hardware interrupt request, the matching bit of SD_ISE must be set as well.
+    (offset = 0x234) [reset = 0x00000000] */
+    typedef union
+    {
+        struct
+        {
+            uint32_t    CC_ENABLE   : 1;        // bit  0       (R/W) Command completed interrupt enable      [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    TC_ENABLE   : 1;        // bit  1       (R/W) Transfer completed interrupt enable     [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    BGE_ENABLE  : 1;        // bit  2       (R/W) Block gap event interrupt enable        [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    DMA_ENABLE  : 1;        // bit  3       (R/W) DMA interrupt enable                    [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    BWR_ENABLE  : 1;        // bit  4       (R/W) Buffer write ready interrupt enable     [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    BRR_ENABLE  : 1;        // bit  5       (R/W) Buffer read ready interrupt enable      [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    CINS_ENABLE : 1;        // bit  6       (R/W) Card insertion interrupt enable. Must be set to 1 when entering smart
+                                                //                    idle mode, to let the system identify the wake-up event and to allow
+                                                //                    the controller to clear the internal wake-up source.
+                                                //                    [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    CREM_ENABLE : 1;        // bit  7       (R/W) Card removal interrupt enable. Must be set to 1 when entering smart idle
+                                                //                    mode (see CINS_ENABLE).
+                                                //                    [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    CIRQ_ENABLE : 1;        // bit  8       (R/W) Card interrupt enable. Clearing this bit also clears the corresponding
+                                                //                    status bit. In 1-bit mode, if the interrupt routine does not remove the
+                                                //                    source of a card interrupt in the SDIO card, the status bit is
+                                                //                    reasserted when this bit is set to 1. Must be set to 1 when entering
+                                                //                    smart idle mode.
+                                                //                    [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    OBI_ENABLE  : 1;        // bit  9       (R/W) Out-of-band interrupt enable. A write to this bit when SD_CON[14] OBIE
+                                                //                    is cleared to 0 is ignored.
+                                                //                    [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    BSR_ENABLE  : 1;        // bit  10      (R/W) Boot status interrupt enable. A write to this bit when SD_CON[BOOT] is
+                                                //                    cleared to 0 is ignored.
+                                                //                    [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t                : 4;        // bits 11..14  (R)   Reserved
+            uint32_t    NULL_       : 1;        // bit  15      (R)   Fixed to 0. The host driver shall control the error interrupts using the
+                                                //                    error interrupt signal enable register. Writes to this bit are ignored.
+            uint32_t    CTO_ENABLE  : 1;        // bit  16      (R/W) Command timeout error interrupt enable  [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    CCRC_ENABLE : 1;        // bit  17      (R/W) Command CRC error interrupt enable      [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    CEB_ENABLE  : 1;        // bit  18      (R/W) Command end bit error interrupt enable  [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    CIE_ENABLE  : 1;        // bit  19      (R/W) Command index error interrupt enable    [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    DTO_ENABLE  : 1;        // bit  20      (R/W) Data timeout error interrupt enable     [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    DCRC_ENABLE : 1;        // bit  21      (R/W) Data CRC error interrupt enable         [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    DEB_ENABLE  : 1;        // bit  22      (R/W) Data end bit error interrupt enable     [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t                : 1;        // bit  23      (R)   Reserved
+            uint32_t    ACE_ENABLE  : 1;        // bit  24      (R/W) Auto CMD12 error interrupt enable       [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    ADMA_ENABLE : 1;        // bit  25      (R/W) ADMA error interrupt enable             [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t                : 2;        // bits 26,27   (R)   Reserved
+            uint32_t    CERR_ENABLE : 1;        // bit  28      (R/W) Card error interrupt enable             [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    BADA_ENABLE : 1;        // bit  29      (R/W) Bad access to data space enable         [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t                : 2;        // bits 30,31   (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } IE_reg_t;
 
-    /* (offset = 0x238) [reset = 0x0] */
+    /*  @brief      SD Interrupt Signal Enable Register
+     *  @details    Enables/disables the routing of a status bit of SD_STAT to the module interrupt line, on an
+     *              event-by-event basis. SD_ISE[31:16] = error interrupt signal enable,
+     *              SD_ISE[15:0] = normal interrupt signal enable.
+    (offset = 0x238) [reset = 0x00000000] */
     typedef union
     {
         struct
         {
-                                            /* Register SD_ISE */
-
-            uint32_t    CC_SIGEN   : 1;     // bit:0       (R/W) Command completed signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    TC_SIGEN   : 1;     // bit:1       (R/W) Transfer completed signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    BGE_SIGEN  : 1;     // bit:2       (R/W) Block gap event signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    DMA_SIGEN  : 1;     // bit:3       (R/W) DMA signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    BWR_SIGEN  : 1;     // bit:4       (R/W) Buffer write ready signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    BRR_SIGEN  : 1;     // bit:5       (R/W) Buffer read ready signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    CINS_SIGEN : 1;     // bit:6       (R/W) Card Insertion signal status enable. This bit must be set to 1 when entering in smart
-                                            //                  idle mode to enable system to identity wake-up event and to allow controller to clear
-                                            //                  internal wake-up source. [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    CREM_SIGEN : 1;     // bit:7       (R/W) Card Removal signal status enable This bit must be set to 1 when entering in smart idle
-                                            //                  mode to enable system to identity wake-up event and to allow controller to clear
-                                            //                  internal wake-up source. [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    CIRQ_SIGEN : 1;     // bit:8       (R/W) Card interrupt signal status enable. A clear of this bit also clears the corresponding
-                                            //                  status bit. During 1-bit mode, if the interrupt routine does not remove the source of a
-                                            //                  card interrupt in the SDIO card, the status bit is reasserted when this bit is set to 1.
-                                            //                  This bit must be set to 1 when entering in smart idle mode to enable system to identity
-                                            //                  wake-up event and to allow controller to clear internal wake-up source. [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    OBI_SIGEN  : 1;     // bit:9       (R/W) Out-of-band interrupt signal status enable. A write to this register when SD_CON[14]
-                                            //                  OBIE is cleared to 0 is ignored. [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    BSR_SIGEN  : 1;     // bit:10      (R/W) Boot Status signal status enable. A write to this register when SD_CON[BOOT] is cleared
-                                            //                  to 0 is ignored [0x0 = Masked; 0x1 = Enabled]
-            uint32_t               : 4;     // bits:11..14 (R)   Reserved
-            uint32_t    NULL_      : 1;     // bit:15      (R)   Fixed to 0. The host driver shall control error interrupts using the error interrupt
-                                            //                  signal enable register. Writes to this bit are ignored.
-            uint32_t    CTO_SIGEN  : 1;     // bit:16      (R/W) Command timeout error signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    CCRC_SIGEN : 1;     // bit:17      (R/W) Command CRC error signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    CEB_SIGEN  : 1;     // bit:18      (R/W) Command end bit error signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    CIE_SIGEN  : 1;     // bit:19      (R/W) Command index error signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    DTO_SIGEN  : 1;     // bit:20      (R/W) Data timeout error signal status enable
-                                            //                   [0x0 = Masked. The host controller provides the clock to the card until the card sends the data or the transfer is aborted.
-                                            //                    0x1 = Enabled]
-            uint32_t    DCRC_SIGEN : 1;     // bit:21      (R/W) Data CRC error signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    DEB_SIGEN  : 1;     // bit:22      (R/W) Data end bit error signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t               : 1;     // bit:23      (R)   Reserved
-            uint32_t    ACE_SIGEN  : 1;     // bit:24      (R/W) Auto CMD12 error signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    ADMA_SIGEN : 1;     // bit:25      (R/W) ADMA error signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t               : 2;     // bits:26..27 (R)   Reserved
-            uint32_t    CERR_SIGEN : 1;     // bit:28      (R/W) Card error interrupt signal status enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t    BADA_SIGEN : 1;     // bit:29      (R/W) Bad access to data space interrupt enable [0x0 = Masked; 0x1 = Enabled]
-            uint32_t               : 2;     // bits:30..31 (R)   Reserved
-        } b;
-        uint32_t reg;
+            uint32_t    CC_SIGEN   : 1;         // bit  0       (R/W) Command completed signal status enable  [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    TC_SIGEN   : 1;         // bit  1       (R/W) Transfer completed signal status enable [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    BGE_SIGEN  : 1;         // bit  2       (R/W) Block gap event signal status enable    [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    DMA_SIGEN  : 1;         // bit  3       (R/W) DMA signal status enable                [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    BWR_SIGEN  : 1;         // bit  4       (R/W) Buffer write ready signal status enable [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    BRR_SIGEN  : 1;         // bit  5       (R/W) Buffer read ready signal status enable  [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    CINS_SIGEN : 1;         // bit  6       (R/W) Card insertion signal status enable. Must be set to 1 when entering
+                                                //                    smart idle mode. [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    CREM_SIGEN : 1;         // bit  7       (R/W) Card removal signal status enable. Must be set to 1 when entering smart
+                                                //                    idle mode. [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    CIRQ_SIGEN : 1;         // bit  8       (R/W) Card interrupt signal status enable. Clearing this bit also clears the
+                                                //                    corresponding status bit. Must be set to 1 when entering smart idle
+                                                //                    mode. [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    OBI_SIGEN  : 1;         // bit  9       (R/W) Out-of-band interrupt signal status enable. A write to this bit when
+                                                //                    SD_CON[14] OBIE is cleared to 0 is ignored.
+                                                //                    [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    BSR_SIGEN  : 1;         // bit  10      (R/W) Boot status signal status enable. A write to this bit when SD_CON[BOOT]
+                                                //                    is cleared to 0 is ignored. [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t               : 4;         // bits 11..14  (R)   Reserved
+            uint32_t    NULL_      : 1;         // bit  15      (R)   Fixed to 0. Writes to this bit are ignored.
+            uint32_t    CTO_SIGEN  : 1;         // bit  16      (R/W) Command timeout error signal status enable  [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    CCRC_SIGEN : 1;         // bit  17      (R/W) Command CRC error signal status enable      [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    CEB_SIGEN  : 1;         // bit  18      (R/W) Command end bit error signal status enable  [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    CIE_SIGEN  : 1;         // bit  19      (R/W) Command index error signal status enable    [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    DTO_SIGEN  : 1;         // bit  20      (R/W) Data timeout error signal status enable
+                                                //                    [ 0x0 = Masked. The host controller provides the clock to the card until
+                                                //                            the card sends the data or the transfer is aborted;
+                                                //                      0x1 = Enabled ]
+            uint32_t    DCRC_SIGEN : 1;         // bit  21      (R/W) Data CRC error signal status enable         [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    DEB_SIGEN  : 1;         // bit  22      (R/W) Data end bit error signal status enable     [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t               : 1;         // bit  23      (R)   Reserved
+            uint32_t    ACE_SIGEN  : 1;         // bit  24      (R/W) Auto CMD12 error signal status enable       [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    ADMA_SIGEN : 1;         // bit  25      (R/W) ADMA error signal status enable             [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t               : 2;         // bits 26,27   (R)   Reserved
+            uint32_t    CERR_SIGEN : 1;         // bit  28      (R/W) Card error signal status enable             [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t    BADA_SIGEN : 1;         // bit  29      (R/W) Bad access to data space signal enable      [ 0x0 = Masked; 0x1 = Enabled ]
+            uint32_t               : 2;         // bits 30,31   (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } ISE_reg_t;
 
-    /* (offset = 0x23C) [reset = 0x0] */
+    /*  @brief      Auto CMD12 Error Status Register
+     *  @details    Lets the host driver determine which of the error cases related to Auto CMD12 has occurred.
+     *              Valid only when Auto CMD12 is enabled (SD_CMD[2] ACEN) and the Auto CMD12 error (SD_STAT[24] ACE)
+     *              is set to 1. These bits are automatically reset when starting a new adtc command with data.
+    (offset = 0x23C) [reset = 0x00000000] */
     typedef union
     {
         struct
         {
-                                  /* Register SD_AC12 */
-
-            uint32_t    ACNE : 1; // bit:0      (R) Auto CMD12 not executed. This bit is set to 1 if multiple block data transfer command
-                                  //               has started and if an error occurs in command before auto CMD12 starts.
-                                  //               [0x0 = Auto CMD12 executed; 0x1 = Auto CMD12 not executed]
-            uint32_t    ACTO : 1; // bit:1      (R) Auto CMD12 timeout error. This bit is set to 1 if no response is received within 64
-                                  //               clock cycles from the end bit of the auto CMD12 command. [0x0 = No error; 0x1 = Auto CMD12 time out]
-            uint32_t    ACCE : 1; // bit:2      (R) Auto CMD12 CRC error. This bit is automatically set to 1 when a CRC7 error is detected
-                                  //               in the auto CMD12 command response depending on the enable in the SD_CMD[19] CCCE bit.
-                                  //               [0x0 = No error; 0x1 = Auto CMD12 CRC error]
-            uint32_t    ACEB : 1; // bit:3      (R) Auto CMD12 end bit error. This bit is set to 1 when detecting a 0 at the end bit
-                                  //               position of auto CMD12 command response. [0x0 = No error; 0x1 = AutoCMD12 end bit error]
-            uint32_t    ACIE : 1; // bit:4      (R) Auto CMD12 index error. This bit is a set to 1 when response index differs from
-                                  //               corresponding command auto CMD12 index previously emitted. This bit depends on the
-                                  //               command index check enable (SD_CMD[20] CICE bit). [0x0 = No error; 0x1 = Auto CMD12 index error]
-            uint32_t         : 2; // bits:5..6  (R) Reserved
-            uint32_t    CNI  : 1; // bit:7      (R) Command not issue by auto CMD12 error. If this bit is set to 1, it means that pending
-                                  //               command is not executed due to auto CMD12 error ACEB, ACCE, ACTO, or ACNE.
-                                  //               [0x0 = Not error; 0x1 = Command not issued]
-            uint32_t         :24; // bits:8..31 (R) Reserved
-        } b;
-        uint32_t reg;
+            uint32_t    ACNE : 1;               // bit  0       (R)   Auto CMD12 not executed, set if a multiple block data transfer command
+                                                //                    has started and an error occurs in the command before Auto CMD12 starts
+                                                //                    [ 0x0 = Auto CMD12 executed; 0x1 = Auto CMD12 not executed ]
+            uint32_t    ACTO : 1;               // bit  1       (R)   Auto CMD12 timeout error, set if no response is received within 64 clock
+                                                //                    cycles from the end bit of the Auto CMD12 command
+                                                //                    [ 0x0 = No error; 0x1 = Auto CMD12 time out ]
+            uint32_t    ACCE : 1;               // bit  2       (R)   Auto CMD12 CRC error, set when a CRC7 error is detected in the Auto
+                                                //                    CMD12 command response, depending on SD_CMD[19] CCCE
+                                                //                    [ 0x0 = No error; 0x1 = Auto CMD12 CRC error ]
+            uint32_t    ACEB : 1;               // bit  3       (R)   Auto CMD12 end bit error, set when detecting a 0 at the end bit position
+                                                //                    of the Auto CMD12 command response
+                                                //                    [ 0x0 = No error; 0x1 = Auto CMD12 end bit error ]
+            uint32_t    ACIE : 1;               // bit  4       (R)   Auto CMD12 index error, set when the response index differs from the
+                                                //                    corresponding Auto CMD12 index, depending on SD_CMD[20] CICE
+                                                //                    [ 0x0 = No error; 0x1 = Auto CMD12 index error ]
+            uint32_t         : 2;               // bits 5,6     (R)   Reserved
+            uint32_t    CNI  : 1;               // bit  7       (R)   Command not issued by Auto CMD12 error: the pending command is not
+                                                //                    executed due to an Auto CMD12 error (ACEB, ACCE, ACTO or ACNE)
+                                                //                    [ 0x0 = Not error; 0x1 = Command not issued ]
+            uint32_t         :24;               // bits 8..31   (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } AC12_reg_t;
 
-    /* (offset = 0x240) [reset = 0x0] */
-    typedef union
-    {
-        struct
-        {
-                                       /* Register SD_CAPA */
-
-            uint32_t    TCF       : 6; // bits:0..5   (R)   Timeout clock frequency. The timeout clock frequency is used to detect Data Timeout
-                                       //                  Error (SD_STAT[20] DTO bit). [0x0 = The timeout clock frequency depends on the frequency
-                                       //                  of the clock provided to the card. The value of the timeout clock frequency is not
-                                       //                  available in this register.
-            uint32_t              : 1; // bit:6       (R)   Reserved
-            uint32_t    TCU       : 1; // bit:7       (R)   Timeout clock unit. This bit shows the unit of base clock frequency used to detect Data
-                                       //                  Timeout Error (SD_STAT[20] DTO bit). [0x0 = kHz; 0x1 = MHz]
-            uint32_t    BCF       : 6; // bits:8..13  (R)   Base clock frequency for clock provided to the card. ARRAY(0x1bfe1b0)
-            uint32_t              : 2; // bits:14..15 (R)   Reserved
-            uint32_t    MBL       : 2; // bits:16..17 (R)   Maximum block length. This value indicates the maximum block size that the host driver
-                                       //                  can read and write to the buffer in the host controller. The host controller supports
-                                       //                  512 bytes and 1024 bytes block transfers. [see e_MBL]
-            uint32_t              : 1; // bit:18      (R)   Reserved
-            uint32_t    AD2S      : 1; // bit:19      (R)   This bit indicates whether the Host Controller is capable of using ADMA2. It depends on
-                                       //                  setting of generic parameter MADMA_EN. [0x0 = ADMA2 supported; 0x1 = ADMA2 not supported]
-            uint32_t              : 1; // bit:20      (R)   Reserved
-            uint32_t    HSS       : 1; // bit:21      (R)   High-speed support. This bit indicates that the host controller supports high speed
-                                       //                  operations and can supply an up-to-52 MHz clock to the card.
-                                       //                  [0x0 = DMA not supported; 0x1 = DMA supported]
-            uint32_t    DS        : 1; // bit:22      (R)   DMA support. This bit indicates that the Host controller is able to use DMA to transfer
-                                       //                  data between system memory and the Host controller directly.
-                                       //                  [0x0 = DMA not supported;
-                                       //                   0x1 = DMA supported]
-            uint32_t    SRS       : 1; // bit:23      (R)   Suspend/resume support (SDIO cards only). This bit indicates whether the host controller
-                                       //                  supports Suspend/Resume functionality.
-                                       //                  [0x0 = The Host controller does not suspend/resume functionality.
-                                       //                   0x1 = The Host controller supports suspend/resume functionality.]
-            uint32_t    VS33      : 1; // bit:24      (R/W) Voltage support 3.3V. Initialization of this register (via a write access to this
-                                       //                  register) depends on the system capabilities. The host driver shall not modify this
-                                       //                  register after the initialization. This register is only reinitialized by a hard reset
-                                       //                  (via mmc_RESET signal).
-                                       //                  [0x0 (W) = 3.3 V not supported;
-                                       //                   0x0 (R) = 3.3 V not supported;
-                                       //                   0x1 (W) = 3.3 V supported;
-                                       //                   0x1 (R) = 3.3 V supported]
-            uint32_t    VS30      : 1; // bit:25      (R/W) Voltage support 3.0V. Initialization of this register (via a write access to this
-                                       //                  register) depends on the system capabilities. The host driver shall not modify this
-                                       //                  register after the initialization. This register is only reinitialized by a hard reset
-                                       //                  (via mmc_RESET signal).
-                                       //                  [0x0 (W) = 3.0 V not supported;
-                                       //                   0x0 (R) = 3.0 V not supported;
-                                       //                   0x1 (W) = 3.0 V supported;
-                                       //                   0x1 (R) = 3.0 V supported]
-            uint32_t    VS18      : 1; // bit:26      (R/W) Voltage support 1.8 V. Initialization of this register (via a write access to this
-                                       //                  register) depends on the system capabilities. The host driver shall not modify this
-                                       //                  register after the initialization. This register is only reinitialized by a hard reset
-                                       //                  (via mmc_RESET signal).
-                                       //                  [0x0 (W) = 1.8 V not supported;
-                                       //                   0x0 (R) = 1.8 V not supported;
-                                       //                   0x1 (W) = 1.8 V supported;
-                                       //                   0x1 (R) = 1.8 V supported]
-            uint32_t              : 1; // bit:27      (R)   Reserved
-            uint32_t    BUS_64BIT : 1; // bit:28      (R/W) 64 Bit System Bus Support. Setting 1 to this bit indicates that the Host Controller
-                                       //                  supports 64-bit address descriptor mode and is connected to 64-bit address system bus.
-                                       //                  [0x0 (R) = 32-bit System bus address;
-                                       //                   0x1 (R) = 64-bit System bus address]
-            uint32_t              : 3; // bits:29..31 (R)   Reserved
-        } b;
-        uint32_t reg;
-    } CAPA_reg_t;
-
+    /*  @brief      Capabilities Register
+     *  @details    Lists the capabilities of the MMC/SD/SDIO host controller. The voltage support bits are written
+     *              once during the initialization, according to the system capabilities, and shall not be modified
+     *              afterwards; they are only reinitialized by a hard reset (mmc_RESET signal).
+    (offset = 0x240) [reset = 0x00000000] */
     enum e_MBL : uint32_t
     {
-        /*  Maximum block length supported by controller
-         *  Determines largest single block that can be transferred
+        /*  Maximum block length supported by the controller.
+         *  Determines the largest single block that can be transferred through the host buffer.
          */
-        MBL_512        = 0x0,  // 512 bytes maximum block length
-        MBL_1024       = 0x1,  // 1024 bytes maximum block length
-        MBL_2048       = 0x2   // 2048 bytes maximum block length
+        MBL_512  = 0x0,             // 512 bytes maximum block length
+        MBL_1024 = 0x1,             // 1024 bytes maximum block length
+        MBL_2048 = 0x2              // 2048 bytes maximum block length
     };
 
-    /* (offset = 0x248) [reset = 0x0] */
     typedef union
     {
         struct
         {
-                                        /* Register SD_CUR_CAPA */
+            uint32_t    TCF       : 6;          // bits 0..5    (R)   Timeout clock frequency, used to detect the data timeout error
+                                                //                    (SD_STAT[20] DTO). The unit is given by TCU.
+                                                //                    [ 0x0 = The timeout clock frequency depends on the frequency of the
+                                                //                            clock provided to the card and is not available here ]
+            uint32_t              : 1;          // bit  6       (R)   Reserved
+            uint32_t    TCU       : 1;          // bit  7       (R)   Timeout clock unit, the unit of the base clock frequency used to detect
+                                                //                    the data timeout error (SD_STAT[20] DTO)
+                                                //                    [ 0x0 = kHz; 0x1 = MHz ]
+            uint32_t    BCF       : 6;          // bits 8..13   (R)   Base clock frequency of the clock provided to the card, encoded in the
+                                                //                    unit given by TCU (0 means "not available in this register")
+            uint32_t              : 2;          // bits 14,15   (R)   Reserved
+            uint32_t    MBL       : 2;          // bits 16,17   (R)   Maximum block length [see e_MBL]
+            uint32_t              : 1;          // bit  18      (R)   Reserved
+            uint32_t    AD2S      : 1;          // bit  19      (R)   ADMA2 capability, depends on the setting of the generic parameter
+                                                //                    MADMA_EN
+                                                //                    [ 0x0 = ADMA2 supported; 0x1 = ADMA2 not supported ]
+            uint32_t              : 1;          // bit  20      (R)   Reserved
+            uint32_t    HSS       : 1;          // bit  21      (R)   High-speed support: the host controller supports high speed operations
+                                                //                    and can supply an up-to-52 MHz clock to the card
+                                                //                    [ 0x0 = High speed not supported; 0x1 = High speed supported ]
+            uint32_t    DS        : 1;          // bit  22      (R)   DMA support: the host controller is able to use DMA to transfer data
+                                                //                    between the system memory and the host controller directly
+                                                //                    [ 0x0 = DMA not supported; 0x1 = DMA supported ]
+            uint32_t    SRS       : 1;          // bit  23      (R)   Suspend/resume support (SDIO cards only)
+                                                //                    [ 0x0 = Suspend/resume not supported;
+                                                //                      0x1 = Suspend/resume supported ]
+            uint32_t    VS33      : 1;          // bit  24      (R/W) Voltage support 3.3 V
+                                                //                    [ 0x0 = 3.3 V not supported; 0x1 = 3.3 V supported ]
+            uint32_t    VS30      : 1;          // bit  25      (R/W) Voltage support 3.0 V
+                                                //                    [ 0x0 = 3.0 V not supported; 0x1 = 3.0 V supported ]
+            uint32_t    VS18      : 1;          // bit  26      (R/W) Voltage support 1.8 V
+                                                //                    [ 0x0 = 1.8 V not supported; 0x1 = 1.8 V supported ]
+            uint32_t              : 1;          // bit  27      (R)   Reserved
+            uint32_t    BUS_64BIT : 1;          // bit  28      (R/W) 64-bit system bus support: the host controller supports the 64-bit
+                                                //                    address descriptor mode and is connected to a 64-bit address system bus
+                                                //                    [ 0x0 (R) = 32-bit system bus address;
+                                                //                      0x1 (R) = 64-bit system bus address ]
+            uint32_t              : 3;          // bits 29..31  (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
+    } CAPA_reg_t;
 
-            uint32_t    CUR_3V3 : 8;    // bits:0..7   (R/W) Maximum current for 3.3 V
-                                        //                   0x0 (R) = The maximum current capability for this voltage is not available. Feature not implemented.
-            uint32_t    CUR_3V0 : 8;    // bits:8..15  (R/W) Maximum current for 3.0 V
-                                        //                   0x0 (R) = The maximum current capability for this voltage is not available. Feature not implemented.
-            uint32_t    CUR_1V8 : 8;    // bits:16..23 (R/W) Maximum current for 1.8 V
-                                        //                   0x0 (R) = The maximum current capability for this voltage is not available. Feature not implemented.
-            uint32_t            : 8;    // bits:24..31 (R)   Reserved
-        } b;
-        uint32_t reg;
+    /*  @brief      Maximum Current Capabilities Register
+     *  @details    Indicates the maximum current capability for each voltage. The value is meaningful only if the
+     *              matching voltage support is set in SD_CAPA. Written once during the initialization, according to
+     *              the system capabilities, and only reinitialized by a hard reset (mmc_RESET signal).
+    (offset = 0x248) [reset = 0x00000000] */
+    typedef union
+    {
+        struct
+        {
+            uint32_t    CUR_3V3 : 8;            // bits 0..7    (R/W) Maximum current for 3.3 V
+                                                //                    [ 0x0 (R) = The maximum current capability for this voltage is not
+                                                //                                available, feature not implemented ]
+            uint32_t    CUR_3V0 : 8;            // bits 8..15   (R/W) Maximum current for 3.0 V (see CUR_3V3)
+            uint32_t    CUR_1V8 : 8;            // bits 16..23  (R/W) Maximum current for 1.8 V (see CUR_3V3)
+            uint32_t            : 8;            // bits 24..31  (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } CUR_CAPA_reg_t;
 
-    /* (offset = 0x250) [reset = 0x0] */
+    /*  @brief      Force Event Register
+     *  @details    Not a physically implemented register: it is an address at which the error interrupt status
+     *              register can be written. The effect of a write is reflected in SD_STAT[31:16], if the
+     *              corresponding bit of SD_IE is set.
+    (offset = 0x250) [reset = 0x00000000] */
     typedef union
     {
         struct
         {
-                                        /* Register SD_FE */
-
-            uint32_t    FE_ACNE  : 1;   // bit:0       (W) Force Event Auto CMD12 not executed.
-                                        //                 [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t    FE_ACTO  : 1;   // bit:1       (W) Force Event Auto CMD12 timeout error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t    FE_ACCE  : 1;   // bit:2       (W) Force Event Auto CMD12 CRC error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t    FE_ACEB  : 1;   // bit:3       (W) Force Event Auto CMD12 end bit error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t    FE_ACIE  : 1;   // bit:4       (W) Force Event Auto CMD12 index error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t             : 2;   // bits:5..6   (R) Reserved
-            uint32_t    FE_CNI   : 1;   // bit:7       (W) Force Event Command not issue by Auto CMD12 error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t             : 8;   // bits:8..15  (R) Reserved
-            uint32_t    FE_CTO   : 1;   // bit:16      (W) Force Event Command Timeout error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t    FE_CCRC  : 1;   // bit:17      (W) Force Event Comemand CRC error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t    FE_CEB   : 1;   // bit:18      (W) Force Event Command end bit error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t    FE_CIE   : 1;   // bit:19      (W) Force Event Command index error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t    FE_DTO   : 1;   // bit:20      (W) Force Event Data timeout error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t    FE_DCRC  : 1;   // bit:21      (W) Force Event Data CRC error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t    FE_DEB   : 1;   // bit:22      (W) Force Event Data End Bit error. [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t             : 1;   // bit:23      (R) Reserved
-            uint32_t    FE_ACE   : 1;   // bit:24      (W) Force Event Auto CMD12 error. [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t    FE_ADMAE : 1;   // bit:25      (W) Force Event ADMA error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t             : 2;   // bits:26..27 (R) Reserved
-            uint32_t    FE_CERR  : 1;   // bit:28      (W) Force Event Card error [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t    FE_BADA  : 1;   // bit:29      (W) Force Event Bad access to data space. [0x0 = No effect, no interrupt; 0x1 = Interrupt forced]
-            uint32_t             : 2;   // bits:30..31 (R) Reserved
-        } b;
-        uint32_t reg;
+            uint32_t    FE_ACNE  : 1;           // bit  0       (W)   Force event Auto CMD12 not executed
+                                                //                    [ 0x0 = No effect, no interrupt; 0x1 = Interrupt forced ]
+            uint32_t    FE_ACTO  : 1;           // bit  1       (W)   Force event Auto CMD12 timeout error      [ 0x1 = Interrupt forced ]
+            uint32_t    FE_ACCE  : 1;           // bit  2       (W)   Force event Auto CMD12 CRC error          [ 0x1 = Interrupt forced ]
+            uint32_t    FE_ACEB  : 1;           // bit  3       (W)   Force event Auto CMD12 end bit error      [ 0x1 = Interrupt forced ]
+            uint32_t    FE_ACIE  : 1;           // bit  4       (W)   Force event Auto CMD12 index error        [ 0x1 = Interrupt forced ]
+            uint32_t             : 2;           // bits 5,6     (R)   Reserved
+            uint32_t    FE_CNI   : 1;           // bit  7       (W)   Force event command not issued by Auto CMD12 error
+                                                //                    [ 0x1 = Interrupt forced ]
+            uint32_t             : 8;           // bits 8..15   (R)   Reserved
+            uint32_t    FE_CTO   : 1;           // bit  16      (W)   Force event command timeout error         [ 0x1 = Interrupt forced ]
+            uint32_t    FE_CCRC  : 1;           // bit  17      (W)   Force event command CRC error             [ 0x1 = Interrupt forced ]
+            uint32_t    FE_CEB   : 1;           // bit  18      (W)   Force event command end bit error         [ 0x1 = Interrupt forced ]
+            uint32_t    FE_CIE   : 1;           // bit  19      (W)   Force event command index error           [ 0x1 = Interrupt forced ]
+            uint32_t    FE_DTO   : 1;           // bit  20      (W)   Force event data timeout error            [ 0x1 = Interrupt forced ]
+            uint32_t    FE_DCRC  : 1;           // bit  21      (W)   Force event data CRC error                [ 0x1 = Interrupt forced ]
+            uint32_t    FE_DEB   : 1;           // bit  22      (W)   Force event data end bit error            [ 0x1 = Interrupt forced ]
+            uint32_t             : 1;           // bit  23      (R)   Reserved
+            uint32_t    FE_ACE   : 1;           // bit  24      (W)   Force event Auto CMD12 error              [ 0x1 = Interrupt forced ]
+            uint32_t    FE_ADMAE : 1;           // bit  25      (W)   Force event ADMA error                    [ 0x1 = Interrupt forced ]
+            uint32_t             : 2;           // bits 26,27   (R)   Reserved
+            uint32_t    FE_CERR  : 1;           // bit  28      (W)   Force event card error                    [ 0x1 = Interrupt forced ]
+            uint32_t    FE_BADA  : 1;           // bit  29      (W)   Force event bad access to data space      [ 0x1 = Interrupt forced ]
+            uint32_t             : 2;           // bits 30,31   (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } FE_reg_t;
 
-    /* (offset = 0x254) [reset = 0x0] */
-    typedef union
-    {
-        struct
-        {
-                                    /* Register SD_ADMAES */
-
-            uint32_t    AES : 2;    // bits:0..1  (R/W) ADMA Error State. This field indicates the state of ADMA when an error occurred during
-                                    //                 an ADMA data transfer. This field never indicates '10' because ADMA never
-                                    //                 stops in this state. [see e_AES]
-            uint32_t    LME : 1;    // bit:2      (W)   ADMA Length Mismatch Error: While Block Count Enable is being set, the total data length
-                                    //                 specified by the Descriptor table is different from that specified by the Block Count
-                                    //                 and Block Length. Total data length cannot be divided by the block length.
-                                    //                 [0x0 = No error; 0x1 = Error]
-            uint32_t        :29;    // bits:3..31 (R)   Reserved
-        } b;
-        uint32_t reg;
-    } ADMAES_reg_t;
-
+    /*  @brief      ADMA Error Status Register
+     *  @details    When an ADMA error interrupt has occurred, this register holds the ADMA state and SD_ADMASAL
+     *              holds the address around the error descriptor. The host controller generates the ADMA error
+     *              interrupt when it detects invalid descriptor data (Valid = 0) at the ST_FDS state.
+    (offset = 0x254) [reset = 0x00000000] */
     enum e_AES : uint32_t
     {
-        /*  ADMA Error State indicates current state when error occurred
-         *  Helps diagnose ADMA transfer failures
+        /*  ADMA error state: indicates the state of the ADMA when the error occurred.
+         *  Helps to locate the error descriptor through SD_ADMASAL.
          */
-        AES_ST_STOP    = 0x0,  // Stop DMA (error occurred in idle state)
-        AES_ST_FDS     = 0x1,  // Fetch Descriptor (error during descriptor fetch)
-        AES_RESERVED   = 0x2,  // Never set (reserved value)
-        AES_ST_TFR     = 0x3   // Transfer Data (error during data transfer)
+        AES_ST_STOP  = 0x0,         // ST_STOP (stop DMA), SD_ADMASAL points to the error descriptor
+        AES_ST_FDS   = 0x1,         // ST_FDS (fetch descriptor), SD_ADMASAL points to the error descriptor
+        AES_RESERVED = 0x2,         // Never set, the ADMA never stops in this state
+        AES_ST_TFR   = 0x3          // ST_TFR (transfer data), SD_ADMASAL points to the 'next' of the error descriptor
     };
 
-    /* (offset = 0x258) [reset = 0x0] */
     typedef union
     {
         struct
         {
-                                        /* Register SD_ADMASAL */
+            uint32_t    AES : 2;                // bits 0,1     (R/W) ADMA error state [see e_AES]
+            uint32_t    LME : 1;                // bit  2       (W)   ADMA length mismatch error: while block count enable is set, the total
+                                                //                    data length specified by the descriptor table differs from the one
+                                                //                    specified by the block count and block length, or the total data length
+                                                //                    cannot be divided by the block length
+                                                //                    [ 0x0 = No error; 0x1 = Error ]
+            uint32_t        :29;                // bits 3..31   (R)   Reserved
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
+    } ADMAES_reg_t;
 
-            uint32_t    ADMA_A32B :32;  // bits:0..31 (R/W) The ADMA increments this register address, which points to the next line, whenever
-                                        //                 fetching a Descriptor line. When the ADMA Error Interrupt is generated, this register
-                                        //                 holds the valid Descriptor address depending on the ADMA state. The Host Driver shall
-                                        //                 program the Descriptor Table on a 32-bit boundary and set the 32-bit boundary address to
-                                        //                 this register. ADMA2 ignores the lower 2 bits of this register and assumes it to be 00b.
-        } b;
-        uint32_t reg;
+    /*  @brief      ADMA System Address Low Bits Register
+     *  @details    Holds the byte address of the executing command of the descriptor table. The 32-bit address
+     *              descriptor uses the lower 32 bits of this register. At the start of the ADMA the host driver
+     *              shall set the start address of the descriptor table.
+    (offset = 0x258) [reset = 0x00000000] */
+    typedef union
+    {
+        struct
+        {
+            uint32_t    ADMA_A32B :32;          // bits 0..31   (R/W) The ADMA increments this address, which points to the next line,
+                                                //                    whenever a descriptor line is fetched. When the ADMA error interrupt is
+                                                //                    generated it holds the valid descriptor address depending on the ADMA
+                                                //                    state. The descriptor table shall be programmed on a 32-bit boundary;
+                                                //                    ADMA2 ignores the lower 2 bits and assumes them to be 00b.
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } ADMASAL_reg_t;
 
-    /* (offset = 0x25C) [reset = 0x0] */
+    /*  @brief      ADMA System Address High Bits Register
+     *  @details    Upper half of the ADMA system address, used only with the 64-bit address descriptor mode.
+    (offset = 0x25C) [reset = 0x00000000] */
     typedef union
     {
         struct
         {
-                                        /* Register SD_ADMASAH */
-
-            uint32_t    ADMA_A32B :32;  // bits:0..31 (R/W) ADMA_A32B.
-        } b;
-        uint32_t reg;
+            uint32_t    ADMA_A32B :32;          // bits 0..31   (R/W) ADMA system address, high 32 bits
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } ADMASAH_reg_t;
 
-    /* (offset = 0x2FC) [reset = 0x31010000] */
+    /*  @brief      Versions Register
+     *  @details    Contains the hard coded RTL vendor revision number, the version number of the SD specification
+     *              compliancy and a slot status bit. SD_REV[31:16] = host controller version,
+     *              SD_REV[15:0] = slot interrupt status.
+    (offset = 0x2FC) [reset = 0x31010000] */
     typedef union
-    {                                          /* Revision Register
-                                                 */
+    {
         struct
         {
-            uint32_t    SIS          : 1;       // bit  0      (R) Slot Interrupt Status.
-                                                //                 This status bit indicates the inverted state of interrupt signal for the
-                                                //                 module. By a power on reset or by setting a software reset for all
-                                                //                 (SD_SYSCTL[24] SRA), the interrupt signal shall be deasserted and
-                                                //                 this status shall read 0.
-            uint32_t                 :15;       // bits 1..15  (R) Reserved
-            uint32_t    SREV         : 8;       // bits 16..23 (R) SSpecification Version Number.
-                                                //                  This status indicates the Standard SD Host Controller Specification Version.
-                                                //                  The upper and lower 4 bits indicate the version.
-                                                //                  Reset value is 0x01. 0x0h = SD Host Specification Version 1.0
-            uint32_t    VREV         : 8;       // bits 24..31 (R) Vendor Version Number.
-                                                //                Bits 7 to 4 are the major revision, bits 3 to 0 are the minor revision.
-                                                //                Examples: 0x10 for 1.0 and 0x21 for 2.1.
-                                                //                Reset value is 0x31.
-        } b;
-        uint32_t reg;
+            uint32_t    SIS  : 1;               // bit  0       (R)   Slot interrupt status: the inverted state of the interrupt signal of the
+                                                //                    module. After a power-on reset, or after a software reset for all
+                                                //                    (SD_SYSCTL[24] SRA), the interrupt signal is deasserted and this status
+                                                //                    reads 0.
+            uint32_t         :15;               // bits 1..15   (R)   Reserved
+            uint32_t    SREV : 8;               // bits 16..23  (R)   Specification version number: the standard SD host controller
+                                                //                    specification version. The upper and lower 4 bits indicate the version.
+                                                //                    Reset value is 0x01 [ 0x00 = SD host specification version 1.0 ]
+            uint32_t    VREV : 8;               // bits 24..31  (R)   Vendor version number. Bits 7 to 4 are the major revision, bits 3 to 0
+                                                //                    are the minor revision, e.g. 0x10 for 1.0 and 0x21 for 2.1.
+                                                //                    Reset value is 0x31.
+        } b;                                    // Structure used for bit access
+        uint32_t  reg;                          // Type used for register access
     } REV_reg_t;
 
+    /*  @brief      MMC/SD/SDIO host controller register map (MULTIMEDIA_CARD, TRM table 18-19)
+     *  @details    The module register map starts at the instance base address and is 0x300 bytes long. Every
+     *              offset that is not listed in the TRM is reserved and must not be modified, so the gaps are
+     *              covered by the RESERVEDn arrays below.
+     */
     struct AM335x_MMCHS_Type
     {
-        __R    uint32_t         RESERVED[68];
-        __RW   SYSCONFIG_reg_t  SYSCONFIG;        // (0x110)
-        __R    SYSSTATUS_reg_t  SYSSTATUS;        // (0x114)
-        __R    uint32_t         RESERVED1[3];
-        __RW   CSRE_reg_t       CSRE;             // (0x124)
-        __RW   SYSTEST_reg_t    SYSTEST;          // (0x128)
-        __RW   CON_reg_t        CON;              // (0x12C)
-        __RW   PWCNT_reg_t      PWCNT;            // (0x130)
-        __R    uint32_t         RESERVED2[51];
-        __R    SDMASA_reg_t     SDMASA;           // (0x200)
-        __RW   BLK_reg_t        BLK;              // (0x204)
-        __RW   ARG_reg_t        ARG;              // (0x208)
-        __RW   CMD_reg_t        CMD;              // (0x20C)
-        __R    RSP10_reg_t      RSP10;            // (0x210)
-        __R    RSP32_reg_t      RSP32;            // (0x214)
-        __R    RSP54_reg_t      RSP54;            // (0x218)
-        __R    RSP76_reg_t      RSP76;            // (0x21C)
-        __RW   DATA_reg_t       DATA;             // (0x220)
-        __RW    PSTATE_reg_t    PSTATE;           // (0x224)
-        __RW   HCTL_reg_t       HCTL;             // (0x228)
-        __RW   SYSCTL_reg_t     SYSCTL;           // (0x22C)
-        __RW   STAT_reg_t       STAT;             // (0x230)
-        __RW   IE_reg_t         IE;               // (0x234)
-        __RW   ISE_reg_t        ISE;              // (0x238)
-        __R    AC12_reg_t       AC12;             // (0x23C)
-        __RW   CAPA_reg_t       CAPA;             // (0x240)
-        __R    uint32_t         RESERVED3[1];
-        __RW   CUR_CAPA_reg_t   CUR_CAPA;         // (0x248)
-        __R    uint32_t         RESERVED4[1];
-        __W    FE_reg_t         FE;               // (0x250)
-        __RW   ADMAES_reg_t     ADMAES;           // (0x254)
-        __RW   ADMASAL_reg_t    ADMASAL;          // (0x258)
-        __RW   ADMASAH_reg_t    ADMASAH;          // (0x25C)
-        __R    uint32_t         RESERVED5[39];
-        __R    REV_reg_t        REV;              // (0x2FC)
+        __R    uint32_t         RESERVED0[68];   // (0x000..0x10C) Reserved
+        __RW   SYSCONFIG_reg_t  SYSCONFIG;       // (0x110) System Configuration Register
+        __R    SYSSTATUS_reg_t  SYSSTATUS;       // (0x114) System Status Register
+        __R    uint32_t         RESERVED1[3];    // (0x118..0x120) Reserved
+        __RW   CSRE_reg_t       CSRE;            // (0x124) Card Status Response Error Register
+        __RW   SYSTEST_reg_t    SYSTEST;         // (0x128) System Test Register
+        __RW   CON_reg_t        CON;             // (0x12C) Configuration Register
+        __RW   PWCNT_reg_t      PWCNT;           // (0x130) Power Counter Register
+        __R    uint32_t         RESERVED2[51];   // (0x134..0x1FC) Reserved
+        __RW   SDMASA_reg_t     SDMASA;          // (0x200) SDMA System Address Register
+        __RW   BLK_reg_t        BLK;             // (0x204) Transfer Length Configuration Register
+        __RW   ARG_reg_t        ARG;             // (0x208) Command Argument Register
+        __RW   CMD_reg_t        CMD;             // (0x20C) Command and Transfer Mode Register
+        __R    RSP10_reg_t      RSP10;           // (0x210) Command Response 0 and 1
+        __R    RSP32_reg_t      RSP32;           // (0x214) Command Response 2 and 3
+        __R    RSP54_reg_t      RSP54;           // (0x218) Command Response 4 and 5
+        __R    RSP76_reg_t      RSP76;           // (0x21C) Command Response 6 and 7
+        __RW   DATA_reg_t       DATA;            // (0x220) Data Register
+        __R    PSTATE_reg_t     PSTATE;          // (0x224) Present State Register (read only)
+        __RW   HCTL_reg_t       HCTL;            // (0x228) Host Control Register
+        __RW   SYSCTL_reg_t     SYSCTL;          // (0x22C) SD System Control Register
+        __RW   STAT_reg_t       STAT;            // (0x230) SD Interrupt Status Register (write 1 to clear)
+        __RW   IE_reg_t         IE;              // (0x234) SD Interrupt Enable Register
+        __RW   ISE_reg_t        ISE;             // (0x238) SD Interrupt Signal Enable Register
+        __R    AC12_reg_t       AC12;            // (0x23C) Auto CMD12 Error Status Register
+        __RW   CAPA_reg_t       CAPA;            // (0x240) Capabilities Register
+        __R    uint32_t         RESERVED3[1];    // (0x244) Reserved
+        __RW   CUR_CAPA_reg_t   CUR_CAPA;        // (0x248) Maximum Current Capabilities Register
+        __R    uint32_t         RESERVED4[1];    // (0x24C) Reserved
+        __W    FE_reg_t         FE;              // (0x250) Force Event Register (write only)
+        __RW   ADMAES_reg_t     ADMAES;          // (0x254) ADMA Error Status Register
+        __RW   ADMASAL_reg_t    ADMASAL;         // (0x258) ADMA System Address Low Bits Register
+        __RW   ADMASAH_reg_t    ADMASAH;         // (0x25C) ADMA System Address High Bits Register
+        __R    uint32_t         RESERVED5[39];   // (0x260..0x2F8) Reserved
+        __R    REV_reg_t        REV;             // (0x2FC) Versions Register
 
-        uint32_t RSP(const uint8_t n)  { return (0x210 + (n * 4)); }
+        /*  @brief      Read one 32-bit word of the card response.
+         *  @param  n   Response word index: 0 -> SD_RSP10 [31:0], 1 -> SD_RSP32 [63:32],
+         *                                   2 -> SD_RSP54 [95:64], 3 -> SD_RSP76 [127:96].
+         *  @return     The value of the selected response register (not its offset).
+         */
+        uint32_t RSP(const uint8_t n) const volatile
+        {
+            switch (n & 0x3u)
+            {
+                case 0:  return RSP10.reg;
+                case 1:  return RSP32.reg;
+                case 2:  return RSP54.reg;
+                default: return RSP76.reg;
+            }
+        }
     };
 
-    constexpr uint32_t AM335x_MMCHS_0_BASE = 0x48060000;
-    constexpr uint32_t AM335x_MMCHS_1_BASE = 0x481D8000;
-    constexpr uint32_t AM335x_MMCHS_2_BASE = 0x47810000;
+    /*  The register map must cover exactly the TRM range 0x000..0x2FC inclusive. */
+    static_assert(sizeof(AM335x_MMCHS_Type) == (0x2FCu + 4u), "AM335x_MMCHS_Type must be exactly 0x300 bytes");
+
+    static_assert(offsetof(AM335x_MMCHS_Type, SYSCONFIG) == 0x110, "SD_SYSCONFIG offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, SYSSTATUS) == 0x114, "SD_SYSSTATUS offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, CSRE)      == 0x124, "SD_CSRE offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, SYSTEST)   == 0x128, "SD_SYSTEST offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, CON)       == 0x12C, "SD_CON offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, PWCNT)     == 0x130, "SD_PWCNT offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, SDMASA)    == 0x200, "SD_SDMASA offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, BLK)       == 0x204, "SD_BLK offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, ARG)       == 0x208, "SD_ARG offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, CMD)       == 0x20C, "SD_CMD offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, RSP10)     == 0x210, "SD_RSP10 offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, RSP32)     == 0x214, "SD_RSP32 offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, RSP54)     == 0x218, "SD_RSP54 offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, RSP76)     == 0x21C, "SD_RSP76 offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, DATA)      == 0x220, "SD_DATA offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, PSTATE)    == 0x224, "SD_PSTATE offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, HCTL)      == 0x228, "SD_HCTL offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, SYSCTL)    == 0x22C, "SD_SYSCTL offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, STAT)      == 0x230, "SD_STAT offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, IE)        == 0x234, "SD_IE offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, ISE)       == 0x238, "SD_ISE offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, AC12)      == 0x23C, "SD_AC12 offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, CAPA)      == 0x240, "SD_CAPA offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, CUR_CAPA)  == 0x248, "SD_CUR_CAPA offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, FE)        == 0x250, "SD_FE offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, ADMAES)    == 0x254, "SD_ADMAES offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, ADMASAL)   == 0x258, "SD_ADMASAL offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, ADMASAH)   == 0x25C, "SD_ADMASAH offset");
+    static_assert(offsetof(AM335x_MMCHS_Type, REV)       == 0x2FC, "SD_REV offset");
+
+    constexpr uint32_t AM335x_MMCHS_0_BASE = 0x48060000;    // MMC0, connected to the SD slot on the BeagleBone Black
+    constexpr uint32_t AM335x_MMCHS_1_BASE = 0x481D8000;    // MMC1, connected to the on-board eMMC on the BeagleBone Black
+    constexpr uint32_t AM335x_MMCHS_2_BASE = 0x47810000;    // MMC2
 
     inline AM335x_MMCHS_Type * AM335x_MMCHS_0 = reinterpret_cast<AM335x_MMCHS_Type *>(AM335x_MMCHS_0_BASE);
     inline AM335x_MMCHS_Type * AM335x_MMCHS_1 = reinterpret_cast<AM335x_MMCHS_Type *>(AM335x_MMCHS_1_BASE);
     inline AM335x_MMCHS_Type * AM335x_MMCHS_2 = reinterpret_cast<AM335x_MMCHS_Type *>(AM335x_MMCHS_2_BASE);
 
-    enum e_BUS_WIDTH : uint32_t
+    //-> MMC/SD controller instance number. <-//
+    enum e_MMCHS_INSTANCE_NUM : int
     {
-        WIDTH_1BIT  = 0x1,
-        WIDTH_4BIT  = 0x4,
-        WIDTH_8BIT  = 0x8
+        MMCHS_INSTANCE_NA = -1,
+        MMCHS_INSTANCE_0  = 0x0,
+        MMCHS_INSTANCE_1  = 0x1,
+        MMCHS_INSTANCE_2  = 0x2
     };
 
-} // namespace MMCHS
+    //-> Values used to select the bus/data width (SD_CON[5] DW8 and SD_HCTL[1] DTW). <-//
+    enum e_BUS_WIDTH : uint32_t
+    {
+        WIDTH_1BIT = 0x1,
+        WIDTH_4BIT = 0x4,
+        WIDTH_8BIT = 0x8
+    };
 
-#endif //__MMCHS_HPP
+    //-> Software reset requests, SD_SYSCTL[26:24]. <-//
+    enum e_LINE_RESET : uint32_t
+    {
+        RESET_ALL      = BIT(24),      // SRA - software reset for all the design
+        RESET_CMD_LINE = BIT(25),      // SRC - software reset for the mmc_cmd line
+        RESET_DAT_LINE = BIT(26)       // SRD - software reset for the mmc_dat line
+    };
+
+    /*  Event masks shared by SD_STAT, SD_IE and SD_ISE: the three registers have the very same bit layout,
+     *  so one set of masks serves the status, the status-enable and the signal-enable registers.
+     */
+    enum e_EVENT : uint32_t
+    {
+        EVENT_CMD_COMPLETE  = BIT(0),  // CC    - command complete
+        EVENT_XFER_COMPLETE = BIT(1),  // TC    - transfer completed
+        EVENT_BLOCK_GAP     = BIT(2),  // BGE   - block gap event
+        EVENT_DMA           = BIT(3),  // DMA   - ADMA interrupt
+        EVENT_BUF_WR_READY  = BIT(4),  // BWR   - buffer write ready
+        EVENT_BUF_RD_READY  = BIT(5),  // BRR   - buffer read ready
+        EVENT_CARD_INS      = BIT(6),  // CINS  - card insertion
+        EVENT_CARD_REM      = BIT(7),  // CREM  - card removal
+        EVENT_CARD_IRQ      = BIT(8),  // CIRQ  - card interrupt
+        EVENT_OOB_IRQ       = BIT(9),  // OBI   - out-of-band interrupt
+        EVENT_BOOT_STATUS   = BIT(10), // BSR   - boot status received
+        EVENT_ERROR         = BIT(15), // ERRI  - any error of the 31..16 group (SD_STAT only, read only)
+        EVENT_ERR_CMD_TOUT  = BIT(16), // CTO   - command timeout error
+        EVENT_ERR_CMD_CRC   = BIT(17), // CCRC  - command CRC error
+        EVENT_ERR_CMD_EB    = BIT(18), // CEB   - command end bit error
+        EVENT_ERR_CMD_INDX  = BIT(19), // CIE   - command index error
+        EVENT_ERR_DATA_TOUT = BIT(20), // DTO   - data timeout error
+        EVENT_ERR_DATA_CRC  = BIT(21), // DCRC  - data CRC error
+        EVENT_ERR_DATA_EB   = BIT(22), // DEB   - data end bit error
+        EVENT_ERR_ACMD12    = BIT(24), // ACE   - Auto CMD12 error
+        EVENT_ERR_ADMA      = BIT(25), // ADMAE - ADMA error
+        EVENT_ERR_CARD      = BIT(28), // CERR  - card error
+        EVENT_ERR_BAD_ACCESS= BIT(29)  // BADA  - bad access to data space
+    };
+
+    //-> Mask of every error bit of SD_STAT / SD_IE / SD_ISE (bits 31..16). <-//
+    constexpr uint32_t EVENT_ERR_MASK = 0xFFFF0000u;
+
+    //-> Mask that clears every writable status bit of SD_STAT. <-//
+    constexpr uint32_t EVENT_ALL_MASK = 0xFFFFFFFFu;
+
+    constexpr uint32_t BLOCK_LEN_MAX   = 2048U;    // widest block SD_BLK[BLEN] can encode
+    constexpr uint32_t BLOCK_LEN_SD    = 512U;     // block length used by standard capacity SD/SDHC cards
+    constexpr uint32_t BUFFER_SIZE     = 1024U;    // size of the embedded data buffer of the AM335x MMCHS
+    constexpr uint32_t RESPONSE_WORDS  = 4U;       // SD_RSP10 .. SD_RSP76
+
+}   // namespace REGS::MMCHS
+
+#endif //REGS_MMCHS_HPP
