@@ -187,21 +187,21 @@ namespace HAL::MMCSD
      **/
     void Card::m_decode_csd() noexcept
     {
-        const uint32_t csd_structure = (m_csd[3] >> 22) & 0x3u;   // CSD[127:126]
+        m_block_count = 0u;
+        const uint32_t csd_structure = (m_csd[3] >> 30) & 0x3u;
 
         if (csd_structure == 0x1u)
         {
-            /* CSD version 2.0: C_SIZE is CSD[69:48], that is response bits [61:40] */
-            const uint32_t c_size = (m_csd[1] >> 8) & 0x3FFFFFu;
-
+            const uint32_t c_size = ((m_csd[2] & 0x3Fu) << 16) | ((m_csd[1] >> 16) & 0xFFFFu);
             m_block_count = (c_size + 1u) * 1024u;
         }
         else
+        if (csd_structure == 0u)
         {
             /* CSD version 1.0 */
-            const uint32_t c_size      = ((m_csd[2] & 0x3u) << 10) | ((m_csd[1] >> 22) & 0x3FFu);  // CSD[73:62]
-            const uint32_t c_size_mult = (m_csd[1] >> 7) & 0x7u;                                   // CSD[49:47]
-            const uint32_t read_bl_len = (m_csd[2] >> 8) & 0xFu;                                   // CSD[83:80]
+            const uint32_t c_size = ((m_csd[2] & 0x3FFu) << 2) | ((m_csd[1] >> 30) & 0x3u);
+            const uint32_t c_size_mult = (m_csd[1] >> 15) & 0x7u;
+            const uint32_t read_bl_len = (m_csd[2] >> 16) & 0xFu;
 
             /* capacity = (C_SIZE + 1) << (C_SIZE_MULT + 2 + READ_BL_LEN) bytes */
             const uint32_t mult_shift = c_size_mult + 2u + read_bl_len;
@@ -461,11 +461,11 @@ namespace HAL::MMCSD
         if (out == nullptr)
             return;
 
-        out[0] = static_cast<char>((m_cid[2] >> 24) & 0xFFu);
-        out[1] = static_cast<char>((m_cid[2] >> 16) & 0xFFu);
-        out[2] = static_cast<char>((m_cid[2] >>  8) & 0xFFu);
-        out[3] = static_cast<char>((m_cid[2]      ) & 0xFFu);
-        out[4] = static_cast<char>((m_cid[1] >> 24) & 0xFFu);
+        out[0] = static_cast<char>((m_cid[3]      ) & 0xFFu);
+        out[1] = static_cast<char>((m_cid[2] >> 24) & 0xFFu);
+        out[2] = static_cast<char>((m_cid[2] >> 16) & 0xFFu);
+        out[3] = static_cast<char>((m_cid[2] >>  8) & 0xFFu);
+        out[4] = static_cast<char>((m_cid[2]      ) & 0xFFu);
         out[5] = '\0';
 
         for (uint32_t i = 0; i < 5u; ++i)

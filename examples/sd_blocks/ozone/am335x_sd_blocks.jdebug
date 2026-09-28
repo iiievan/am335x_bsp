@@ -1,0 +1,308 @@
+
+/*********************************************************************
+*
+*       OnProjectLoad
+*
+* Function description
+*   Project load routine. Required.
+*
+**********************************************************************
+*/
+int OZONE_RTT_ENABLED;
+int OZONE_JLINK_LOG_ENABLED;
+int OZONE_CONSOLE_LOG_ENABLED;
+
+void SetRtt(int enabled)
+{
+  if (OZONE_RTT_ENABLED != 0)
+  {
+  Project.SetRTT(enabled);
+  }
+}
+
+void OnProjectLoad (void) 
+{
+  // User options. Full J-Link logging is intentionally off during normal use.
+  OZONE_RTT_ENABLED = 1;
+  OZONE_JLINK_LOG_ENABLED = 0;
+  OZONE_CONSOLE_LOG_ENABLED = 0;
+
+  Edit.SysVar(VAR_RTT_ENABLED, OZONE_RTT_ENABLED);
+  if (OZONE_RTT_ENABLED != 0)
+  {
+    // AM335x requires stop-mode BMA emulation (available through Ozone 3.38g).
+    Edit.SysVar(VAR_ALLOW_BMA_EMULATION, 1);
+  }
+
+  Project.SetJLinkScript("../../../tools/AM335x_DDR_Init.jlinkscript");
+  if (OZONE_JLINK_LOG_ENABLED != 0)
+  {
+    Project.SetJLinkLogFile("am335x_sd_blocks_jlink.log");
+  }
+  if (OZONE_CONSOLE_LOG_ENABLED != 0)
+  {
+    Project.SetConsoleLogFile("am335x_sd_blocks_console.log");
+  }
+
+  // Вот эти две строки решают проблему неработающего Reset с открытой вкладкой Peripherals
+  Edit.SysVar("PERIPHERAL_UPDATE_INTERVAL", 0);       // полностью отключает авто-обновление
+  Edit.SysVar("PERIPHERAL_UPDATE_ON_HALT", 0);        // не обновлять при halt/reset
+
+  Edit.SysVar("RESET_ON_CONNECT", 0);                    // Не сбрасывать при подключении
+  Edit.SysVar("CPU_DISABLE_CACHES_MMU_ON_CONNECT", 0);   // Не отключать MMU/кэши
+  Edit.SysVar("CORESIGHT_CORE_RESET_ON_CONNECT", 0);     // Не сбрасывать CoreSight
+
+  Project.SetDevice ("AM3359");
+  Project.SetHostIF ("USB", "941000024");
+  Project.SetTargetIF ("JTAG");
+  Project.SetTIFSpeed ("12 MHz");
+
+  if (OZONE_RTT_ENABLED != 0)
+  {
+    Project.AddRTTSearchRange(0x40300000, 0x00010000);
+  }
+
+  Project.AddSvdFile("Cortex-A8.svd");
+  Project.AddSvdFile ("../../../tools/AM335x.svd");
+
+  File.Open("../../../cmake-build-debug/examples/sd_blocks/am335x_sd_blocks.elf");
+  // File.Open may auto-detect RTT. Keep capture off until startup completion.
+  SetRtt(0);
+
+  // Use the named Reset & Halt mode; numeric 1 selects Break at Symbol.
+  Debug.SetResetMode(RM_RESET_HALT);
+}
+
+/*********************************************************************
+*
+*     DisableWatchdog
+*
+* Function description
+*   Helper Function
+*
+**********************************************************************
+*/
+void DisableWatchdog(void) 
+{
+   Util.Log("Disable watchdog");
+
+   // ВАЖНО: Отключаем RTT перед остановкой ядра
+   // Это ключевое решение проблемы
+   SetRtt(0);
+
+   // Небольшая пауза не нужна, SetRTT выполняется синхронно
+
+   Debug.Halt();
+   Target.WriteU32(0x44E35048, 0x0000AAAA);
+   Target.WriteU32(0x44E35048, 0x00005555);
+
+   // RTT stays disabled during reset/download; OnStartupComplete enables it.
+}
+
+/*********************************************************************
+*
+*     SetExecModeARM
+*
+* Function description
+*   Helper Function
+*
+**********************************************************************
+*/
+void SetExecModeARM(void) 
+{
+   unsigned int CPSR;
+   unsigned int thumb_bit;
+   
+   CPSR = Target.GetReg("CPSR");
+   if (CPSR != 0xFFFFFFFF) 
+   {
+      thumb_bit = CPSR & 0x20;
+      if (thumb_bit != 0)
+      {
+         Util.Log("Setting Execution Mode to ARM.");
+         CPSR = CPSR & 0xFFFFFFDF;
+         Target.SetReg("CPSR", CPSR);
+      }
+   }
+}
+
+/*********************************************************************
+*
+*     SetPCtoEntryPoint
+*
+* Function description
+*   Устанавливаем PC на точку входа ELF файла
+*
+**********************************************************************
+*/
+void SetPCtoEntryPoint(void)
+{
+   unsigned int PC;
+
+   PC = Elf.GetEntryPointPC();
+   if (PC == 0xFFFFFFFF)
+   {
+      Util.Log("WARNING: Failed to get entry point from ELF, using 0x80000000");
+      PC = 0x80000000;  // fallback на начало DDR
+   }
+
+   if (PC == 0)
+   {
+      Util.Log("WARNING: Zero ELF entry point, using 0x80000000");
+      PC = 0x80000000;
+   }
+
+   Util.LogHex("Setting PC to ELF entry point:", PC);
+   Target.SetReg("PC", PC); 
+}
+
+/*********************************************************************
+*                                                                     
+*       TargetDownload                                              
+*                                                                     
+* Function description                                                
+*   Загружаем приложение в DDR
+*
+**********************************************************************
+*/
+void TargetDownload (void)
+{
+   int test;
+   SetRtt(0);
+   Util.Log("TargetDownload: Loading application to DDR (0x80000000)");
+
+   Target.WriteU32(0x80000000, 0xDEADBEEF);
+   test = Target.ReadU32(0x80000000);
+   Util.LogHex("DDR test:" , test);
+   
+   if (test == 0xDEADBEEF) {
+       Util.Log("SUCCESS: DDR is working!");
+   } else {
+       Util.Log("FAILED: DDR still not accessible");
+   }
+
+   // Загружаем ELF (он сам разложит секции по нужным адресам, включая 0x80000000)
+   Exec.Download("../../../cmake-build-debug/examples/sd_blocks/am335x_sd_blocks.elf");
+}
+
+/*********************************************************************
+*                                                                     
+*       TargetReset                                             
+*                                                                     
+* Function description                                                
+*   Replaces the default reset routine.
+*   Restarts at the ELF entry point while preserving the initialized DDR.                             
+*                                                                     
+**********************************************************************
+*/                                                                
+void TargetReset(void) 
+{
+   Util.Log("TargetReset");
+   
+   DisableWatchdog();
+   SetExecModeARM();
+   SetPCtoEntryPoint();
+
+   // Use the named Reset & Halt mode; numeric 1 selects Break at Symbol.
+   Debug.SetResetMode(RM_RESET_HALT);
+}   
+
+/*********************************************************************
+*                                                                     
+*       AfterTargetReset                                             
+*                                                                     
+* Function description                                                
+*   Event handler                          
+*                                                                     
+**********************************************************************
+*/                                                                
+void AfterTargetReset(void) 
+{
+   U32 PC;
+
+   PC = Target.GetReg("PC");
+   Util.LogHex("AfterTargetReset: PC:", PC);
+   
+}
+
+/*********************************************************************
+*
+*       AfterTargetDownload
+*
+* Function description
+*   После загрузки - ставим PC на entry point и можем бежать
+*
+**********************************************************************
+*/
+void AfterTargetDownload (void)
+{
+   U32 test_val;
+   U32 PC;
+
+   SetRtt(0);
+   Util.Log("AfterTargetDownload: Download complete; RTT awaits startup");
+   
+   // Просто останавливаемся, пусть пользователь сам запускает
+   test_val = Target.ReadU32(0x80000000);
+   Util.LogHex("Value at 0x80000000:", test_val);
+   
+   PC = Elf.GetEntryPointPC();
+
+   // PC устанавливаем, но не продолжаем
+   Target.SetReg("PC", PC);
+   
+   // Проверяем PC
+   PC = Target.GetReg("PC");
+   Util.LogHex("PC after set:", PC);
+   
+   // НЕ вызываем Debug.Continue() - пусть разработчик нажмёт Go
+   Util.Log("Ready. Press Go to start debugging.");
+}
+
+/*********************************************************************
+*
+*       AfterTargetHalt
+*
+* Function description
+*   Event handler routine. Optional.
+*
+**********************************************************************
+*/
+void AfterTargetHalt (void)
+{
+   unsigned int PC;
+
+   Util.Log("AfterTargetHalt");
+
+   PC = Target.GetReg("PC");
+   if (PC != 0xFFFFFFFF)
+   {
+      Util.LogHex("Halted at PC:", PC);
+   }
+} 
+
+
+/*********************************************************************
+* BeforeTargetConnect: suspend capture while connecting.
+*********************************************************************/
+void BeforeTargetConnect(void)
+{
+   SetRtt(0);
+}
+
+/*********************************************************************
+* OnStartupComplete
+* Ozone calls this when the configured startup completion point is reached.
+* That point may precede the application's own SEGGER_RTT_Init call.
+*********************************************************************/
+void OnStartupComplete(void)
+{
+   SetRtt(1);
+}
+
+void BeforeTargetDisconnect(void)
+{
+   SetRtt(0);
+}
+
+/*** EOF ***/
