@@ -37,7 +37,7 @@
 #define FF_USE_STRFUNC  1
 #define FF_PRINT_LLI    0
 #define FF_PRINT_FLOAT  0
-#define FF_STRF_ENCODE  0
+#define FF_STRF_ENCODE  3
 /* f_puts / f_gets / f_printf, used by the example to write a small text file. */
 
 /*---------------------------------------------------------------------------/
@@ -52,9 +52,10 @@
    which suits a baremetal target. The API is not reentrant in this mode, which is
    fine because FF_FS_REENTRANT is 0. */
 #define FF_MAX_LFN      255
-#define FF_LFN_UNICODE  0
-#define FF_LFN_BUF      255
-#define FF_SFN_BUF      12
+#define FF_LFN_UNICODE  2
+/* UTF-8 char paths, including Cyrillic names on FAT and exFAT. */
+#define FF_LFN_BUF      765
+#define FF_SFN_BUF      34
 
 #define FF_FS_RPATH     0
 /* No relative paths: every path the example uses is absolute. */
@@ -66,14 +67,14 @@
 / Drive/Volume Configurations
 /---------------------------------------------------------------------------*/
 
-#define FF_VOLUMES      1
-/* A single volume, physical drive 0, the microSD slot on MMC0. */
+#define FF_VOLUMES      2
+/* Two logical volumes on the SAME physical MMC0 card. See partitions.cpp. */
 
 #define FF_STR_VOLUME_ID    0
 #define FF_VOLUME_STRS      "RAM","NAND","CF","SD","SD2","USB","USB2","USB3"
 
-#define FF_MULTI_PARTITION  0
-/* Drive 0 maps to the first partition found in the MBR. */
+#define FF_MULTI_PARTITION  1
+/* Explicit mapping: 0: = MBR entry 1; 1: = MBR entry 2. No auto-search. */
 
 #define FF_MIN_SS       512
 #define FF_MAX_SS       512
@@ -81,7 +82,7 @@
    disk_ioctl(GET_SECTOR_SIZE) is never called. */
 
 #define FF_LBA64        0
-/* 32-bit LBA is enough: it covers cards up to 2 TiB. */
+/* Keep the existing 32-bit Card API. This configuration targets MBR, not GPT. */
 
 #define FF_MIN_GPT      0x10000000
 #define FF_USE_TRIM     0
@@ -93,8 +94,8 @@
 #define FF_FS_TINY      0
 /* Each FIL keeps its own sector buffer: faster, at the price of 512 bytes per file. */
 
-#define FF_FS_EXFAT     0
-/* FAT12/16/32 only. exFAT would also drag in a licence obligation. */
+#define FF_FS_EXFAT     1
+/* FAT12/16/32 and exFAT. FF_USE_LFN and ffunicode.c are already enabled. */
 
 #define FF_FS_NORTC     1
 #define FF_NORTC_MON    1

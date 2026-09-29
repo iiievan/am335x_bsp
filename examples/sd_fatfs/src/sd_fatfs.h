@@ -5,10 +5,9 @@
 extern "C" {
 #endif
 
-/*  Mount the microSD card of the BeagleBone Black, report what the file system looks like, list the
- *  root directory, then write a small text file and read it back to prove the write path works.
- *
- *  Returns true when every step succeeded.
+/* Test both configured MMC0 partitions, independently. Existing files are
+ * preserved: the example creates a numbered test file with FA_CREATE_NEW.
+ * Returns true only if every configured partition passes, including unmount.
  */
 bool sd_fatfs_test(void);
 

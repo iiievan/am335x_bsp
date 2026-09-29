@@ -20,6 +20,7 @@ add_am335x_firmware(${SD_FATFS_TARGET}
         src/init.cpp
         src/sd_fatfs.cpp
         src/diskio.cpp
+        src/partitions.cpp
         "${FATFS_DIR}/ff.c"
         "${FATFS_DIR}/ffunicode.c"
 
